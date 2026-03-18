@@ -286,17 +286,18 @@ function createNavigationStore() {
     _favorites = favs;
     columns = columns.map((col) => ({
       ...col,
-      items: col.items.map((item) => ({
-        ...item,
-        isFavorite:
-          item.type === 'project'
-            ? favs.projects.includes(item.key)
-            : item.type === 'file'
-              ? favs.files.includes(item.key)
-              : item.type === 'category'
-                ? favs.categories.includes(item.key)
-                : item.isFavorite,
-      })),
+      items: col.items.map((item) => {
+        if (item.type === 'project') {
+          return { ...item, isFavorite: favs.projects.includes(item.key) };
+        } else if (item.type === 'file') {
+          // Recent files use key "__r:name"; regular files use key = name
+          const fileKey = item.key.startsWith('__r:') ? item.key.slice(4) : item.key;
+          return { ...item, isFavorite: favs.files.includes(fileKey) };
+        } else if (item.type === 'category') {
+          return { ...item, isFavorite: favs.categories.includes(item.key) };
+        }
+        return item;
+      }),
     }));
   }
 

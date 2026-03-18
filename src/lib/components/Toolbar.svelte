@@ -16,6 +16,13 @@
     onsearchresult: (result: SearchResult) => void;
   } = $props();
 
+  let searchInputEl = $state<HTMLInputElement | null>(null);
+
+  export function focusSearch() {
+    searchInputEl?.focus();
+    searchInputEl?.select();
+  }
+
   let query = $state('');
   let results = $state<SearchResult[]>([]);
   let dropdownVisible = $state(false);
@@ -125,6 +132,7 @@
           <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
         <input
+          bind:this={searchInputEl}
           type="text"
           class="search-input"
           placeholder="Search projects..."

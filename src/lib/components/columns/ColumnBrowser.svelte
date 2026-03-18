@@ -7,6 +7,16 @@
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import Column from './Column.svelte';
 
+  let browserEl = $state<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    // Scroll right whenever a new column is added
+    const _len = navigationStore.columns.length;
+    if (browserEl) {
+      browserEl.scrollTo({ left: browserEl.scrollWidth, behavior: 'smooth' });
+    }
+  });
+
   let isEmpty = $derived(
     Object.keys(configStore.categories).length === 0 &&
     Object.keys(configStore.files).length === 0 &&
@@ -60,7 +70,7 @@
   }
 </script>
 
-<div class="column-browser">
+<div class="column-browser" bind:this={browserEl}>
   {#if isEmpty}
     <div class="onboarding">
       <svg class="onboarding-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">

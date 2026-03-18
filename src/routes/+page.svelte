@@ -8,6 +8,8 @@
   import { openProjectInEditor, openFileInEditor, addRecent } from '$lib/api/commands';
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
+
+  let toolbarRef = $state<ReturnType<typeof Toolbar> | null>(null);
   import DetailPanel from '$lib/components/DetailPanel.svelte';
   import ContextMenu from '$lib/components/context-menu/ContextMenu.svelte';
   import CategoryDialog from '$lib/components/dialogs/CategoryDialog.svelte';
@@ -38,6 +40,12 @@
       if (contextMenuStore.visible) return;
       // Don't intercept when typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        toolbarRef?.focusSearch();
+        return;
+      }
 
       switch (e.key) {
         case 'ArrowUp':
@@ -113,6 +121,7 @@
     <div class="state-overlay error">Failed to load config: {configStore.error}</div>
   {:else}
     <Toolbar
+      bind:this={toolbarRef}
       onnewcategory={() => dialogStore.open({ type: 'category', mode: 'add' })}
       onnewproject={() => dialogStore.open({ type: 'project', mode: 'add' })}
       onnewfile={() => dialogStore.open({ type: 'file', mode: 'add' })}
