@@ -25,6 +25,8 @@ pub struct Preferences {
     pub default_text_editor: Option<String>,
     pub close_on_open: bool,
     pub terminal: TerminalPreferences,
+    #[serde(default)]
+    pub editors_available: HashMap<String, String>,
 }
 
 impl Default for Preferences {
@@ -34,6 +36,7 @@ impl Default for Preferences {
             default_text_editor: None,
             close_on_open: false,
             terminal: TerminalPreferences::default(),
+            editors_available: HashMap::new(),
         }
     }
 }

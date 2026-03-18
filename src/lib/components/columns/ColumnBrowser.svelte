@@ -36,6 +36,7 @@
   function handleRightClick(item: NavItem, x: number, y: number) {
     const menuItems = buildMenuItems(item, {
       defaultEditor: configStore.preferences.default_editor,
+      editorsAvailable: configStore.preferences.editors_available ?? {},
       favorites: configStore.favorites,
       onEdit: () => {
         if (item.type === 'category') {

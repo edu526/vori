@@ -17,6 +17,7 @@ function createConfigStore() {
     default_editor: 'vscode',
     close_on_open: false,
     terminal: { available: {} },
+    editors_available: {},
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);

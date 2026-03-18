@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
-  import { updatePreferences, detectTerminals } from '$lib/api/commands';
+  import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
   import type { Preferences } from '$lib/api/types';
 
   const isOpen = $derived(dialogStore.current?.type === 'preferences');
@@ -11,10 +11,12 @@
     default_editor: 'vscode',
     close_on_open: false,
     terminal: { available: {} },
+    editors_available: {},
   });
 
   let detectError = $state('');
   let detecting = $state(false);
+  let detectingEditors = $state(false);
 
   $effect(() => {
     if (!isOpen) return;
@@ -59,6 +61,27 @@
   }
 
   const terminalEntries = $derived(Object.entries(prefs.terminal.available ?? {}));
+  const editorEntries = $derived(Object.entries(prefs.editors_available ?? {}).sort(([a], [b]) => a.localeCompare(b)));
+
+  const EDITOR_LABELS: Record<string, string> = {
+    'vscode': 'VSCode', 'vscode-insiders': 'VSCode Insiders', 'cursor': 'Cursor',
+    'windsurf': 'Windsurf', 'kiro': 'Kiro', 'zed': 'Zed', 'fleet': 'Fleet',
+    'sublime': 'Sublime Text', 'graviton': 'Graviton', 'helix': 'Helix',
+    'neovim': 'Neovim', 'vim': 'Vim', 'emacs': 'Emacs', 'kate': 'Kate', 'gedit': 'Gedit',
+  };
+
+  async function handleDetectEditors() {
+    detectingEditors = true;
+    detectError = '';
+    try {
+      const available = await detectEditors();
+      prefs.editors_available = available;
+    } catch (e) {
+      detectError = String(e);
+    } finally {
+      detectingEditors = false;
+    }
+  }
 </script>
 
 {#if isOpen}
@@ -73,26 +96,26 @@
 
         <div class="field">
           <div class="field-label">Default editor</div>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input
-                type="radio"
-                name="default_editor"
-                value="vscode"
-                bind:group={prefs.default_editor}
-              />
-              VSCode
-            </label>
-            <label class="radio-label">
-              <input
-                type="radio"
-                name="default_editor"
-                value="kiro"
-                bind:group={prefs.default_editor}
-              />
-              Kiro
-            </label>
-          </div>
+          {#if editorEntries.length > 0}
+            <div class="radio-group">
+              {#each editorEntries as [key, execPath]}
+                <label class="radio-label" title={execPath}>
+                  <input
+                    type="radio"
+                    name="default_editor"
+                    value={key}
+                    bind:group={prefs.default_editor}
+                  />
+                  {EDITOR_LABELS[key] ?? key}
+                </label>
+              {/each}
+            </div>
+          {:else}
+            <p class="hint">No editors detected yet.</p>
+          {/if}
+          <button class="btn btn-secondary detect-btn" onclick={handleDetectEditors} disabled={detectingEditors}>
+            {detectingEditors ? 'Detecting...' : 'Detect Editors'}
+          </button>
         </div>
 
         <div class="field">

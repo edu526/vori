@@ -8,8 +8,7 @@ mod state;
 use commands::config::*;
 use commands::launcher::*;
 use commands::search::*;
-use services::config_manager;
-use services::terminal;
+use services::{config_manager, editor_detector, terminal};
 use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -40,8 +39,12 @@ pub fn run() {
             // Auto-detect terminals on first launch (when none are configured yet)
             if preferences.terminal.available.is_empty() {
                 preferences.terminal.available = terminal::detect_terminals();
-                let _ = config_manager::save("preferences.json", &preferences);
             }
+            // Auto-detect editors on first launch (when none are configured yet)
+            if preferences.editors_available.is_empty() {
+                preferences.editors_available = editor_detector::detect_editors();
+            }
+            let _ = config_manager::save("preferences.json", &preferences);
 
             app.manage(AppState::new(
                 categories, projects, files, preferences, favorites, recents,
@@ -80,6 +83,7 @@ pub fn run() {
             open_file_in_editor,
             open_in_terminal,
             detect_terminals,
+            detect_editors,
             // Search
             search,
         ])

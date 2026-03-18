@@ -89,6 +89,9 @@ export const openInTerminal = (path?: string) =>
 export const detectTerminals = () =>
   invoke<Record<string, string>>('detect_terminals');
 
+export const detectEditors = () =>
+  invoke<Record<string, string>>('detect_editors');
+
 // ── Search ────────────────────────────────────────────────────────────────────
 
 export const search = (query: string) => invoke<SearchResult[]>('search', { query });

@@ -44,6 +44,7 @@ export interface Preferences {
   default_text_editor?: string;
   close_on_open: boolean;
   terminal: TerminalPreferences;
+  editors_available: Record<string, string>;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::services::{config_manager, editor, terminal};
+use crate::services::{config_manager, editor, editor_detector, terminal};
 use crate::state::AppState;
 
 #[tauri::command]
@@ -9,10 +9,16 @@ pub fn open_project_in_editor(
     editor_name: String,
     state: State<AppState>,
 ) -> Result<(), String> {
-    editor::open_in_editor(&path, &editor_name)?;
-    // If close_on_open, the frontend handles window close after this returns Ok
-    let _ = state.preferences.lock().unwrap().close_on_open;
-    Ok(())
+    // Resolve editor key → binary path from detected editors, fall back to raw name
+    let binary = {
+        let prefs = state.preferences.lock().unwrap();
+        prefs
+            .editors_available
+            .get(&editor_name)
+            .cloned()
+            .unwrap_or_else(|| editor_name.clone())
+    };
+    editor::open_in_editor(&path, &binary)
 }
 
 #[tauri::command]
@@ -39,6 +45,19 @@ pub fn open_in_terminal(path: Option<String>, state: State<AppState>) -> Result<
             .unwrap_or(preferred)
     };
     terminal::open_terminal(path.as_deref(), &terminal_cmd)
+}
+
+#[tauri::command]
+pub fn detect_editors(
+    state: State<AppState>,
+) -> Result<std::collections::HashMap<String, String>, String> {
+    let found = editor_detector::detect_editors();
+    {
+        let mut prefs = state.preferences.lock().unwrap();
+        prefs.editors_available = found.clone();
+        config_manager::save("preferences.json", &*prefs)?;
+    }
+    Ok(found)
 }
 
 #[tauri::command]

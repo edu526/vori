@@ -50,11 +50,22 @@
 
   let defaultEditor = $derived(configStore.preferences.default_editor);
 
+  const EDITOR_LABELS: Record<string, string> = {
+    'vscode': 'VSCode', 'vscode-insiders': 'VSCode Insiders', 'cursor': 'Cursor',
+    'windsurf': 'Windsurf', 'kiro': 'Kiro', 'zed': 'Zed', 'fleet': 'Fleet',
+    'sublime': 'Sublime Text', 'graviton': 'Graviton', 'helix': 'Helix',
+    'neovim': 'Neovim', 'vim': 'Vim', 'emacs': 'Emacs', 'kate': 'Kate', 'gedit': 'Gedit',
+  };
+
   function editorLabel(editorId: string): string {
-    if (editorId === 'vscode') return 'VSCode';
-    if (editorId === 'kiro') return 'Kiro';
-    return editorId;
+    return EDITOR_LABELS[editorId] ?? editorId;
   }
+
+  let availableEditors = $derived(
+    Object.keys(configStore.preferences.editors_available ?? {})
+      .filter((key) => key !== defaultEditor)
+      .sort((a, b) => a.localeCompare(b))
+  );
 
   function trackRecent(recentItem: Parameters<typeof addRecent>[0]) {
     addRecent(recentItem);
@@ -131,23 +142,14 @@
           Open in {editorLabel(defaultEditor)}
         </button>
 
-        {#if defaultEditor !== 'vscode'}
+        {#each availableEditors as editorKey}
           <button
             class="btn btn-secondary"
-            onclick={() => handleOpenInEditor(selectedItem!.path!, 'vscode')}
+            onclick={() => handleOpenInEditor(selectedItem!.path!, editorKey)}
           >
-            Open in VSCode
+            Open in {editorLabel(editorKey)}
           </button>
-        {/if}
-
-        {#if defaultEditor !== 'kiro'}
-          <button
-            class="btn btn-secondary"
-            onclick={() => handleOpenInEditor(selectedItem!.path!, 'kiro')}
-          >
-            Open in Kiro
-          </button>
-        {/if}
+        {/each}
 
         <button
           class="btn btn-secondary"

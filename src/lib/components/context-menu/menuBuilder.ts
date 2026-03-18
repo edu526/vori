@@ -15,10 +15,22 @@ import {
   toggleFavorite,
 } from '$lib/api/commands';
 
+const EDITOR_LABELS: Record<string, string> = {
+  'vscode': 'VSCode', 'vscode-insiders': 'VSCode Insiders', 'cursor': 'Cursor',
+  'windsurf': 'Windsurf', 'kiro': 'Kiro', 'zed': 'Zed', 'fleet': 'Fleet',
+  'sublime': 'Sublime Text', 'graviton': 'Graviton', 'helix': 'Helix',
+  'neovim': 'Neovim', 'vim': 'Vim', 'emacs': 'Emacs', 'kate': 'Kate', 'gedit': 'Gedit',
+};
+
+function editorLabel(key: string): string {
+  return EDITOR_LABELS[key] ?? key;
+}
+
 export function buildMenuItems(
   item: NavItem,
   opts: {
     defaultEditor: string;
+    editorsAvailable: Record<string, string>;
     favorites: Favorites;
     onEdit: () => void;
     onRefresh: () => void;
@@ -26,9 +38,10 @@ export function buildMenuItems(
     onAddProject?: () => void;
   },
 ): MenuItem[] {
-  const primaryEditor = opts.defaultEditor === 'kiro' ? 'Kiro' : 'VSCode';
-  const secondaryEditor = opts.defaultEditor === 'kiro' ? 'VSCode' : 'Kiro';
-  const secondaryEditorId = opts.defaultEditor === 'kiro' ? 'vscode' : 'kiro';
+  const primaryLabel = editorLabel(opts.defaultEditor);
+  const otherEditors = Object.keys(opts.editorsAvailable)
+    .filter((k) => k !== opts.defaultEditor)
+    .sort((a, b) => a.localeCompare(b));
 
   switch (item.type) {
     case 'category': {
@@ -83,13 +96,13 @@ export function buildMenuItems(
       const isFav = opts.favorites.projects.includes(item.key);
       return [
         {
-          label: `Open in ${primaryEditor}`,
+          label: `Open in ${primaryLabel}`,
           action: () => openProjectInEditor(item.path!, opts.defaultEditor),
         },
-        {
-          label: `Open in ${secondaryEditor}`,
-          action: () => openProjectInEditor(item.path!, secondaryEditorId),
-        },
+        ...otherEditors.map((key) => ({
+          label: `Open in ${editorLabel(key)}`,
+          action: () => openProjectInEditor(item.path!, key),
+        })),
         {
           label: 'Open in Terminal',
           action: () => openInTerminal(item.path!),
