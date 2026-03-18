@@ -267,6 +267,20 @@ function createNavigationStore() {
     }
   }
 
+  // Prepend a recent to the root column without losing current navigation
+  function addRecentToView(item: RecentItem) {
+    _recents = [item, ..._recents.filter((r) => r.path !== item.path)].slice(0, 20);
+    const rootSelectedKey = columns[0]?.selectedKey ?? null;
+    columns = [
+      {
+        items: buildRootItems(_categories, _projects, _files, _favorites, _recents),
+        selectedKey: rootSelectedKey,
+        title: 'Projects',
+      },
+      ...columns.slice(1),
+    ];
+  }
+
   // Patch isFavorite on every item across all columns without rebuilding
   function updateFavorites(favs: Favorites) {
     _favorites = favs;
@@ -309,6 +323,7 @@ function createNavigationStore() {
     collapseLeft,
     refresh,
     updateFavorites,
+    addRecentToView,
   };
 }
 

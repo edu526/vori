@@ -56,15 +56,16 @@
     return editorId;
   }
 
+  function trackRecent(recentItem: Parameters<typeof addRecent>[0]) {
+    addRecent(recentItem);
+    navigationStore.addRecentToView(recentItem);
+    configStore.recents = [recentItem, ...configStore.recents.filter(r => r.path !== recentItem.path)].slice(0, 20);
+  }
+
   async function handleOpenInEditor(path: string, editor: string) {
     try {
       await openProjectInEditor(path, editor);
-      addRecent({
-        path,
-        name: selectedItem!.label,
-        type: 'project',
-        timestamp: Date.now() / 1000,
-      });
+      trackRecent({ path, name: selectedItem!.label, type: 'project', timestamp: Date.now() / 1000 });
       if (configStore.preferences.close_on_open) {
         await getCurrentWindow().close();
       }
@@ -76,12 +77,7 @@
   async function handleOpenFile(path: string) {
     try {
       await openFileInEditor(path, configStore.preferences.default_text_editor);
-      addRecent({
-        path,
-        name: selectedItem!.label,
-        type: 'file',
-        timestamp: Date.now() / 1000,
-      });
+      trackRecent({ path, name: selectedItem!.label, type: 'file', timestamp: Date.now() / 1000 });
       if (configStore.preferences.close_on_open) {
         await getCurrentWindow().close();
       }

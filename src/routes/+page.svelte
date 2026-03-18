@@ -60,23 +60,19 @@
           e.preventDefault();
           const item = navigationStore.selectedItem;
           if (item?.type === 'project' && item.path) {
-            openProjectInEditor(item.path, configStore.preferences.default_editor).then(() =>
-              addRecent({
-                path: item.path!,
-                name: item.label,
-                type: 'project',
-                timestamp: Date.now() / 1000,
-              }),
-            );
+            const recent = { path: item.path, name: item.label, type: 'project' as const, timestamp: Date.now() / 1000 };
+            openProjectInEditor(item.path, configStore.preferences.default_editor).then(() => {
+              addRecent(recent);
+              navigationStore.addRecentToView(recent);
+              configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== recent.path)].slice(0, 20);
+            });
           } else if (item?.type === 'file' && item.path) {
-            openFileInEditor(item.path, configStore.preferences.default_text_editor).then(() =>
-              addRecent({
-                path: item.path!,
-                name: item.label,
-                type: 'file',
-                timestamp: Date.now() / 1000,
-              }),
-            );
+            const recent = { path: item.path, name: item.label, type: 'file' as const, timestamp: Date.now() / 1000 };
+            openFileInEditor(item.path, configStore.preferences.default_text_editor).then(() => {
+              addRecent(recent);
+              navigationStore.addRecentToView(recent);
+              configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== recent.path)].slice(0, 20);
+            });
           }
           break;
         }
