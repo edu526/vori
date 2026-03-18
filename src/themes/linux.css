@@ -1,0 +1,29 @@
+/* Linux (Adwaita-inspired) — default theme, applied to :root */
+:root,
+[data-os='linux'] {
+  --font-family: 'Cantarell', 'Inter', system-ui, sans-serif;
+  --font-size-base: 14px;
+
+  --color-bg: #f6f5f4;
+  --color-surface: #ffffff;
+  --color-border: #deddda;
+  --color-text: #1a1a2e;
+  --color-text-secondary: #77767b;
+  --color-hover: #e8e7e4;
+  --color-accent: #3584e4;
+  --color-accent-hover: #1c71d8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root,
+  [data-os='linux'] {
+    --color-bg: #1e1e2e;
+    --color-surface: #242434;
+    --color-border: #363646;
+    --color-text: #cdd6f4;
+    --color-text-secondary: #6c7086;
+    --color-hover: #313244;
+    --color-accent: #89b4fa;
+    --color-accent-hover: #74c7ec;
+  }
+}

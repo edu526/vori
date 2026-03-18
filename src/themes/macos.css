@@ -1,0 +1,27 @@
+/* macOS (HIG-inspired) */
+[data-os='macos'] {
+  --font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --font-size-base: 13px;
+
+  --color-bg: #ececec;
+  --color-surface: rgba(255, 255, 255, 0.85);
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-text: #1d1d1f;
+  --color-text-secondary: #8e8e93;
+  --color-hover: rgba(0, 0, 0, 0.06);
+  --color-accent: #007aff;
+  --color-accent-hover: #0056cc;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-os='macos'] {
+    --color-bg: #1c1c1e;
+    --color-surface: rgba(44, 44, 46, 0.9);
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-text: #f2f2f7;
+    --color-text-secondary: #aeaeb2;
+    --color-hover: rgba(255, 255, 255, 0.08);
+    --color-accent: #0a84ff;
+    --color-accent-hover: #409cff;
+  }
+}
