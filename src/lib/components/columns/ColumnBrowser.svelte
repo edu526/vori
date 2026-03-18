@@ -10,9 +10,8 @@
   let browserEl = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
-    // Scroll right whenever a new column is added
-    const _len = navigationStore.columns.length;
-    if (browserEl) {
+    // Reading columns.length establishes the reactive dependency
+    if (navigationStore.columns.length > 0 && browserEl) {
       browserEl.scrollTo({ left: browserEl.scrollWidth, behavior: 'smooth' });
     }
   });
