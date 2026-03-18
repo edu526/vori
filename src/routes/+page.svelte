@@ -4,6 +4,8 @@
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
+  import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
+  import { openProjectInEditor, openFileInEditor, addRecent } from '$lib/api/commands';
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import DetailPanel from '$lib/components/DetailPanel.svelte';
@@ -27,6 +29,64 @@
     }
   });
 
+  // ── Keyboard navigation ─────────────────────────────────────────────────────
+  $effect(() => {
+    function handleKeydown(e: KeyboardEvent) {
+      // Let dialogs and context menus handle their own keys
+      if (dialogStore.current) return;
+      if (contextMenuStore.visible) return;
+      // Don't intercept when typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          navigationStore.moveSelection(-1);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          navigationStore.moveSelection(1);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          navigationStore.expandRight();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          navigationStore.collapseLeft();
+          break;
+        case 'Enter': {
+          e.preventDefault();
+          const item = navigationStore.selectedItem;
+          if (item?.type === 'project' && item.path) {
+            openProjectInEditor(item.path, configStore.preferences.default_editor).then(() =>
+              addRecent({
+                path: item.path!,
+                name: item.label,
+                type: 'project',
+                timestamp: Date.now() / 1000,
+              }),
+            );
+          } else if (item?.type === 'file' && item.path) {
+            openFileInEditor(item.path, configStore.preferences.default_text_editor).then(() =>
+              addRecent({
+                path: item.path!,
+                name: item.label,
+                type: 'file',
+                timestamp: Date.now() / 1000,
+              }),
+            );
+          }
+          break;
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  });
+
+  // ── Search navigation ───────────────────────────────────────────────────────
   function handleSearchResult(result: SearchResult) {
     if (result.result_type === 'category') {
       navigationStore.selectItem(0, result.key);
@@ -66,7 +126,7 @@
   {/if}
 </div>
 
-<!-- Global overlays — rendered outside the loading guard so dialogs/menus are always available -->
+<!-- Global overlays -->
 <ContextMenu />
 {#if dialogStore.current?.type === 'category'}
   <CategoryDialog />

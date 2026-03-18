@@ -7,6 +7,12 @@
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import Column from './Column.svelte';
 
+  let isEmpty = $derived(
+    Object.keys(configStore.categories).length === 0 &&
+    Object.keys(configStore.files).length === 0 &&
+    configStore.recents.length === 0,
+  );
+
   async function refresh() {
     await configStore.load();
     navigationStore.refresh(
@@ -52,9 +58,24 @@
 </script>
 
 <div class="column-browser">
-  {#each navigationStore.columns as column, i (i)}
-    <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} />
-  {/each}
+  {#if isEmpty}
+    <div class="onboarding">
+      <svg class="onboarding-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M6 12a3 3 0 0 1 3-3h10l4 5h16a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V12z"/>
+        <line x1="24" y1="20" x2="24" y2="32"/>
+        <line x1="18" y1="26" x2="30" y2="26"/>
+      </svg>
+      <p class="onboarding-title">Welcome to Vori</p>
+      <p class="onboarding-sub">Organize your projects in categories to get started</p>
+      <button class="onboarding-btn" onclick={() => dialogStore.open({ type: 'category', mode: 'add' })}>
+        Add your first category
+      </button>
+    </div>
+  {:else}
+    {#each navigationStore.columns as column, i (i)}
+      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} />
+    {/each}
+  {/if}
 </div>
 
 <style>
@@ -64,5 +85,52 @@
     overflow-x: auto;
     overflow-y: hidden;
     background: var(--color-surface);
+  }
+
+  .onboarding {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--color-text-secondary);
+    padding: 32px;
+  }
+
+  .onboarding-icon {
+    width: 56px;
+    height: 56px;
+    opacity: 0.3;
+    margin-bottom: 4px;
+  }
+
+  .onboarding-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .onboarding-sub {
+    font-size: 0.8rem;
+    margin: 0;
+    text-align: center;
+  }
+
+  .onboarding-btn {
+    margin-top: 8px;
+    padding: 8px 18px;
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .onboarding-btn:hover {
+    opacity: 0.85;
   }
 </style>

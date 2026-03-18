@@ -38,7 +38,6 @@ function buildRootItems(
   if (recentItems.length > 0) {
     items.push({ key: '__recents__', label: 'Recent', type: 'section-header' });
     for (const recent of recentItems) {
-      // Use name as key (it's the project/file key); prefix to avoid collision with Files section
       const key = recent.type === 'file' ? `__r:${recent.name}` : recent.name;
       items.push({
         key,
@@ -143,8 +142,13 @@ function buildSubcategoryItems(
     }));
 }
 
+function selectableItems(col: Column): NavItem[] {
+  return col.items.filter((it) => it.type !== 'section-header');
+}
+
 function createNavigationStore() {
   let columns = $state<Column[]>([]);
+  let activeColumnIndex = $state(0);
   let _categories = $state<CategoriesMap>({});
   let _projects = $state<ProjectsMap>({});
   let _files = $state<FilesMap>({});
@@ -163,6 +167,7 @@ function createNavigationStore() {
     _files = fls;
     _favorites = favs;
     _recents = recents;
+    activeColumnIndex = 0;
     columns = [
       {
         items: buildRootItems(cats, projs, fls, favs, recents),
@@ -175,6 +180,8 @@ function createNavigationStore() {
   function selectItem(columnIndex: number, key: string) {
     const item = columns[columnIndex]?.items.find((it) => it.key === key);
     if (!item || item.type === 'section-header') return;
+
+    activeColumnIndex = columnIndex;
 
     columns = columns
       .slice(0, columnIndex + 1)
@@ -193,6 +200,45 @@ function createNavigationStore() {
 
     if (nextItems.length > 0) {
       columns = [...columns, { items: nextItems, selectedKey: null, title: nextTitle }];
+    }
+  }
+
+  // ── Keyboard navigation ───────────────────────────────────────────────────
+
+  function moveSelection(delta: -1 | 1) {
+    const col = columns[activeColumnIndex];
+    if (!col) return;
+
+    const items = selectableItems(col);
+    if (items.length === 0) return;
+
+    const currentIdx = items.findIndex((it) => it.key === col.selectedKey);
+    let nextIdx: number;
+
+    if (currentIdx === -1) {
+      nextIdx = delta === 1 ? 0 : items.length - 1;
+    } else {
+      nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + delta));
+    }
+
+    selectItem(activeColumnIndex, items[nextIdx].key);
+  }
+
+  function expandRight() {
+    const nextCol = columns[activeColumnIndex + 1];
+    if (!nextCol) return;
+    const first = selectableItems(nextCol)[0];
+    if (first) {
+      activeColumnIndex = activeColumnIndex + 1;
+      selectItem(activeColumnIndex, first.key);
+    } else {
+      activeColumnIndex = activeColumnIndex + 1;
+    }
+  }
+
+  function collapseLeft() {
+    if (activeColumnIndex > 0) {
+      activeColumnIndex = activeColumnIndex - 1;
     }
   }
 
@@ -225,8 +271,23 @@ function createNavigationStore() {
     get columns() {
       return columns;
     },
+    get activeColumnIndex() {
+      return activeColumnIndex;
+    },
+    get selectedItem(): NavItem | null {
+      for (let i = columns.length - 1; i >= 0; i--) {
+        if (columns[i].selectedKey) {
+          const item = columns[i].items.find((it) => it.key === columns[i].selectedKey);
+          if (item && item.type !== 'section-header') return item;
+        }
+      }
+      return null;
+    },
     init,
     selectItem,
+    moveSelection,
+    expandRight,
+    collapseLeft,
     refresh,
   };
 }
