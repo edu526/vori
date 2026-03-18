@@ -17,7 +17,13 @@
     await themeStore.init();
     await configStore.load();
     if (!configStore.error) {
-      navigationStore.init(configStore.categories, configStore.projects, configStore.files);
+      navigationStore.init(
+        configStore.categories,
+        configStore.projects,
+        configStore.files,
+        configStore.favorites,
+        configStore.recents,
+      );
     }
   });
 

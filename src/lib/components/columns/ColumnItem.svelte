@@ -40,6 +40,9 @@
       {/if}
     </span>
     <span class="label">{item.label}</span>
+    {#if item.isFavorite}
+      <span class="favorite">★</span>
+    {/if}
     {#if item.hasChildren}
       <span class="chevron">›</span>
     {/if}
@@ -109,5 +112,17 @@
 
   .column-item.selected .chevron {
     opacity: 0.8;
+  }
+
+  .favorite {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    color: var(--color-accent);
+  }
+
+  .column-item.selected .favorite {
+    color: white;
+    opacity: 0.9;
   }
 </style>

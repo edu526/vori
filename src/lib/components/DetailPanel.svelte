@@ -1,7 +1,8 @@
 <script lang="ts">
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { configStore } from '$lib/stores/config.svelte';
-  import { openProjectInEditor, openFileInEditor, openInTerminal } from '$lib/api/commands';
+  import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
 
   let errorMessage = $state<string | null>(null);
   let errorTimer: ReturnType<typeof setTimeout> | null = null;
@@ -58,6 +59,15 @@
   async function handleOpenInEditor(path: string, editor: string) {
     try {
       await openProjectInEditor(path, editor);
+      addRecent({
+        path,
+        name: selectedItem!.label,
+        type: 'project',
+        timestamp: Date.now() / 1000,
+      });
+      if (configStore.preferences.close_on_open) {
+        await getCurrentWindow().close();
+      }
     } catch (e) {
       showError(String(e));
     }
@@ -66,6 +76,15 @@
   async function handleOpenFile(path: string) {
     try {
       await openFileInEditor(path, configStore.preferences.default_text_editor);
+      addRecent({
+        path,
+        name: selectedItem!.label,
+        type: 'file',
+        timestamp: Date.now() / 1000,
+      });
+      if (configStore.preferences.close_on_open) {
+        await getCurrentWindow().close();
+      }
     } catch (e) {
       showError(String(e));
     }

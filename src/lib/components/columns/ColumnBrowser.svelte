@@ -9,7 +9,13 @@
 
   async function refresh() {
     await configStore.load();
-    navigationStore.refresh(configStore.categories, configStore.projects, configStore.files);
+    navigationStore.refresh(
+      configStore.categories,
+      configStore.projects,
+      configStore.files,
+      configStore.favorites,
+      configStore.recents,
+    );
   }
 
   function handleRightClick(item: NavItem, x: number, y: number) {

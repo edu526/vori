@@ -1,4 +1,4 @@
-import type { CategoriesMap, FilesMap, ProjectsMap } from '$lib/api/types';
+import type { CategoriesMap, Favorites, FilesMap, ProjectsMap, RecentItem } from '$lib/api/types';
 
 export type NavItemType = 'category' | 'subcategory' | 'project' | 'file' | 'section-header';
 
@@ -10,6 +10,7 @@ export interface NavItem {
   categoryKey?: string;
   subcategoryKey?: string;
   hasChildren?: boolean;
+  isFavorite?: boolean;
 }
 
 export interface Column {
@@ -18,17 +19,65 @@ export interface Column {
   title?: string;
 }
 
-function buildRootItems(categories: CategoriesMap, files: FilesMap): NavItem[] {
+const MAX_RECENTS_IN_COLUMN = 5;
+
+function buildRootItems(
+  categories: CategoriesMap,
+  projects: ProjectsMap,
+  files: FilesMap,
+  favorites: Favorites,
+  recents: RecentItem[],
+): NavItem[] {
   const items: NavItem[] = [];
 
-  for (const [key] of Object.entries(categories)) {
-    items.push({ key, label: key, type: 'category', hasChildren: true });
+  // ── Recents ───────────────────────────────────────────────────────────────
+  const recentItems = recents
+    .filter((r) => r.type === 'project' || r.type === 'file')
+    .slice(0, MAX_RECENTS_IN_COLUMN);
+
+  if (recentItems.length > 0) {
+    items.push({ key: '__recents__', label: 'Recent', type: 'section-header' });
+    for (const recent of recentItems) {
+      // Use name as key (it's the project/file key); prefix to avoid collision with Files section
+      const key = recent.type === 'file' ? `__r:${recent.name}` : recent.name;
+      items.push({
+        key,
+        label: recent.name,
+        type: recent.type as 'project' | 'file',
+        path: recent.path,
+        isFavorite:
+          recent.type === 'project'
+            ? favorites.projects.includes(recent.name)
+            : favorites.files.includes(recent.name),
+      });
+    }
   }
 
+  // ── Categories ────────────────────────────────────────────────────────────
+  if (Object.keys(categories).length > 0) {
+    items.push({ key: '__categories__', label: 'Categories', type: 'section-header' });
+  }
+  for (const [key] of Object.entries(categories)) {
+    items.push({
+      key,
+      label: key,
+      type: 'category',
+      hasChildren: true,
+      isFavorite: favorites.categories.includes(key),
+    });
+  }
+
+  // ── Files ─────────────────────────────────────────────────────────────────
   if (Object.keys(files).length > 0) {
     items.push({ key: '__files__', label: 'Files', type: 'section-header' });
     for (const [key, file] of Object.entries(files)) {
-      items.push({ key, label: key, type: 'file', path: file.path });
+      items.push({
+        key,
+        label: key,
+        type: 'file',
+        path: file.path,
+        isFavorite: favorites.files.includes(key),
+      });
     }
   }
 
@@ -39,6 +88,7 @@ function buildCategoryItems(
   categoryKey: string,
   categories: CategoriesMap,
   projects: ProjectsMap,
+  favorites: Favorites,
 ): NavItem[] {
   const cat = categories[categoryKey];
   if (!cat) return [];
@@ -60,7 +110,14 @@ function buildCategoryItems(
   if (directProjects.length > 0) {
     items.push({ key: '__projects__', label: 'Projects', type: 'section-header' });
     for (const [key, proj] of directProjects) {
-      items.push({ key, label: key, type: 'project', path: proj.path, categoryKey });
+      items.push({
+        key,
+        label: key,
+        type: 'project',
+        path: proj.path,
+        categoryKey,
+        isFavorite: favorites.projects.includes(key),
+      });
     }
   }
 
@@ -71,6 +128,7 @@ function buildSubcategoryItems(
   categoryKey: string,
   subcategoryKey: string,
   projects: ProjectsMap,
+  favorites: Favorites,
 ): NavItem[] {
   return Object.entries(projects)
     .filter(([, p]) => p.category === categoryKey && p.subcategory === subcategoryKey)
@@ -81,6 +139,7 @@ function buildSubcategoryItems(
       path: proj.path,
       categoryKey,
       subcategoryKey,
+      isFavorite: favorites.projects.includes(key),
     }));
 }
 
@@ -89,33 +148,46 @@ function createNavigationStore() {
   let _categories = $state<CategoriesMap>({});
   let _projects = $state<ProjectsMap>({});
   let _files = $state<FilesMap>({});
+  let _favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
+  let _recents = $state<RecentItem[]>([]);
 
-  function init(cats: CategoriesMap, projs: ProjectsMap, fls: FilesMap) {
+  function init(
+    cats: CategoriesMap,
+    projs: ProjectsMap,
+    fls: FilesMap,
+    favs: Favorites,
+    recents: RecentItem[],
+  ) {
     _categories = cats;
     _projects = projs;
     _files = fls;
-    columns = [{ items: buildRootItems(cats, fls), selectedKey: null, title: 'Projects' }];
+    _favorites = favs;
+    _recents = recents;
+    columns = [
+      {
+        items: buildRootItems(cats, projs, fls, favs, recents),
+        selectedKey: null,
+        title: 'Projects',
+      },
+    ];
   }
 
   function selectItem(columnIndex: number, key: string) {
-    // Section headers are not selectable
     const item = columns[columnIndex]?.items.find((it) => it.key === key);
     if (!item || item.type === 'section-header') return;
 
-    // Update selection, drop all columns after this one
     columns = columns
       .slice(0, columnIndex + 1)
       .map((col, i) => (i === columnIndex ? { ...col, selectedKey: key } : col));
 
-    // Push next column if the item has children
     let nextItems: NavItem[] = [];
     let nextTitle: string | undefined;
 
     if (item.type === 'category') {
-      nextItems = buildCategoryItems(key, _categories, _projects);
+      nextItems = buildCategoryItems(key, _categories, _projects, _favorites);
       nextTitle = key;
     } else if (item.type === 'subcategory' && item.categoryKey) {
-      nextItems = buildSubcategoryItems(item.categoryKey, key, _projects);
+      nextItems = buildSubcategoryItems(item.categoryKey, key, _projects, _favorites);
       nextTitle = key;
     }
 
@@ -124,14 +196,26 @@ function createNavigationStore() {
     }
   }
 
-  function refresh(cats: CategoriesMap, projs: ProjectsMap, fls: FilesMap) {
+  function refresh(
+    cats: CategoriesMap,
+    projs: ProjectsMap,
+    fls: FilesMap,
+    favs: Favorites,
+    recents: RecentItem[],
+  ) {
     _categories = cats;
     _projects = projs;
     _files = fls;
-    // Rebuild root column, preserve selection
+    _favorites = favs;
+    _recents = recents;
     const rootSelectedKey = columns[0]?.selectedKey ?? null;
-    columns = [{ items: buildRootItems(cats, fls), selectedKey: rootSelectedKey, title: 'Projects' }];
-    // Re-apply selection to rebuild child columns
+    columns = [
+      {
+        items: buildRootItems(cats, projs, fls, favs, recents),
+        selectedKey: rootSelectedKey,
+        title: 'Projects',
+      },
+    ];
     if (rootSelectedKey) {
       selectItem(0, rootSelectedKey);
     }

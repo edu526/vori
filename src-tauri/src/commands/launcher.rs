@@ -24,11 +24,19 @@ pub fn open_file_in_editor(path: String, text_editor: Option<String>) -> Result<
 pub fn open_in_terminal(path: Option<String>, state: State<AppState>) -> Result<(), String> {
     let terminal_cmd = {
         let prefs = state.preferences.lock().unwrap();
-        prefs
+        let preferred = prefs
             .terminal
             .preferred
             .clone()
-            .unwrap_or_else(|| "xterm".to_string())
+            .unwrap_or_else(|| "xterm".to_string());
+        // Resolve name → full binary path from the detected terminals map.
+        // Falls back to the name itself so plain commands like "xterm" still work.
+        prefs
+            .terminal
+            .available
+            .get(&preferred)
+            .cloned()
+            .unwrap_or(preferred)
     };
     terminal::open_terminal(path.as_deref(), &terminal_cmd)
 }
