@@ -104,6 +104,8 @@
           navigationStore.selectItem(1, result.key);
         }
       }, 50);
+    } else if (result.result_type === 'file') {
+      navigationStore.selectItem(0, result.key);
     }
   }
 </script>

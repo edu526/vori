@@ -267,6 +267,25 @@ function createNavigationStore() {
     }
   }
 
+  // Patch isFavorite on every item across all columns without rebuilding
+  function updateFavorites(favs: Favorites) {
+    _favorites = favs;
+    columns = columns.map((col) => ({
+      ...col,
+      items: col.items.map((item) => ({
+        ...item,
+        isFavorite:
+          item.type === 'project'
+            ? favs.projects.includes(item.key)
+            : item.type === 'file'
+              ? favs.files.includes(item.key)
+              : item.type === 'category'
+                ? favs.categories.includes(item.key)
+                : item.isFavorite,
+      })),
+    }));
+  }
+
   return {
     get columns() {
       return columns;
@@ -289,6 +308,7 @@ function createNavigationStore() {
     expandRight,
     collapseLeft,
     refresh,
+    updateFavorites,
   };
 }
 

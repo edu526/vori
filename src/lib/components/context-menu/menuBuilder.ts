@@ -1,5 +1,6 @@
 import { ask } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
+import { navigationStore } from '$lib/stores/navigation.svelte';
 import type { Favorites } from '$lib/api/types';
 import type { MenuItem } from '$lib/stores/contextMenu.svelte';
 import {
@@ -96,7 +97,7 @@ export function buildMenuItems(
         {
           label: isFav ? 'Remove from Favorites' : 'Add to Favorites',
           action: () => {
-            toggleFavorite(item.key, 'project').then(() => opts.onRefresh());
+            toggleFavorite(item.key, 'project').then((favs) => navigationStore.updateFavorites(favs));
           },
         },
         { label: '', action: () => {}, divider: true },
@@ -126,7 +127,7 @@ export function buildMenuItems(
         {
           label: isFav ? 'Remove from Favorites' : 'Add to Favorites',
           action: () => {
-            toggleFavorite(item.key, 'file').then(() => opts.onRefresh());
+            toggleFavorite(item.key, 'file').then((favs) => navigationStore.updateFavorites(favs));
           },
         },
         { label: '', action: () => {}, divider: true },
