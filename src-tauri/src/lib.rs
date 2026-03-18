@@ -9,6 +9,7 @@ use commands::config::*;
 use commands::launcher::*;
 use commands::search::*;
 use services::config_manager;
+use services::terminal;
 use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -31,9 +32,16 @@ pub fn run() {
             let categories = config_manager::load("categories.json").unwrap_or_default();
             let projects = config_manager::load("projects.json").unwrap_or_default();
             let files = config_manager::load("files.json").unwrap_or_default();
-            let preferences = config_manager::load("preferences.json").unwrap_or_default();
+            let mut preferences: models::preferences::Preferences =
+                config_manager::load("preferences.json").unwrap_or_default();
             let favorites = config_manager::load("favorites.json").unwrap_or_default();
             let recents = config_manager::load("recents.json").unwrap_or_default();
+
+            // Auto-detect terminals on first launch (when none are configured yet)
+            if preferences.terminal.available.is_empty() {
+                preferences.terminal.available = terminal::detect_terminals();
+                let _ = config_manager::save("preferences.json", &preferences);
+            }
 
             app.manage(AppState::new(
                 categories, projects, files, preferences, favorites, recents,

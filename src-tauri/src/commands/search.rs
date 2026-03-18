@@ -80,5 +80,17 @@ pub fn search(query: String, state: State<AppState>) -> Vec<SearchResult> {
         }
     }
 
+    // Sort: categories → subcategories → projects → files, then alphabetically
+    results.sort_by(|a, b| {
+        let order = |r: &SearchResult| match r.result_type.as_str() {
+            "category" => 0,
+            "subcategory" => 1,
+            "project" => 2,
+            "file" => 3,
+            _ => 4,
+        };
+        order(a).cmp(&order(b)).then_with(|| a.name.cmp(&b.name))
+    });
+
     results
 }

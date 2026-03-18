@@ -183,7 +183,7 @@
           {#each results as result, i (result.key)}
             {#if i === 0 || results[i - 1].result_type !== result.result_type}
               <div class="dropdown-section-header">
-                {result.result_type === 'category' ? 'Categories' : result.result_type === 'project' ? 'Projects' : 'Files'}
+                {result.result_type === 'category' ? 'Categories' : result.result_type === 'subcategory' ? 'Subcategories' : result.result_type === 'project' ? 'Projects' : 'Files'}
               </div>
             {/if}
             <button
