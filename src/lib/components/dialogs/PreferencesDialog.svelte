@@ -54,7 +54,7 @@
     if (e.key === 'Escape') dialogStore.close();
   }
 
-  function stopPropagation(e: MouseEvent) {
+  function stopPropagation(e: MouseEvent | KeyboardEvent) {
     e.stopPropagation();
   }
 
@@ -64,8 +64,7 @@
 {#if isOpen}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="dialog" onclick={stopPropagation}>
+    <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="dialog-header">Preferences</div>
 
       <!-- Editor section -->
@@ -73,7 +72,7 @@
         <div class="section-title">Editor</div>
 
         <div class="field">
-          <label>Default editor</label>
+          <div class="field-label">Default editor</div>
           <div class="radio-group">
             <label class="radio-label">
               <input
@@ -125,7 +124,7 @@
 
         {#if terminalEntries.length > 0}
           <div class="field">
-            <label>Preferred terminal</label>
+            <div class="field-label">Preferred terminal</div>
             <div class="radio-group">
               {#each terminalEntries as [name, execPath]}
                 <label class="radio-label" title={execPath}>
@@ -219,15 +218,14 @@
     gap: 4px;
   }
 
-  .field label {
+  .field label,
+  .field-label {
     font-size: 0.8rem;
     color: var(--color-text-secondary);
     font-weight: 500;
   }
 
-  .field input,
-  .field textarea,
-  .field select {
+  .field input {
     padding: 7px 10px;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -236,9 +234,7 @@
     font-size: 0.875rem;
   }
 
-  .field input:focus,
-  .field textarea:focus,
-  .field select:focus {
+  .field input:focus {
     outline: none;
     border-color: var(--color-accent);
   }

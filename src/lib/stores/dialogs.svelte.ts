@@ -1,6 +1,6 @@
 type DialogPayload =
   | { type: 'category'; mode: 'add'; parentKey?: string }
-  | { type: 'category'; mode: 'edit'; key: string }
+  | { type: 'category'; mode: 'edit'; key: string; parentKey?: string }
   | { type: 'project'; mode: 'add'; categoryKey?: string; subcategoryKey?: string }
   | { type: 'project'; mode: 'edit'; key: string }
   | { type: 'preferences' };

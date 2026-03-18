@@ -42,7 +42,7 @@
     class="cm-backdrop"
     onclick={() => contextMenuStore.hide()}
     role="presentation"
-  />
+  ></div>
   <div
     class="cm-menu"
     style="left: {contextMenuStore.x}px; top: {contextMenuStore.y}px"
@@ -51,7 +51,7 @@
   >
     {#each contextMenuStore.items as item}
       {#if item.divider}
-        <div class="cm-divider" role="separator" />
+        <div class="cm-divider" role="separator"></div>
       {:else}
         <button
           class="cm-item"

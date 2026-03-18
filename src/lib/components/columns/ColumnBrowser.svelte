@@ -31,10 +31,11 @@
       onEdit: () => {
         if (item.type === 'category') {
           dialogStore.open({ type: 'category', mode: 'edit', key: item.key });
+        } else if (item.type === 'subcategory' && item.categoryKey) {
+          dialogStore.open({ type: 'category', mode: 'edit', key: item.key, parentKey: item.categoryKey });
         } else if (item.type === 'project') {
           dialogStore.open({ type: 'project', mode: 'edit', key: item.key });
         }
-        // subcategory & file edit: future dialogs
       },
       onRefresh: refresh,
       onAddSubcategory: () => {

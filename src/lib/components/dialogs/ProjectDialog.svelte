@@ -90,7 +90,7 @@
     if (e.key === 'Escape') dialogStore.close();
   }
 
-  function stopPropagation(e: MouseEvent) {
+  function stopPropagation(e: MouseEvent | KeyboardEvent) {
     e.stopPropagation();
   }
 </script>
@@ -98,8 +98,7 @@
 {#if payload}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="dialog" onclick={stopPropagation}>
+    <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="dialog-header">
         {isEdit ? 'Edit Project' : 'Add Project'}
       </div>
@@ -204,7 +203,6 @@
   }
 
   .field input,
-  .field textarea,
   .field select {
     padding: 7px 10px;
     border: 1px solid var(--color-border);
@@ -215,7 +213,6 @@
   }
 
   .field input:focus,
-  .field textarea:focus,
   .field select:focus {
     outline: none;
     border-color: var(--color-accent);

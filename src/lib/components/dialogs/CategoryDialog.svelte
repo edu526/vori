@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
-  import { addCategory, addSubcategory, updateCategory } from '$lib/api/commands';
+  import { addCategory, addSubcategory, updateCategory, updateSubcategory } from '$lib/api/commands';
 
   const ICON_OPTIONS = ['folder', 'code', 'star', 'heart', 'briefcase'];
 
@@ -10,7 +10,10 @@
   );
 
   const isEdit = $derived(payload?.mode === 'edit');
-  const isSubcategory = $derived(payload?.mode === 'add' && !!payload.parentKey);
+  const isSubcategory = $derived(
+    (payload?.mode === 'add' && !!payload.parentKey) ||
+    (payload?.mode === 'edit' && !!payload.parentKey),
+  );
 
   let key = $state('');
   let description = $state('');
@@ -21,10 +24,18 @@
     if (!payload) return;
 
     if (payload.mode === 'edit') {
-      const existing = configStore.categories[payload.key];
       key = payload.key;
-      description = existing?.description ?? '';
-      icon = existing?.icon ?? 'folder';
+      if (payload.parentKey) {
+        // Subcategory edit
+        const existing = configStore.categories[payload.parentKey]?.subcategories[payload.key];
+        description = existing?.description ?? '';
+        icon = existing?.icon ?? 'folder';
+      } else {
+        // Category edit
+        const existing = configStore.categories[payload.key];
+        description = existing?.description ?? '';
+        icon = existing?.icon ?? 'folder';
+      }
     } else {
       key = '';
       description = '';
@@ -59,12 +70,18 @@
           await addCategory(key, { description, icon, subcategories: {} });
         }
       } else if (payload.mode === 'edit') {
-        const existing = configStore.categories[payload.key];
-        await updateCategory(payload.key, {
-          ...existing,
-          description,
-          icon,
-        });
+        if (payload.parentKey) {
+          // Subcategory edit
+          await updateSubcategory(payload.parentKey, payload.key, { description, icon });
+        } else {
+          // Category edit
+          const existing = configStore.categories[payload.key];
+          await updateCategory(payload.key, {
+            ...existing,
+            description,
+            icon,
+          });
+        }
       }
       await configStore.load();
       dialogStore.close();
@@ -77,7 +94,7 @@
     if (e.key === 'Escape') dialogStore.close();
   }
 
-  function stopPropagation(e: MouseEvent) {
+  function stopPropagation(e: MouseEvent | KeyboardEvent) {
     e.stopPropagation();
   }
 </script>
@@ -85,10 +102,11 @@
 {#if payload}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="dialog" onclick={stopPropagation}>
+    <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="dialog-header">
-        {#if isEdit}
+        {#if isEdit && isSubcategory}
+          Edit Subcategory
+        {:else if isEdit}
           Edit Category
         {:else if isSubcategory}
           Add Subcategory
