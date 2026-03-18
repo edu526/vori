@@ -12,6 +12,7 @@
   import ContextMenu from '$lib/components/context-menu/ContextMenu.svelte';
   import CategoryDialog from '$lib/components/dialogs/CategoryDialog.svelte';
   import ProjectDialog from '$lib/components/dialogs/ProjectDialog.svelte';
+  import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
   import type { SearchResult } from '$lib/api/types';
 
@@ -116,6 +117,7 @@
     <Toolbar
       onnewcategory={() => dialogStore.open({ type: 'category', mode: 'add' })}
       onnewproject={() => dialogStore.open({ type: 'project', mode: 'add' })}
+      onnewfile={() => dialogStore.open({ type: 'file', mode: 'add' })}
       onopenpreferences={() => dialogStore.open({ type: 'preferences' })}
       onsearchresult={handleSearchResult}
     />
@@ -132,6 +134,8 @@
   <CategoryDialog />
 {:else if dialogStore.current?.type === 'project'}
   <ProjectDialog />
+{:else if dialogStore.current?.type === 'file'}
+  <FileDialog />
 {:else if dialogStore.current?.type === 'preferences'}
   <PreferencesDialog />
 {/if}

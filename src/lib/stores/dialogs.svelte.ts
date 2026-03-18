@@ -3,6 +3,8 @@ type DialogPayload =
   | { type: 'category'; mode: 'edit'; key: string; parentKey?: string }
   | { type: 'project'; mode: 'add'; categoryKey?: string; subcategoryKey?: string }
   | { type: 'project'; mode: 'edit'; key: string }
+  | { type: 'file'; mode: 'add' }
+  | { type: 'file'; mode: 'edit'; key: string }
   | { type: 'preferences' };
 
 function createDialogStore() {

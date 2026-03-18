@@ -1,6 +1,6 @@
 export interface MenuItem {
   label: string;
-  action: () => void;
+  action: () => void | Promise<void>;
   danger?: boolean;
   disabled?: boolean;
   divider?: boolean;

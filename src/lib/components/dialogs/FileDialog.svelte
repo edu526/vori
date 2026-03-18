@@ -2,60 +2,45 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
-  import { addProject, updateProject } from '$lib/api/commands';
+  import { addFile, updateFile } from '$lib/api/commands';
 
   const payload = $derived(
-    dialogStore.current?.type === 'project' ? dialogStore.current : null,
+    dialogStore.current?.type === 'file' ? dialogStore.current : null,
   );
 
   const isEdit = $derived(payload?.mode === 'edit');
 
   let key = $state('');
   let path = $state('');
-  let selectedCategory = $state('');
-  let selectedSubcategory = $state('');
   let keyError = $state('');
-
-  const subcategories = $derived(
-    selectedCategory && configStore.categories[selectedCategory]
-      ? Object.keys(configStore.categories[selectedCategory].subcategories)
-      : [],
-  );
 
   $effect(() => {
     if (!payload) return;
 
     if (payload.mode === 'edit') {
-      const existing = configStore.projects[payload.key];
+      const existing = configStore.files[payload.key];
       key = payload.key;
       path = existing?.path ?? '';
-      selectedCategory = existing?.category ?? '';
-      selectedSubcategory = existing?.subcategory ?? '';
     } else {
       key = '';
       path = '';
-      selectedCategory = payload.categoryKey ?? '';
-      selectedSubcategory = payload.subcategoryKey ?? '';
     }
     keyError = '';
-  });
-
-  $effect(() => {
-    // Reset subcategory when category changes
-    if (selectedCategory && !subcategories.includes(selectedSubcategory)) {
-      selectedSubcategory = '';
-    }
   });
 
   async function handleBrowse() {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
-      const result = await open({ directory: true });
+      const result = await open({ directory: false });
       if (typeof result === 'string') {
         path = result;
+        // Auto-fill name from filename if empty
+        if (!key) {
+          key = result.split('/').pop()?.replace(/\.[^.]+$/, '') ?? '';
+        }
       }
     } catch (e) {
-      console.error('Failed to open directory picker:', e);
+      console.error('Failed to open file picker:', e);
     }
   }
 
@@ -68,17 +53,11 @@
 
     keyError = '';
 
-    const projectData = {
-      path,
-      category: selectedCategory,
-      subcategory: selectedSubcategory || undefined,
-    };
-
     try {
       if (payload.mode === 'edit') {
-        await updateProject(payload.key, projectData);
+        await updateFile(payload.key, { path });
       } else {
-        await addProject(key, projectData);
+        await addFile(key, { path });
       }
       await configStore.load();
       navigationStore.refresh(
@@ -108,17 +87,17 @@
   <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
     <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="dialog-header">
-        {isEdit ? 'Edit Project' : 'Add Project'}
+        {isEdit ? 'Edit File' : 'Add File'}
       </div>
 
       <div class="field">
-        <label for="proj-key">Name</label>
+        <label for="file-key">Name</label>
         <input
-          id="proj-key"
+          id="file-key"
           type="text"
           bind:value={key}
           disabled={isEdit}
-          placeholder="my-project"
+          placeholder="my-config"
         />
         {#if keyError}
           <span class="error-msg">{keyError}</span>
@@ -126,39 +105,17 @@
       </div>
 
       <div class="field">
-        <label for="proj-path">Path</label>
+        <label for="file-path">Path</label>
         <div class="path-row">
           <input
-            id="proj-path"
+            id="file-path"
             type="text"
             bind:value={path}
-            placeholder="/home/user/projects/my-project"
+            placeholder="/home/user/.config/file.toml"
           />
           <button class="btn btn-secondary browse-btn" onclick={handleBrowse}>Browse...</button>
         </div>
       </div>
-
-      <div class="field">
-        <label for="proj-category">Category</label>
-        <select id="proj-category" bind:value={selectedCategory}>
-          <option value="">(none)</option>
-          {#each Object.keys(configStore.categories) as catKey}
-            <option value={catKey}>{catKey}</option>
-          {/each}
-        </select>
-      </div>
-
-      {#if subcategories.length > 0}
-        <div class="field">
-          <label for="proj-subcategory">Subcategory</label>
-          <select id="proj-subcategory" bind:value={selectedSubcategory}>
-            <option value="">(none)</option>
-            {#each subcategories as subKey}
-              <option value={subKey}>{subKey}</option>
-            {/each}
-          </select>
-        </div>
-      {/if}
 
       <div class="dialog-actions">
         <button class="btn btn-secondary" onclick={() => dialogStore.close()}>Cancel</button>
@@ -210,8 +167,7 @@
     font-weight: 500;
   }
 
-  .field input,
-  .field select {
+  .field input {
     padding: 7px 10px;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -220,8 +176,7 @@
     font-size: 0.875rem;
   }
 
-  .field input:focus,
-  .field select:focus {
+  .field input:focus {
     outline: none;
     border-color: var(--color-accent);
   }

@@ -1,3 +1,4 @@
+import { ask } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import type { Favorites } from '$lib/api/types';
 import type { MenuItem } from '$lib/stores/contextMenu.svelte';
@@ -46,10 +47,9 @@ export function buildMenuItems(
         {
           label: 'Delete Category',
           danger: true,
-          action: () => {
-            if (window.confirm(`Delete category "${item.label}"? This cannot be undone.`)) {
-              deleteCategory(item.key).then(() => opts.onRefresh());
-            }
+          action: async () => {
+            const ok = await ask(`Delete category "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            if (ok) await deleteCategory(item.key).then(() => opts.onRefresh());
           },
         },
       ];
@@ -69,12 +69,9 @@ export function buildMenuItems(
         {
           label: 'Delete Subcategory',
           danger: true,
-          action: () => {
-            if (
-              window.confirm(`Delete subcategory "${item.label}"? This cannot be undone.`)
-            ) {
-              deleteSubcategory(item.categoryKey!, item.key).then(() => opts.onRefresh());
-            }
+          action: async () => {
+            const ok = await ask(`Delete subcategory "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            if (ok) await deleteSubcategory(item.categoryKey!, item.key).then(() => opts.onRefresh());
           },
         },
       ];
@@ -110,10 +107,9 @@ export function buildMenuItems(
         {
           label: 'Delete Project',
           danger: true,
-          action: () => {
-            if (window.confirm(`Delete project "${item.label}"? This cannot be undone.`)) {
-              deleteProject(item.key).then(() => opts.onRefresh());
-            }
+          action: async () => {
+            const ok = await ask(`Delete project "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            if (ok) await deleteProject(item.key).then(() => opts.onRefresh());
           },
         },
       ];
@@ -141,10 +137,9 @@ export function buildMenuItems(
         {
           label: 'Delete File',
           danger: true,
-          action: () => {
-            if (window.confirm(`Delete file "${item.label}"? This cannot be undone.`)) {
-              deleteFile(item.key).then(() => opts.onRefresh());
-            }
+          action: async () => {
+            const ok = await ask(`Delete file "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            if (ok) await deleteFile(item.key).then(() => opts.onRefresh());
           },
         },
       ];

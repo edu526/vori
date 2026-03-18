@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
+  import { navigationStore } from '$lib/stores/navigation.svelte';
   import { addCategory, addSubcategory, updateCategory, updateSubcategory } from '$lib/api/commands';
 
   const ICON_OPTIONS = ['folder', 'code', 'star', 'heart', 'briefcase'];
@@ -84,6 +85,13 @@
         }
       }
       await configStore.load();
+      navigationStore.refresh(
+        configStore.categories,
+        configStore.projects,
+        configStore.files,
+        configStore.favorites,
+        configStore.recents,
+      );
       dialogStore.close();
     } catch (e) {
       keyError = String(e);

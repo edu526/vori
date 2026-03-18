@@ -35,6 +35,8 @@
           dialogStore.open({ type: 'category', mode: 'edit', key: item.key, parentKey: item.categoryKey });
         } else if (item.type === 'project') {
           dialogStore.open({ type: 'project', mode: 'edit', key: item.key });
+        } else if (item.type === 'file') {
+          dialogStore.open({ type: 'file', mode: 'edit', key: item.key });
         }
       },
       onRefresh: refresh,

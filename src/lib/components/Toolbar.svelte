@@ -5,11 +5,13 @@
   let {
     onnewcategory,
     onnewproject,
+    onnewfile,
     onopenpreferences,
     onsearchresult,
   }: {
     onnewcategory: () => void;
     onnewproject: () => void;
+    onnewfile: () => void;
     onopenpreferences: () => void;
     onsearchresult: (result: SearchResult) => void;
   } = $props();
@@ -100,6 +102,17 @@
         <line x1="6" y1="11" x2="10" y2="11" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
       </svg>
       <span>New Project</span>
+    </button>
+
+    <button class="toolbar-btn" onclick={onnewfile} title="New File">
+      <!-- Doc icon -->
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M9 1H3.5A1.5 1.5 0 0 0 2 2.5v11A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5V6L9 1Z" stroke="currentColor" stroke-width="1.25" fill="none"/>
+        <polyline points="9,1 9,6 14,6" stroke="currentColor" stroke-width="1.25" fill="none" stroke-linejoin="round"/>
+        <line x1="5" y1="9.5" x2="11" y2="9.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+        <line x1="5" y1="11.5" x2="9" y2="11.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+      </svg>
+      <span>New File</span>
     </button>
   </div>
 
