@@ -26,11 +26,14 @@
   let query = $state('');
   let results = $state<SearchResult[]>([]);
   let dropdownVisible = $state(false);
+  let highlightedIndex = $state(-1);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let dropdownEl = $state<HTMLDivElement | null>(null);
 
   function handleInput(e: Event) {
     const value = (e.target as HTMLInputElement).value;
     query = value;
+    highlightedIndex = -1;
 
     if (debounceTimer !== null) {
       clearTimeout(debounceTimer);
@@ -47,6 +50,7 @@
         const res = await search(value.trim());
         results = res;
         dropdownVisible = res.length > 0;
+        highlightedIndex = -1;
       } catch {
         results = [];
         dropdownVisible = false;
@@ -55,24 +59,57 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    if (!dropdownVisible) {
+      if (e.key === 'Escape') {
+        query = '';
+        results = [];
+      }
+      return;
+    }
+
     if (e.key === 'Escape') {
-      query = '';
-      results = [];
       dropdownVisible = false;
+      highlightedIndex = -1;
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightedIndex = Math.min(highlightedIndex + 1, results.length - 1);
+      scrollHighlightedIntoView();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex - 1, 0);
+      scrollHighlightedIntoView();
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      selectResult(results[highlightedIndex]);
     }
   }
 
-  function handleResultClick(result: SearchResult) {
+  function scrollHighlightedIntoView() {
+    // Run after DOM update
+    setTimeout(() => {
+      const el = dropdownEl?.querySelector(`[data-index="${highlightedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }, 0);
+  }
+
+  function selectResult(result: SearchResult) {
     dropdownVisible = false;
+    highlightedIndex = -1;
     query = '';
     results = [];
     onsearchresult(result);
+  }
+
+  function handleResultClick(result: SearchResult) {
+    selectResult(result);
   }
 
   function handleBlur() {
     // Delay hiding so click on result can register first
     setTimeout(() => {
       dropdownVisible = false;
+      highlightedIndex = -1;
     }, 150);
   }
 
@@ -82,9 +119,6 @@
     }
   }
 
-  const categories = $derived(results.filter((r) => r.result_type === 'category'));
-  const projects = $derived(results.filter((r) => r.result_type === 'project'));
-  const files = $derived(results.filter((r) => r.result_type === 'file'));
 </script>
 
 <div class="toolbar">
@@ -145,42 +179,26 @@
       </div>
 
       {#if dropdownVisible}
-        <div class="search-dropdown">
-          {#if categories.length > 0}
-            <div class="dropdown-section-header">Categories</div>
-            {#each categories as result (result.key)}
-              <button class="dropdown-item" onmousedown={() => handleResultClick(result)}>
-                <span class="item-name">{result.name}</span>
-                {#if result.path}
-                  <span class="item-path">{result.path}</span>
-                {/if}
-              </button>
-            {/each}
-          {/if}
-
-          {#if projects.length > 0}
-            <div class="dropdown-section-header">Projects</div>
-            {#each projects as result (result.key)}
-              <button class="dropdown-item" onmousedown={() => handleResultClick(result)}>
-                <span class="item-name">{result.name}</span>
-                {#if result.path}
-                  <span class="item-path">{result.path}</span>
-                {/if}
-              </button>
-            {/each}
-          {/if}
-
-          {#if files.length > 0}
-            <div class="dropdown-section-header">Files</div>
-            {#each files as result (result.key)}
-              <button class="dropdown-item" onmousedown={() => handleResultClick(result)}>
-                <span class="item-name">{result.name}</span>
-                {#if result.path}
-                  <span class="item-path">{result.path}</span>
-                {/if}
-              </button>
-            {/each}
-          {/if}
+        <div class="search-dropdown" bind:this={dropdownEl}>
+          {#each results as result, i (result.key)}
+            {#if i === 0 || results[i - 1].result_type !== result.result_type}
+              <div class="dropdown-section-header">
+                {result.result_type === 'category' ? 'Categories' : result.result_type === 'project' ? 'Projects' : 'Files'}
+              </div>
+            {/if}
+            <button
+              class="dropdown-item"
+              class:highlighted={i === highlightedIndex}
+              data-index={i}
+              onmousedown={() => handleResultClick(result)}
+              onmouseenter={() => { highlightedIndex = i; }}
+            >
+              <span class="item-name">{result.name}</span>
+              {#if result.path}
+                <span class="item-path">{result.path}</span>
+              {/if}
+            </button>
+          {/each}
         </div>
       {/if}
     </div>
@@ -330,7 +348,8 @@
     transition: background 0.1s;
   }
 
-  .dropdown-item:hover {
+  .dropdown-item:hover,
+  .dropdown-item.highlighted {
     background: var(--color-hover);
   }
 
