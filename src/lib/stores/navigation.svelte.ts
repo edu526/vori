@@ -56,7 +56,7 @@ function buildRootItems(
   if (Object.keys(categories).length > 0) {
     items.push({ key: '__categories__', label: 'Categories', type: 'section-header' });
   }
-  for (const [key] of Object.entries(categories)) {
+  for (const [key] of Object.entries(categories).sort(([a], [b]) => a.localeCompare(b))) {
     items.push({
       key,
       label: key,
@@ -69,7 +69,7 @@ function buildRootItems(
   // ── Files ─────────────────────────────────────────────────────────────────
   if (Object.keys(files).length > 0) {
     items.push({ key: '__files__', label: 'Files', type: 'section-header' });
-    for (const [key, file] of Object.entries(files)) {
+    for (const [key, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
       items.push({
         key,
         label: key,
@@ -97,14 +97,14 @@ function buildCategoryItems(
 
   if (hasSubcats) {
     items.push({ key: '__subcats__', label: 'Subcategories', type: 'section-header' });
-    for (const [key] of Object.entries(cat.subcategories)) {
+    for (const [key] of Object.entries(cat.subcategories).sort(([a], [b]) => a.localeCompare(b))) {
       items.push({ key, label: key, type: 'subcategory', categoryKey, hasChildren: true });
     }
   }
 
-  const directProjects = Object.entries(projects).filter(
-    ([, p]) => p.category === categoryKey && !p.subcategory,
-  );
+  const directProjects = Object.entries(projects)
+    .filter(([, p]) => p.category === categoryKey && !p.subcategory)
+    .sort(([a], [b]) => a.localeCompare(b));
 
   if (directProjects.length > 0) {
     items.push({ key: '__projects__', label: 'Projects', type: 'section-header' });
@@ -131,6 +131,7 @@ function buildSubcategoryItems(
 ): NavItem[] {
   return Object.entries(projects)
     .filter(([, p]) => p.category === categoryKey && p.subcategory === subcategoryKey)
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, proj]) => ({
       key,
       label: key,
