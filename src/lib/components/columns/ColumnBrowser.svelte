@@ -94,7 +94,7 @@
 <style>
   .column-browser {
     display: flex;
-    flex: 1;
+    flex: 0 0 auto;
     overflow-x: auto;
     overflow-y: hidden;
     background: var(--color-surface);

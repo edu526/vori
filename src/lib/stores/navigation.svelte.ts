@@ -19,8 +19,6 @@ export interface Column {
   title?: string;
 }
 
-const MAX_RECENTS_IN_COLUMN = 5;
-
 function buildRootItems(
   categories: CategoriesMap,
   projects: ProjectsMap,
@@ -29,28 +27,6 @@ function buildRootItems(
   recents: RecentItem[],
 ): NavItem[] {
   const items: NavItem[] = [];
-
-  // ── Recents ───────────────────────────────────────────────────────────────
-  const recentItems = recents
-    .filter((r) => r.type === 'project' || r.type === 'file')
-    .slice(0, MAX_RECENTS_IN_COLUMN);
-
-  if (recentItems.length > 0) {
-    items.push({ key: '__recents__', label: 'Recent', type: 'section-header' });
-    for (const recent of recentItems) {
-      const key = recent.type === 'file' ? `__r:${recent.name}` : recent.name;
-      items.push({
-        key,
-        label: recent.name,
-        type: recent.type as 'project' | 'file',
-        path: recent.path,
-        isFavorite:
-          recent.type === 'project'
-            ? favorites.projects.includes(recent.name)
-            : favorites.files.includes(recent.name),
-      });
-    }
-  }
 
   // ── Categories ────────────────────────────────────────────────────────────
   if (Object.keys(categories).length > 0) {
@@ -243,6 +219,21 @@ function createNavigationStore() {
     }
   }
 
+  // Deselect the deepest selected column and remove its children.
+  // Returns true if something was collapsed, false if already at root with nothing selected.
+  function collapseDeepest(): boolean {
+    for (let i = columns.length - 1; i >= 0; i--) {
+      if (columns[i].selectedKey !== null) {
+        columns = columns.slice(0, i + 1).map((col, idx) =>
+          idx === i ? { ...col, selectedKey: null } : col,
+        );
+        activeColumnIndex = Math.min(activeColumnIndex, i);
+        return true;
+      }
+    }
+    return false;
+  }
+
   function refresh(
     cats: CategoriesMap,
     projs: ProjectsMap,
@@ -323,6 +314,7 @@ function createNavigationStore() {
     moveSelection,
     expandRight,
     collapseLeft,
+    collapseDeepest,
     refresh,
     updateFavorites,
     addRecentToView,

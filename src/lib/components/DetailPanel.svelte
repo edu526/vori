@@ -200,8 +200,8 @@
 
 <style>
   .detail-panel {
-    width: 260px;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 200px;
     border-left: 1px solid var(--color-border);
     background: var(--color-surface);
     padding: 20px 16px;

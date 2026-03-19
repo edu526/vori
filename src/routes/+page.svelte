@@ -16,6 +16,7 @@
   import ProjectDialog from '$lib/components/dialogs/ProjectDialog.svelte';
   import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
+  import RecentsView from '$lib/components/RecentsView.svelte';
   import type { SearchResult } from '$lib/api/types';
 
   onMount(async () => {
@@ -38,6 +39,8 @@
       if (e.key === 'Escape') {
         if (dialogStore.handleEscape()) return;
         if (contextMenuStore.visible) { contextMenuStore.hide(); return; }
+        navigationStore.collapseDeepest();
+        return;
       }
       if (dialogStore.current) return;
       if (contextMenuStore.visible) return;
@@ -133,7 +136,11 @@
     />
     <div class="main-content">
       <ColumnBrowser />
-      <DetailPanel />
+      {#if navigationStore.columns[0]?.selectedKey === null && configStore.recents.length > 0}
+        <RecentsView />
+      {:else if navigationStore.columns[0]?.selectedKey !== null}
+        <DetailPanel />
+      {/if}
     </div>
   {/if}
 </div>
