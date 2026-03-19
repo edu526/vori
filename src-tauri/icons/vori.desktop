@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name={{product_name}}
+Comment=Project launcher for VSCode and Kiro
+Exec={{exec}} %U
+Icon={{product_name}}
+Terminal=false
+Categories=Development;
+StartupWMClass=vori
+StartupNotify=true
