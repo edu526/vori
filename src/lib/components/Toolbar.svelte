@@ -3,15 +3,9 @@
   import type { SearchResult } from '$lib/api/types';
 
   let {
-    onnewcategory,
-    onnewproject,
-    onnewfile,
     onopenpreferences,
     onsearchresult,
   }: {
-    onnewcategory: () => void;
-    onnewproject: () => void;
-    onnewfile: () => void;
     onopenpreferences: () => void;
     onsearchresult: (result: SearchResult) => void;
   } = $props();
@@ -122,41 +116,6 @@
 </script>
 
 <div class="toolbar">
-  <!-- Left: action buttons -->
-  <div class="toolbar-left">
-    <button class="toolbar-btn" onclick={onnewcategory} title="New Category">
-      <!-- Folder+ icon -->
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.086a1.5 1.5 0 0 1 1.06.44L7.5 3.293A1.5 1.5 0 0 0 8.56 3.733H13.5A1.5 1.5 0 0 1 15 5.232V12.5A1.5 1.5 0 0 1 13.5 14h-11A1.5 1.5 0 0 1 1 12.5V3.5Z" stroke="currentColor" stroke-width="1.25" fill="none"/>
-        <line x1="8" y1="7.5" x2="8" y2="11.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-        <line x1="6" y1="9.5" x2="10" y2="9.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-      </svg>
-      <span>New Category</span>
-    </button>
-
-    <button class="toolbar-btn" onclick={onnewproject} title="New Project">
-      <!-- File+ icon -->
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M9 1H3.5A1.5 1.5 0 0 0 2 2.5v11A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5V6L9 1Z" stroke="currentColor" stroke-width="1.25" fill="none"/>
-        <polyline points="9,1 9,6 14,6" stroke="currentColor" stroke-width="1.25" fill="none" stroke-linejoin="round"/>
-        <line x1="8" y1="9" x2="8" y2="13" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-        <line x1="6" y1="11" x2="10" y2="11" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-      </svg>
-      <span>New Project</span>
-    </button>
-
-    <button class="toolbar-btn" onclick={onnewfile} title="New File">
-      <!-- Doc icon -->
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M9 1H3.5A1.5 1.5 0 0 0 2 2.5v11A1.5 1.5 0 0 0 3.5 15h9A1.5 1.5 0 0 0 14 13.5V6L9 1Z" stroke="currentColor" stroke-width="1.25" fill="none"/>
-        <polyline points="9,1 9,6 14,6" stroke="currentColor" stroke-width="1.25" fill="none" stroke-linejoin="round"/>
-        <line x1="5" y1="9.5" x2="11" y2="9.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-        <line x1="5" y1="11.5" x2="9" y2="11.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-      </svg>
-      <span>New File</span>
-    </button>
-  </div>
-
   <!-- Center: search -->
   <div class="toolbar-center">
     <div class="search-wrapper">
@@ -229,7 +188,6 @@
     flex-shrink: 0;
   }
 
-  .toolbar-left,
   .toolbar-right {
     display: flex;
     align-items: center;

@@ -135,9 +135,6 @@
   {:else}
     <Toolbar
       bind:this={toolbarRef}
-      onnewcategory={() => dialogStore.open({ type: 'category', mode: 'add' })}
-      onnewproject={() => dialogStore.open({ type: 'project', mode: 'add' })}
-      onnewfile={() => dialogStore.open({ type: 'file', mode: 'add' })}
       onopenpreferences={() => dialogStore.open({ type: 'preferences' })}
       onsearchresult={handleSearchResult}
     />
