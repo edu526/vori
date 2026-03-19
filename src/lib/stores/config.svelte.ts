@@ -21,6 +21,8 @@ function createConfigStore() {
     terminal: { available: {} },
     editors_available: {},
     theme: 'system',
+    autostart: true,
+    hotkey: 'Super+Shift+KeyV',
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);

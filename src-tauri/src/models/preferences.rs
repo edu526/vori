@@ -28,6 +28,14 @@ pub enum Theme {
     Dark,
 }
 
+fn default_autostart() -> bool {
+    true
+}
+
+fn default_hotkey() -> String {
+    "Super+Shift+KeyV".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Preferences {
     pub default_editor: String,
@@ -43,6 +51,10 @@ pub struct Preferences {
     pub editors_available: HashMap<String, String>,
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default = "default_autostart")]
+    pub autostart: bool,
+    #[serde(default = "default_hotkey")]
+    pub hotkey: String,
 }
 
 impl Default for Preferences {
@@ -56,6 +68,8 @@ impl Default for Preferences {
             terminal: TerminalPreferences::default(),
             editors_available: HashMap::new(),
             theme: Theme::default(),
+            autostart: true,
+            hotkey: default_hotkey(),
         }
     }
 }

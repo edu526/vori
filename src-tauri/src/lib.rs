@@ -1,4 +1,10 @@
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
+use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 mod commands;
 mod models;
@@ -11,6 +17,7 @@ use commands::search::*;
 use services::{config_manager, editor_detector, terminal};
 use state::AppState;
 
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -21,6 +28,11 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--autostart"]),
+        ))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
@@ -47,9 +59,73 @@ pub fn run() {
             let _ = config_manager::save("preferences.json", &preferences);
 
             app.manage(AppState::new(
-                categories, projects, files, preferences, favorites, recents,
+                categories, projects, files, preferences.clone(), favorites, recents,
             ));
+
+            // Apply autostart from preferences
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                if preferences.autostart {
+                    let _ = app.autolaunch().enable();
+                } else {
+                    let _ = app.autolaunch().disable();
+                }
+            }
+
+            // Register global shortcut from preferences
+            if !preferences.hotkey.is_empty() {
+                let hotkey = preferences.hotkey.clone();
+                app.global_shortcut().on_shortcut(hotkey.as_str(), |app, _, event| {
+                    if event.state() == ShortcutState::Pressed {
+                        services::window::toggle(app);
+                    }
+                })?;
+            }
+
+            // Build tray icon + menu
+            let show_item =
+                MenuItem::with_id(app, "show", "Mostrar Vori", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            let tray_icon = tauri::image::Image::from_bytes(
+                include_bytes!("../icons/tray_icon.png")
+            ).unwrap_or_else(|_| app.default_window_icon().unwrap().clone());
+
+            TrayIconBuilder::new()
+                .icon(tray_icon)
+                .menu(&menu)
+                .tooltip("Vori")
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        services::window::toggle(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Close button → hide to tray instead of quitting
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             // Config — data

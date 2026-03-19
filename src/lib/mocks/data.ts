@@ -80,6 +80,8 @@ export const mockAppData: AppData = {
       cursor: '/usr/bin/cursor',
     },
     theme: 'system',
+    autostart: true,
+    hotkey: 'Super+Shift+KeyV',
   },
   favorites: {
     projects: ['vori', 'dashboard'],

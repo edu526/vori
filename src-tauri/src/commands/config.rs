@@ -181,7 +181,36 @@ pub fn get_preferences(state: State<AppState>) -> Preferences {
 }
 
 #[tauri::command]
-pub fn update_preferences(prefs: Preferences, state: State<AppState>) -> Result<(), String> {
+pub fn update_preferences(
+    app: tauri::AppHandle,
+    prefs: Preferences,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let old_hotkey = state.preferences.lock().unwrap().hotkey.clone();
+
+    // Apply autostart change
+    {
+        use tauri_plugin_autostart::ManagerExt;
+        if prefs.autostart {
+            let _ = app.autolaunch().enable();
+        } else {
+            let _ = app.autolaunch().disable();
+        }
+    }
+
+    // Re-register hotkey if changed
+    if prefs.hotkey != old_hotkey && !prefs.hotkey.is_empty() {
+        use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+        let _ = app.global_shortcut().unregister_all();
+        app.global_shortcut()
+            .on_shortcut(prefs.hotkey.as_str(), |app, _, event| {
+                if event.state() == ShortcutState::Pressed {
+                    crate::services::window::toggle(app);
+                }
+            })
+            .map_err(|e| e.to_string())?;
+    }
+
     *state.preferences.lock().unwrap() = prefs.clone();
     config_manager::save("preferences.json", &prefs)
 }

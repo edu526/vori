@@ -14,7 +14,7 @@
 
   const isOpen = $derived(dialogStore.current?.type === 'preferences');
 
-  let activeTab = $state<'appearance' | 'editors' | 'terminal'>('appearance');
+  let activeTab = $state<'appearance' | 'editors' | 'terminal' | 'system'>('appearance');
 
   let prefs = $state<Preferences>({
     default_editor: 'vscode',
@@ -24,7 +24,50 @@
     terminal: { available: {} },
     editors_available: {},
     theme: 'system',
+    autostart: true,
+    hotkey: 'Super+Shift+KeyV',
   });
+
+  let recordingHotkey = $state(false);
+  let hotkeyError = $state('');
+
+  function startRecording() {
+    recordingHotkey = true;
+    hotkeyError = '';
+  }
+
+  function stopRecording() {
+    recordingHotkey = false;
+  }
+
+  function handleHotkeyKeydown(e: KeyboardEvent) {
+    if (!recordingHotkey) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Ignore lone modifier presses
+    if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) return;
+
+    const parts: string[] = [];
+    if (e.metaKey) parts.push('Super');
+    if (e.ctrlKey) parts.push('Ctrl');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+
+    // Convert event.code to Tauri shortcut key name
+    // e.g. "KeyV" → "KeyV", "Space" → "Space", "F1" → "F1"
+    const code = e.code; // already in the right format for Tauri
+    parts.push(code);
+
+    if (parts.length < 2) {
+      hotkeyError = 'Use at least one modifier (Super, Ctrl, Alt, Shift)';
+      return;
+    }
+
+    prefs.hotkey = parts.join('+');
+    hotkeyError = '';
+    recordingHotkey = false;
+  }
 
   let detectError = $state('');
   let detecting = $state(false);
@@ -139,6 +182,7 @@
         <TabsTrigger value="appearance">Appearance</TabsTrigger>
         <TabsTrigger value="editors">Editors</TabsTrigger>
         <TabsTrigger value="terminal">Terminal</TabsTrigger>
+        <TabsTrigger value="system">System</TabsTrigger>
       </TabsList>
 
       <!-- Appearance -->
@@ -284,6 +328,46 @@
           <p class="error-msg">{detectError}</p>
         {/if}
       </TabsContent>
+
+      <!-- System -->
+      <TabsContent value="system" class="tab-body">
+        <div class="field">
+          <Label>Startup</Label>
+          <label class="check-row">
+            <Checkbox bind:checked={prefs.autostart} />
+            <span>Launch Vori at login (stays in tray)</span>
+          </label>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label>Global shortcut</Label>
+          <p class="hint">Press this combination anywhere to show or hide Vori.</p>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="hotkey-recorder"
+            class:recording={recordingHotkey}
+            tabindex="0"
+            role="button"
+            aria-label="Click to record shortcut"
+            onclick={startRecording}
+            onblur={stopRecording}
+            onkeydown={handleHotkeyKeydown}
+          >
+            {#if recordingHotkey}
+              <span class="hotkey-recording-label">Press your shortcut…</span>
+            {:else}
+              <kbd class="hotkey-display">{prefs.hotkey || 'Not set'}</kbd>
+              <span class="hotkey-hint">Click to change</span>
+            {/if}
+          </div>
+          {#if hotkeyError}
+            <p class="error-msg">{hotkeyError}</p>
+          {/if}
+          <p class="hint">Format: <code>Super+Shift+KeyV</code> — modifiers: Super, Ctrl, Alt, Shift</p>
+        </div>
+      </TabsContent>
     </Tabs>
 
     <DialogFooter class="px-6 pb-5 pt-3 border-t border-border mt-2">
@@ -381,6 +465,46 @@
     flex-shrink: 0;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Hotkey recorder */
+  .hotkey-recorder {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg);
+    cursor: pointer;
+    min-height: 38px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .hotkey-recorder:hover,
+  .hotkey-recorder:focus { border-color: var(--color-accent); }
+  .hotkey-recorder.recording {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+  }
+
+  .hotkey-display {
+    font-family: ui-monospace, monospace;
+    font-size: 0.82rem;
+    background: var(--color-hover);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--color-text);
+  }
+  .hotkey-hint {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+  }
+  .hotkey-recording-label {
+    font-size: 0.82rem;
+    color: var(--color-accent);
+    font-style: italic;
+  }
 
   /* Theme picker */
   .theme-options { display: flex; gap: 8px; }

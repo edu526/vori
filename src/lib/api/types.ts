@@ -50,6 +50,8 @@ export interface Preferences {
   terminal: TerminalPreferences;
   editors_available: Record<string, string>;
   theme: Theme;
+  autostart: boolean;
+  hotkey: string;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────
