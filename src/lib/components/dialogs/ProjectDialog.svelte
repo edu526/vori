@@ -3,11 +3,16 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { addProject, updateProject } from '$lib/api/commands';
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
+  import { Label } from '$lib/components/ui/label';
+  import { Input } from '$lib/components/ui/input';
+  import { Button } from '$lib/components/ui/button';
 
   const payload = $derived(
     dialogStore.current?.type === 'project' ? dialogStore.current : null,
   );
 
+  const isOpen = $derived(!!payload);
   const isEdit = $derived(payload?.mode === 'edit');
 
   let key = $state('');
@@ -24,7 +29,6 @@
 
   $effect(() => {
     if (!payload) return;
-
     if (payload.mode === 'edit') {
       const existing = configStore.projects[payload.key];
       key = payload.key;
@@ -41,7 +45,6 @@
   });
 
   $effect(() => {
-    // Reset subcategory when category changes
     if (selectedCategory && !subcategories.includes(selectedSubcategory)) {
       selectedSubcategory = '';
     }
@@ -51,30 +54,22 @@
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({ directory: true });
-      if (typeof result === 'string') {
-        path = result;
-      }
+      if (typeof result === 'string') path = result;
     } catch (e) {
       console.error('Failed to open directory picker:', e);
     }
   }
 
   async function handleSave() {
-    if (!key) {
-      keyError = 'Name is required.';
-      return;
-    }
+    if (!key) { keyError = 'Name is required.'; return; }
     if (!payload) return;
-
     keyError = '';
-
-    const projectData = {
-      path,
-      category: selectedCategory,
-      subcategory: selectedSubcategory || undefined,
-    };
-
     try {
+      const projectData = {
+        path,
+        category: selectedCategory,
+        subcategory: selectedSubcategory || undefined,
+      };
       if (payload.mode === 'edit') {
         await updateProject(payload.key, projectData);
       } else {
@@ -82,65 +77,40 @@
       }
       await configStore.load();
       navigationStore.refresh(
-        configStore.categories,
-        configStore.projects,
-        configStore.files,
-        configStore.favorites,
-        configStore.recents,
+        configStore.categories, configStore.projects,
+        configStore.files, configStore.favorites, configStore.recents,
       );
       dialogStore.close();
     } catch (e) {
       keyError = String(e);
     }
   }
-
-  function handleBackdropKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') dialogStore.close();
-  }
-
-  function stopPropagation(e: MouseEvent | KeyboardEvent) {
-    e.stopPropagation();
-  }
 </script>
 
-{#if payload}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
-    <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
-      <div class="dialog-header">
-        {isEdit ? 'Edit Project' : 'Add Project'}
+<Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
+  <DialogContent class="w-[420px] max-w-[90vw]" showCloseButton={false}>
+    <DialogHeader>
+      <DialogTitle>{isEdit ? 'Edit Project' : 'Add Project'}</DialogTitle>
+    </DialogHeader>
+
+    <div class="fields">
+      <div class="field">
+        <Label for="proj-key">Name</Label>
+        <Input id="proj-key" bind:value={key} disabled={isEdit} placeholder="my-project" />
+        {#if keyError}<p class="error-msg">{keyError}</p>{/if}
       </div>
 
       <div class="field">
-        <label for="proj-key">Name</label>
-        <input
-          id="proj-key"
-          type="text"
-          bind:value={key}
-          disabled={isEdit}
-          placeholder="my-project"
-        />
-        {#if keyError}
-          <span class="error-msg">{keyError}</span>
-        {/if}
-      </div>
-
-      <div class="field">
-        <label for="proj-path">Path</label>
+        <Label for="proj-path">Path</Label>
         <div class="path-row">
-          <input
-            id="proj-path"
-            type="text"
-            bind:value={path}
-            placeholder="/home/user/projects/my-project"
-          />
-          <button class="btn btn-secondary browse-btn" onclick={handleBrowse}>Browse...</button>
+          <Input id="proj-path" bind:value={path} placeholder="/home/user/projects/my-project" />
+          <Button variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
         </div>
       </div>
 
       <div class="field">
-        <label for="proj-category">Category</label>
-        <select id="proj-category" bind:value={selectedCategory}>
+        <Label for="proj-category">Category</Label>
+        <select id="proj-category" bind:value={selectedCategory} class="native-select">
           <option value="">(none)</option>
           {#each Object.keys(configStore.categories) as catKey}
             <option value={catKey}>{catKey}</option>
@@ -150,8 +120,8 @@
 
       {#if subcategories.length > 0}
         <div class="field">
-          <label for="proj-subcategory">Subcategory</label>
-          <select id="proj-subcategory" bind:value={selectedSubcategory}>
+          <Label for="proj-subcategory">Subcategory</Label>
+          <select id="proj-subcategory" bind:value={selectedSubcategory} class="native-select">
             <option value="">(none)</option>
             {#each subcategories as subKey}
               <option value={subKey}>{subKey}</option>
@@ -159,131 +129,34 @@
           </select>
         </div>
       {/if}
-
-      <div class="dialog-actions">
-        <button class="btn btn-secondary" onclick={() => dialogStore.close()}>Cancel</button>
-        <button class="btn btn-primary" onclick={handleSave}>Save</button>
-      </div>
     </div>
-  </div>
-{/if}
+
+    <DialogFooter>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
+      <Button onclick={handleSave}>Save</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  .fields { display: flex; flex-direction: column; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .error-msg { font-size: 0.8rem; color: #e53e3e; margin: 0; }
 
-  .dialog {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 24px;
-    width: 420px;
-    max-width: 90vw;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+  .path-row { display: flex; gap: 6px; align-items: center; }
+  .path-row :global(input) { flex: 1; }
 
-  .dialog-header {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .field label {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-  }
-
-  .field input,
-  .field select {
-    padding: 7px 10px;
+  .native-select {
+    width: 100%;
     border: 1px solid var(--color-border);
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
     font-size: 0.875rem;
-  }
-
-  .field input:focus,
-  .field select:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
-
-  .field input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .path-row {
-    display: flex;
-    gap: 6px;
-  }
-
-  .path-row input {
-    flex: 1;
+    font-family: inherit;
     padding: 7px 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-size: 0.875rem;
-  }
-
-  .path-row input:focus {
     outline: none;
-    border-color: var(--color-accent);
+    transition: border-color 0.15s;
   }
-
-  .browse-btn {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 8px;
-  }
-
-  .btn {
-    padding: 7px 16px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-  }
-
-  .btn-primary {
-    background: var(--color-accent);
-    color: white;
-  }
-
-  .btn-secondary {
-    background: var(--color-hover);
-    color: var(--color-text);
-  }
-
-  .error-msg {
-    color: #e53e3e;
-    font-size: 0.8rem;
-  }
+  .native-select:focus { border-color: var(--color-accent); }
 </style>

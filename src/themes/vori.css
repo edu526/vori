@@ -1,9 +1,10 @@
-/* Vori — unified brand theme */
+/* Vori brand tokens — complementan las variables shadcn de app.css */
+
 :root {
-  --font-family: 'Inter', system-ui, sans-serif;
+  --font-family: 'Figtree Variable', system-ui, sans-serif;
   --font-size-base: 14px;
 
-  /* Light */
+  /* Vori-specific tokens (no cubiertos por shadcn) */
   --color-bg: #f0f2f5;
   --color-surface: #ffffff;
   --color-border: #d8dce8;
@@ -33,7 +34,6 @@
   }
 }
 
-/* Forced light — overrides prefers-color-scheme */
 [data-theme='light'] {
   --color-bg: #f0f2f5;
   --color-surface: #ffffff;
@@ -48,7 +48,6 @@
   --color-highlight-hover: #f9a101;
 }
 
-/* Forced dark — overrides prefers-color-scheme */
 [data-theme='dark'] {
   --color-bg: #191b2f;
   --color-surface: #1f2240;

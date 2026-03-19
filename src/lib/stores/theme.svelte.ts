@@ -5,10 +5,14 @@ function createThemeStore() {
 
   function apply(t: Theme) {
     theme = t;
+    const html = document.documentElement;
     if (t === 'system') {
-      document.documentElement.removeAttribute('data-theme');
+      html.removeAttribute('data-theme');
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      html.classList.toggle('dark', isDark);
     } else {
-      document.documentElement.setAttribute('data-theme', t);
+      html.setAttribute('data-theme', t);
+      html.classList.toggle('dark', t === 'dark');
     }
   }
 

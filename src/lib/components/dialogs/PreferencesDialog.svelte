@@ -5,6 +5,12 @@
   import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
+  import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+  import { Checkbox } from '$lib/components/ui/checkbox';
 
   const isOpen = $derived(dialogStore.current?.type === 'preferences');
 
@@ -36,9 +42,7 @@
   function removeEditor(key: string) {
     const { [key]: _, ...rest } = prefs.editors_available;
     prefs.editors_available = rest;
-    if (prefs.default_editor === key) {
-      prefs.default_editor = Object.keys(rest)[0] ?? '';
-    }
+    if (prefs.default_editor === key) prefs.default_editor = Object.keys(rest)[0] ?? '';
   }
 
   function handleAddTerminal(name: string, exec: string) {
@@ -110,14 +114,6 @@
     }
   }
 
-  function handleBackdropKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') dialogStore.close();
-  }
-
-  function stopPropagation(e: MouseEvent | KeyboardEvent) {
-    e.stopPropagation();
-  }
-
   const terminalEntries = $derived(Object.entries(prefs.terminal.available ?? {}));
   const editorEntries = $derived(
     Object.entries(prefs.editors_available ?? {}).sort(([a], [b]) => a.localeCompare(b))
@@ -132,303 +128,199 @@
   };
 </script>
 
-{#if isOpen}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={() => dialogStore.close()} onkeydown={handleBackdropKeydown}>
-    <div class="dialog" role="dialog" aria-modal="true" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
+<Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
+  <DialogContent class="w-[440px] max-w-[90vw] gap-0 p-0" showCloseButton={false}>
+    <DialogHeader class="px-6 pt-5 pb-3">
+      <DialogTitle>Preferences</DialogTitle>
+    </DialogHeader>
 
-      <div class="dialog-header">Preferences</div>
+    <Tabs value={activeTab} onValueChange={(v) => (activeTab = v as typeof activeTab)}>
+      <TabsList class="mx-6">
+        <TabsTrigger value="appearance">Appearance</TabsTrigger>
+        <TabsTrigger value="editors">Editors</TabsTrigger>
+        <TabsTrigger value="terminal">Terminal</TabsTrigger>
+      </TabsList>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab" class:active={activeTab === 'appearance'} onclick={() => activeTab = 'appearance'}>
-          Appearance
-        </button>
-        <button class="tab" class:active={activeTab === 'editors'} onclick={() => activeTab = 'editors'}>
-          Editors
-        </button>
-        <button class="tab" class:active={activeTab === 'terminal'} onclick={() => activeTab = 'terminal'}>
-          Terminal
-        </button>
-      </div>
-
-      <!-- Tab: Appearance -->
-      {#if activeTab === 'appearance'}
-        <div class="tab-content">
-          <div class="field">
-            <div class="field-label">Theme</div>
-            <div class="theme-options">
-              <label class="theme-option" class:active={prefs.theme === 'light'}>
-                <input type="radio" name="theme" value="light" bind:group={prefs.theme} />
-                <div class="theme-preview theme-preview--light">
-                  <div class="tp-sidebar"></div>
-                  <div class="tp-content">
-                    <div class="tp-bar"></div>
-                    <div class="tp-bar tp-bar--short"></div>
-                  </div>
+      <!-- Appearance -->
+      <TabsContent value="appearance" class="tab-body">
+        <div class="field">
+          <Label>Theme</Label>
+          <div class="theme-options">
+            <label class="theme-option" class:active={prefs.theme === 'light'}>
+              <input type="radio" name="theme" value="light" bind:group={prefs.theme} />
+              <div class="theme-preview theme-preview--light">
+                <div class="tp-sidebar"></div>
+                <div class="tp-content">
+                  <div class="tp-bar"></div>
+                  <div class="tp-bar tp-bar--short"></div>
                 </div>
-                <span>Light</span>
-              </label>
-
-              <label class="theme-option" class:active={prefs.theme === 'dark'}>
-                <input type="radio" name="theme" value="dark" bind:group={prefs.theme} />
-                <div class="theme-preview theme-preview--dark">
-                  <div class="tp-sidebar"></div>
-                  <div class="tp-content">
-                    <div class="tp-bar"></div>
-                    <div class="tp-bar tp-bar--short"></div>
-                  </div>
-                </div>
-                <span>Dark</span>
-              </label>
-
-              <label class="theme-option" class:active={prefs.theme === 'system'}>
-                <input type="radio" name="theme" value="system" bind:group={prefs.theme} />
-                <div class="theme-preview theme-preview--system">
-                  <div class="tp-half tp-half--light"><div class="tp-sidebar"></div></div>
-                  <div class="tp-half tp-half--dark"><div class="tp-sidebar"></div></div>
-                </div>
-                <span>System</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      {/if}
-
-      <!-- Tab: Editors -->
-      {#if activeTab === 'editors'}
-        <div class="tab-content">
-          <div class="field">
-            <div class="field-label">Default editor for projects</div>
-            {#if editorEntries.length > 0}
-              <div class="radio-group">
-                {#each editorEntries as [key, execPath]}
-                  <div class="radio-row">
-                    <label class="radio-label" title={execPath}>
-                      <input type="radio" name="default_editor" value={key} bind:group={prefs.default_editor} />
-                      {EDITOR_LABELS[key] ?? key}
-                    </label>
-                    <button class="remove-btn" onclick={() => removeEditor(key)} title="Remove">✕</button>
-                  </div>
-                {/each}
               </div>
-            {:else}
-              <p class="hint">No editors detected yet.</p>
-            {/if}
-            <div class="detect-row">
-              <button class="btn btn-secondary detect-btn" onclick={handleDetectEditors} disabled={detectingEditors}>
-                {#if detectingEditors}<span class="spinner"></span>{/if}
-                {detectingEditors ? 'Detecting...' : 'Detect Editors'}
-              </button>
-              <button class="btn btn-secondary" onclick={() => (showAddEditor = true)}>
-                + Add Editor
-              </button>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="pref-text-editor">Text file editor command</label>
-            <div class="input-row">
-              <input
-                id="pref-text-editor"
-                type="text"
-                bind:value={prefs.default_text_editor}
-                placeholder="xdg-open"
-              />
-              <button class="btn btn-secondary browse-btn" onclick={async () => {
-                const { open } = await import('@tauri-apps/plugin-dialog');
-                const sel = await open({ multiple: false, title: 'Select text editor binary' });
-                if (sel) prefs.default_text_editor = typeof sel === 'string' ? sel : sel[0];
-              }}>Browse</button>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="field">
-            <div class="field-label">After opening</div>
-            <label class="checkbox-label">
-              <input type="checkbox" bind:checked={prefs.close_on_open_editor} />
-              Close Vori after opening a project in editor
+              <span>Light</span>
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" bind:checked={prefs.close_on_open_file} />
-              Close Vori after opening a text file
+            <label class="theme-option" class:active={prefs.theme === 'dark'}>
+              <input type="radio" name="theme" value="dark" bind:group={prefs.theme} />
+              <div class="theme-preview theme-preview--dark">
+                <div class="tp-sidebar"></div>
+                <div class="tp-content">
+                  <div class="tp-bar"></div>
+                  <div class="tp-bar tp-bar--short"></div>
+                </div>
+              </div>
+              <span>Dark</span>
+            </label>
+            <label class="theme-option" class:active={prefs.theme === 'system'}>
+              <input type="radio" name="theme" value="system" bind:group={prefs.theme} />
+              <div class="theme-preview theme-preview--system">
+                <div class="tp-half tp-half--light"><div class="tp-sidebar"></div></div>
+                <div class="tp-half tp-half--dark"><div class="tp-sidebar"></div></div>
+              </div>
+              <span>System</span>
             </label>
           </div>
         </div>
-      {/if}
+      </TabsContent>
 
-      <!-- Tab: Terminal -->
-      {#if activeTab === 'terminal'}
-        <div class="tab-content">
-          <div class="field">
-            <div class="field-label">Preferred terminal</div>
-            {#if terminalEntries.length > 0}
-              <div class="radio-group">
-                {#each terminalEntries as [name, execPath]}
-                  <div class="radio-row">
-                    <label class="radio-label" title={execPath}>
-                      <input type="radio" name="preferred_terminal" value={name} bind:group={prefs.terminal.preferred} />
-                      {name}
-                    </label>
-                    <button class="remove-btn" onclick={() => removeTerminal(name)} title="Remove">✕</button>
-                  </div>
-                {/each}
-              </div>
-            {:else}
-              <p class="hint">No terminals detected yet.</p>
-            {/if}
-            {#if prefs.terminal.last_detected}
-              <p class="hint">Last detected: {new Date(prefs.terminal.last_detected).toLocaleString()}</p>
-            {/if}
-            <div class="detect-row">
-              <button class="btn btn-secondary detect-btn" onclick={handleDetectTerminals} disabled={detecting}>
-                {#if detecting}<span class="spinner"></span>{/if}
-                {detecting ? 'Detecting...' : 'Detect Terminals'}
-              </button>
-              <button class="btn btn-secondary" onclick={() => (showAddTerminal = true)}>
-                + Add Terminal
-              </button>
+      <!-- Editors -->
+      <TabsContent value="editors" class="tab-body">
+        <div class="field">
+          <Label>Default editor for projects</Label>
+          {#if editorEntries.length > 0}
+            <div class="radio-group">
+              {#each editorEntries as [key, execPath]}
+                <div class="radio-row">
+                  <label class="radio-label" title={execPath}>
+                    <input type="radio" name="default_editor" value={key} bind:group={prefs.default_editor} />
+                    {EDITOR_LABELS[key] ?? key}
+                  </label>
+                  <button class="remove-btn" onclick={() => removeEditor(key)} title="Remove">✕</button>
+                </div>
+              {/each}
             </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="field">
-            <div class="field-label">After opening</div>
-            <label class="checkbox-label">
-              <input type="checkbox" bind:checked={prefs.close_on_open_terminal} />
-              Close Vori after opening a terminal
-            </label>
-          </div>
-
-          {#if detectError}
-            <span class="error-msg">{detectError}</span>
+          {:else}
+            <p class="hint">No editors detected yet.</p>
           {/if}
+          <div class="detect-row">
+            <Button variant="outline" size="sm" onclick={handleDetectEditors} disabled={detectingEditors}>
+              {#if detectingEditors}<span class="spinner"></span>{/if}
+              {detectingEditors ? 'Detecting...' : 'Detect Editors'}
+            </Button>
+            <Button variant="outline" size="sm" onclick={() => (showAddEditor = true)}>
+              + Add Editor
+            </Button>
+          </div>
         </div>
-      {/if}
 
-      <div class="dialog-actions">
-        <button class="btn btn-secondary" onclick={() => dialogStore.close()}>Cancel</button>
-        <button class="btn btn-primary" onclick={handleSave}>Save</button>
-      </div>
-    </div>
-  </div>
+        <div class="field">
+          <Label for="pref-text-editor">Text file editor command</Label>
+          <div class="input-row">
+            <Input id="pref-text-editor" bind:value={prefs.default_text_editor} placeholder="xdg-open" />
+            <Button variant="outline" size="sm" onclick={async () => {
+              const { open } = await import('@tauri-apps/plugin-dialog');
+              const sel = await open({ multiple: false, title: 'Select text editor binary' });
+              if (sel) prefs.default_text_editor = typeof sel === 'string' ? sel : sel[0];
+            }}>Browse</Button>
+          </div>
+        </div>
 
-  {#if showAddEditor}
-    <AddEditorModal title="Add Editor" onAdd={handleAddEditor} onClose={() => (showAddEditor = false)} />
-  {/if}
+        <div class="divider"></div>
 
-  {#if showAddTerminal}
-    <AddEditorModal title="Add Terminal" onAdd={handleAddTerminal} onClose={() => (showAddTerminal = false)} />
-  {/if}
+        <div class="field">
+          <Label>After opening</Label>
+          <label class="check-row">
+            <Checkbox bind:checked={prefs.close_on_open_editor} />
+            <span>Close Vori after opening a project in editor</span>
+          </label>
+          <label class="check-row">
+            <Checkbox bind:checked={prefs.close_on_open_file} />
+            <span>Close Vori after opening a text file</span>
+          </label>
+        </div>
+      </TabsContent>
+
+      <!-- Terminal -->
+      <TabsContent value="terminal" class="tab-body">
+        <div class="field">
+          <Label>Preferred terminal</Label>
+          {#if terminalEntries.length > 0}
+            <div class="radio-group">
+              {#each terminalEntries as [name, execPath]}
+                <div class="radio-row">
+                  <label class="radio-label" title={execPath}>
+                    <input type="radio" name="preferred_terminal" value={name} bind:group={prefs.terminal.preferred} />
+                    {name}
+                  </label>
+                  <button class="remove-btn" onclick={() => removeTerminal(name)} title="Remove">✕</button>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="hint">No terminals detected yet.</p>
+          {/if}
+          {#if prefs.terminal.last_detected}
+            <p class="hint">Last detected: {new Date(prefs.terminal.last_detected).toLocaleString()}</p>
+          {/if}
+          <div class="detect-row">
+            <Button variant="outline" size="sm" onclick={handleDetectTerminals} disabled={detecting}>
+              {#if detecting}<span class="spinner"></span>{/if}
+              {detecting ? 'Detecting...' : 'Detect Terminals'}
+            </Button>
+            <Button variant="outline" size="sm" onclick={() => (showAddTerminal = true)}>
+              + Add Terminal
+            </Button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label>After opening</Label>
+          <label class="check-row">
+            <Checkbox bind:checked={prefs.close_on_open_terminal} />
+            <span>Close Vori after opening a terminal</span>
+          </label>
+        </div>
+
+        {#if detectError}
+          <p class="error-msg">{detectError}</p>
+        {/if}
+      </TabsContent>
+    </Tabs>
+
+    <DialogFooter class="px-6 pb-5 pt-3 border-t border-border mt-2">
+      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
+      <Button onclick={handleSave}>Save</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{#if showAddEditor}
+  <AddEditorModal title="Add Editor" onAdd={handleAddEditor} onClose={() => (showAddEditor = false)} />
+{/if}
+
+{#if showAddTerminal}
+  <AddEditorModal title="Add Terminal" onAdd={handleAddTerminal} onClose={() => (showAddTerminal = false)} />
 {/if}
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* Force TabsList background with Vori variables as fallback */
+  :global([data-slot="tabs-list"]) {
+    background: var(--color-hover);
   }
 
-  .dialog {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 20px;
-    width: 420px;
-    max-width: 90vw;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .dialog-header {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 2px;
-    background: var(--color-bg);
-    border-radius: 8px;
-    padding: 3px;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-  }
-
-  .tab.active {
-    background: var(--color-surface);
-    color: var(--color-text);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  }
-
-  /* Tab content */
-  .tab-content {
+  :global(.tab-body) {
     display: flex;
     flex-direction: column;
     gap: 14px;
     height: 260px;
     overflow-y: auto;
+    padding: 12px 24px 4px;
   }
 
-  .divider {
-    height: 1px;
-    background: var(--color-border);
-  }
+  .divider { height: 1px; background: var(--color-border); }
 
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
 
-  .field label,
-  .field-label {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-  }
-
-  .field input[type='text'] {
-    padding: 7px 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-size: 0.875rem;
-  }
-
-  .field input[type='text']:focus {
-    outline: none;
-    border-color: var(--color-accent);
-  }
-
-  .radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+  .radio-group { display: flex; flex-direction: column; gap: 6px; }
 
   .radio-row {
     display: flex;
@@ -437,16 +329,23 @@
     gap: 4px;
   }
 
-  .radio-label,
-  .checkbox-label {
+  .radio-label {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 0.875rem;
     color: var(--color-text);
     cursor: pointer;
-    font-weight: normal;
     flex: 1;
+  }
+
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--color-text);
+    cursor: pointer;
   }
 
   .remove-btn {
@@ -461,118 +360,29 @@
     transition: opacity 0.15s, background 0.15s, color 0.15s;
   }
 
-  .radio-row:hover .remove-btn {
-    opacity: 1;
-  }
+  .radio-row:hover .remove-btn { opacity: 1; }
+  .remove-btn:hover { background: #fee2e2; color: #dc2626; }
 
-  .remove-btn:hover {
-    background: #fee2e2;
-    color: #dc2626;
-  }
+  .input-row { display: flex; gap: 6px; }
+  .input-row :global(input) { flex: 1; }
 
-  .input-row {
-    display: flex;
-    gap: 6px;
-  }
+  .detect-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .input-row input {
-    flex: 1;
-  }
-
-  .browse-btn {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .hint {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
-  .detect-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .detect-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .hint { font-size: 0.8rem; color: var(--color-text-secondary); margin: 0; }
+  .error-msg { color: #e53e3e; font-size: 0.8rem; }
 
   .spinner {
-    width: 12px;
-    height: 12px;
+    width: 12px; height: 12px;
     border: 2px solid currentColor;
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
     flex-shrink: 0;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .detect-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .dialog-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    padding-top: 4px;
-    border-top: 1px solid var(--color-border);
-  }
-
-  .btn {
-    padding: 7px 16px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: opacity 0.15s, filter 0.15s;
-  }
-
-  .btn:hover:not(:disabled) {
-    filter: brightness(0.92);
-  }
-
-  .btn:active:not(:disabled) {
-    filter: brightness(0.85);
-  }
-
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    background: var(--color-accent);
-    color: white;
-  }
-
-  .btn-secondary {
-    background: var(--color-hover);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-  }
-
-  .error-msg {
-    color: #e53e3e;
-    font-size: 0.8rem;
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* Theme picker */
-  .theme-options {
-    display: flex;
-    gap: 8px;
-  }
+  .theme-options { display: flex; gap: 8px; }
 
   .theme-option {
     flex: 1;
@@ -586,57 +396,29 @@
     font-size: 0.8rem;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-weight: normal;
     background: var(--color-bg);
     transition: border-color 0.15s;
   }
-
-  .theme-option.active {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
-    font-weight: 500;
-  }
-
+  .theme-option.active { border-color: var(--color-accent); color: var(--color-accent); font-weight: 500; }
   .theme-option input { display: none; }
 
   .theme-preview {
-    width: 100%;
-    height: 52px;
-    border-radius: 4px;
-    overflow: hidden;
+    width: 100%; height: 52px;
+    border-radius: 4px; overflow: hidden;
     display: flex;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0,0,0,0.08);
   }
-
   .theme-preview--light { background: #f0f2f5; }
   .theme-preview--dark  { background: #191b2f; }
-
   .theme-preview--light .tp-sidebar { background: #e4e7f0; width: 30%; }
   .theme-preview--dark  .tp-sidebar { background: #252845; width: 30%; }
-
-  .tp-content {
-    flex: 1;
-    padding: 6px 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .tp-bar {
-    height: 5px;
-    border-radius: 2px;
-    background: #007c61;
-    width: 80%;
-  }
-
+  .tp-content { flex: 1; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; }
+  .tp-bar { height: 5px; border-radius: 2px; background: #007c61; width: 80%; }
   .tp-bar--short { width: 50%; opacity: 0.4; }
-
   .theme-preview--system { background: transparent; }
-
   .tp-half { flex: 1; display: flex; }
   .tp-half--light { background: #f0f2f5; }
   .tp-half--dark  { background: #191b2f; }
-
   .tp-half--light .tp-sidebar { background: #e4e7f0; width: 40%; }
   .tp-half--dark  .tp-sidebar { background: #252845; width: 40%; }
 </style>
