@@ -33,6 +33,13 @@
     }
   });
 
+  // ── Block native context menu globally ──────────────────────────────────────
+  $effect(() => {
+    const block = (e: MouseEvent) => e.preventDefault();
+    window.addEventListener('contextmenu', block);
+    return () => window.removeEventListener('contextmenu', block);
+  });
+
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   $effect(() => {
     function handleKeydown(e: KeyboardEvent) {
