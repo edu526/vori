@@ -39,12 +39,17 @@ export interface TerminalPreferences {
   last_detected?: string;
 }
 
+export type Theme = 'system' | 'light' | 'dark';
+
 export interface Preferences {
   default_editor: string;
   default_text_editor?: string;
-  close_on_open: boolean;
+  close_on_open_editor: boolean;
+  close_on_open_terminal: boolean;
+  close_on_open_file: boolean;
   terminal: TerminalPreferences;
   editors_available: Record<string, string>;
+  theme: Theme;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────

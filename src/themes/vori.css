@@ -1,0 +1,64 @@
+/* Vori — unified brand theme */
+:root {
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-size-base: 14px;
+
+  /* Light */
+  --color-bg: #f0f2f5;
+  --color-surface: #ffffff;
+  --color-border: #d8dce8;
+  --color-text: #191b2f;
+  --color-text-secondary: #6b7080;
+  --color-hover: #e4e7f0;
+  --color-accent: #007c61;
+  --color-accent-hover: #00474b;
+  --color-accent-fg: #ffffff;
+  --color-highlight: #f7c200;
+  --color-highlight-hover: #f9a101;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #191b2f;
+    --color-surface: #1f2240;
+    --color-border: #2a2d4a;
+    --color-text: #eef0f8;
+    --color-text-secondary: #8b8fa8;
+    --color-hover: #252845;
+    --color-accent: #007c61;
+    --color-accent-hover: #009975;
+    --color-accent-fg: #ffffff;
+    --color-highlight: #f7c200;
+    --color-highlight-hover: #f9a101;
+  }
+}
+
+/* Forced light — overrides prefers-color-scheme */
+[data-theme='light'] {
+  --color-bg: #f0f2f5;
+  --color-surface: #ffffff;
+  --color-border: #d8dce8;
+  --color-text: #191b2f;
+  --color-text-secondary: #6b7080;
+  --color-hover: #e4e7f0;
+  --color-accent: #007c61;
+  --color-accent-hover: #00474b;
+  --color-accent-fg: #ffffff;
+  --color-highlight: #f7c200;
+  --color-highlight-hover: #f9a101;
+}
+
+/* Forced dark — overrides prefers-color-scheme */
+[data-theme='dark'] {
+  --color-bg: #191b2f;
+  --color-surface: #1f2240;
+  --color-border: #2a2d4a;
+  --color-text: #eef0f8;
+  --color-text-secondary: #8b8fa8;
+  --color-hover: #252845;
+  --color-accent: #007c61;
+  --color-accent-hover: #009975;
+  --color-accent-fg: #ffffff;
+  --color-highlight: #f7c200;
+  --color-highlight-hover: #f9a101;
+}

@@ -84,6 +84,7 @@ pub fn run() {
             open_in_terminal,
             detect_terminals,
             detect_editors,
+            get_installed_apps,
             // Search
             search,
         ])

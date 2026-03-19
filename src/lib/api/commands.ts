@@ -92,6 +92,9 @@ export const detectTerminals = () =>
 export const detectEditors = () =>
   invoke<Record<string, string>>('detect_editors');
 
+export const getInstalledApps = () =>
+  invoke<{ name: string; exec: string }[]>('get_installed_apps');
+
 // ── Search ────────────────────────────────────────────────────────────────────
 
 export const search = (query: string) => invoke<SearchResult[]>('search', { query });

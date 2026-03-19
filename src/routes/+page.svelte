@@ -19,8 +19,8 @@
   import type { SearchResult } from '$lib/api/types';
 
   onMount(async () => {
-    await themeStore.init();
     await configStore.load();
+    themeStore.apply(configStore.preferences.theme ?? 'system');
     if (!configStore.error) {
       navigationStore.init(
         configStore.categories,
@@ -35,7 +35,10 @@
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   $effect(() => {
     function handleKeydown(e: KeyboardEvent) {
-      // Let dialogs and context menus handle their own keys
+      if (e.key === 'Escape') {
+        if (dialogStore.handleEscape()) return;
+        if (contextMenuStore.visible) { contextMenuStore.hide(); return; }
+      }
       if (dialogStore.current) return;
       if (contextMenuStore.visible) return;
       // Don't intercept when typing in an input
@@ -87,8 +90,8 @@
       }
     }
 
-    window.addEventListener('keydown', handleKeydown);
-    return () => window.removeEventListener('keydown', handleKeydown);
+    window.addEventListener('keydown', handleKeydown, true);
+    return () => window.removeEventListener('keydown', handleKeydown, true);
   });
 
   // ── Search navigation ───────────────────────────────────────────────────────

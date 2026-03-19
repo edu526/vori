@@ -1,29 +1,23 @@
-function createThemeStore() {
-  let os = $state<'macos' | 'windows' | 'linux'>('linux');
-  let initialized = $state(false);
+import type { Theme } from '$lib/api/types';
 
-  async function init() {
-    try {
-      const { platform } = await import('@tauri-apps/plugin-os');
-      const p = await platform();
-      if (p === 'macos') os = 'macos';
-      else if (p === 'windows') os = 'windows';
-      else os = 'linux';
-    } catch {
-      os = 'linux';
+function createThemeStore() {
+  let theme = $state<Theme>('system');
+
+  function apply(t: Theme) {
+    theme = t;
+    if (t === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', t);
     }
-    document.body.setAttribute('data-os', os);
-    initialized = true;
   }
 
   return {
-    get os() {
-      return os;
+    get theme() {
+      return theme;
     },
-    get initialized() {
-      return initialized;
-    },
-    init,
+    apply,
+    init: async () => {},
   };
 }
 

@@ -77,7 +77,7 @@
     try {
       await openProjectInEditor(path, editor);
       trackRecent({ path, name: selectedItem!.label, type: 'project', timestamp: Date.now() / 1000 });
-      if (configStore.preferences.close_on_open) {
+      if (configStore.preferences.close_on_open_editor) {
         await getCurrentWindow().close();
       }
     } catch (e) {
@@ -89,7 +89,7 @@
     try {
       await openFileInEditor(path, configStore.preferences.default_text_editor);
       trackRecent({ path, name: selectedItem!.label, type: 'file', timestamp: Date.now() / 1000 });
-      if (configStore.preferences.close_on_open) {
+      if (configStore.preferences.close_on_open_file) {
         await getCurrentWindow().close();
       }
     } catch (e) {
@@ -100,6 +100,9 @@
   async function handleOpenTerminal(path: string) {
     try {
       await openInTerminal(path);
+      if (configStore.preferences.close_on_open_terminal) {
+        await getCurrentWindow().close();
+      }
     } catch (e) {
       showError(String(e));
     }

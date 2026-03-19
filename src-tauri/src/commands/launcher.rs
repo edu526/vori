@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::services::{config_manager, editor, editor_detector, terminal};
+use crate::services::{app_search, config_manager, editor, editor_detector, terminal};
 use crate::state::AppState;
 
 #[tauri::command]
@@ -58,6 +58,11 @@ pub fn detect_editors(
         config_manager::save("preferences.json", &*prefs)?;
     }
     Ok(found)
+}
+
+#[tauri::command]
+pub fn get_installed_apps() -> Vec<app_search::InstalledApp> {
+    app_search::get_installed_apps()
 }
 
 #[tauri::command]

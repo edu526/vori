@@ -1,6 +1,4 @@
-@import './themes/linux.css';
-@import './themes/macos.css';
-@import './themes/windows.css';
+@import './themes/vori.css';
 
 *,
 *::before,

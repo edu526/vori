@@ -9,6 +9,7 @@ type DialogPayload =
 
 function createDialogStore() {
   let current = $state<DialogPayload | null>(null);
+  const escapeStack: (() => void)[] = [];
 
   function open(payload: DialogPayload) {
     current = payload;
@@ -18,12 +19,34 @@ function createDialogStore() {
     current = null;
   }
 
+  /** Register a sub-modal escape handler. Returns a cleanup fn to deregister. */
+  function pushEscape(handler: () => void) {
+    escapeStack.push(handler);
+    return () => {
+      const i = escapeStack.lastIndexOf(handler);
+      if (i !== -1) escapeStack.splice(i, 1);
+    };
+  }
+
+  /** Called by the global keydown handler on Escape. Returns true if handled. */
+  function handleEscape(): boolean {
+    if (escapeStack.length > 0) {
+      escapeStack[escapeStack.length - 1]();
+      return true;
+    }
+    if (current) {
+      current = null;
+      return true;
+    }
+    return false;
+  }
+
   return {
-    get current() {
-      return current;
-    },
+    get current() { return current; },
     open,
     close,
+    pushEscape,
+    handleEscape,
   };
 }
 

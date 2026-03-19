@@ -19,14 +19,30 @@ impl Default for TerminalPreferences {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Preferences {
     pub default_editor: String,
     pub default_text_editor: Option<String>,
-    pub close_on_open: bool,
+    #[serde(default)]
+    pub close_on_open_editor: bool,
+    #[serde(default)]
+    pub close_on_open_terminal: bool,
+    #[serde(default)]
+    pub close_on_open_file: bool,
     pub terminal: TerminalPreferences,
     #[serde(default)]
     pub editors_available: HashMap<String, String>,
+    #[serde(default)]
+    pub theme: Theme,
 }
 
 impl Default for Preferences {
@@ -34,9 +50,12 @@ impl Default for Preferences {
         Self {
             default_editor: "vscode".to_string(),
             default_text_editor: None,
-            close_on_open: false,
+            close_on_open_editor: false,
+            close_on_open_terminal: false,
+            close_on_open_file: false,
             terminal: TerminalPreferences::default(),
             editors_available: HashMap::new(),
+            theme: Theme::default(),
         }
     }
 }
