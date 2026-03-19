@@ -50,7 +50,7 @@
   }
 </script>
 
-<div class="recents-view">
+<div class="recents-view" role="region" oncontextmenu={(e) => e.preventDefault()}>
   <h2 class="title">Recent</h2>
   <ul class="list">
     {#each recents as item (item.path)}

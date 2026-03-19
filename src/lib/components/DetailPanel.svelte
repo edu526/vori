@@ -109,7 +109,7 @@
   }
 </script>
 
-<aside class="detail-panel">
+<aside class="detail-panel" oncontextmenu={(e) => e.preventDefault()}>
   {#if selectedItem === null}
     <div class="empty-state">
       <svg

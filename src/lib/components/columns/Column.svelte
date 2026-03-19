@@ -7,15 +7,23 @@
     columnIndex,
     onselect,
     onrightclick,
+    onemptyrightclick,
   }: {
     column: Column;
     columnIndex: number;
     onselect: (columnIndex: number, key: string) => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
+    onemptyrightclick: (columnIndex: number, x: number, y: number) => void;
   } = $props();
+
+  function handleContextMenu(e: MouseEvent) {
+    if ((e.target as Element).closest('.column-item')) return; // ColumnItem handles it
+    e.preventDefault();
+    onemptyrightclick(columnIndex, e.clientX, e.clientY);
+  }
 </script>
 
-<div class="column">
+<div class="column" role="region" oncontextmenu={handleContextMenu}>
   {#if column.title}
     <div class="column-header">{column.title}</div>
   {/if}

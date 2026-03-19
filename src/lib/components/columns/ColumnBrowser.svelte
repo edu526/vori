@@ -68,6 +68,38 @@
   function handleSelect(columnIndex: number, key: string) {
     navigationStore.selectItem(columnIndex, key);
   }
+
+  function handleEmptyRightClick(columnIndex: number, x: number, y: number) {
+    const col = navigationStore.columns[columnIndex];
+
+    // Root column → New Category / Project / File
+    if (columnIndex === 0) {
+      contextMenuStore.show(x, y, [
+        { label: 'New Category', action: () => dialogStore.open({ type: 'category', mode: 'add' }) },
+        { label: 'New Project',  action: () => dialogStore.open({ type: 'project',  mode: 'add' }) },
+        { label: 'New File',     action: () => dialogStore.open({ type: 'file',     mode: 'add' }) },
+      ]);
+      return;
+    }
+
+    // Category column → Add Subcategory / Add Project
+    const selectedInPrev = navigationStore.columns[columnIndex - 1]?.selectedKey;
+    if (selectedInPrev && col?.title) {
+      const prevItem = navigationStore.columns[columnIndex - 1].items.find(
+        (it) => it.key === selectedInPrev,
+      );
+      if (prevItem?.type === 'category') {
+        contextMenuStore.show(x, y, [
+          { label: 'Add Subcategory', action: () => dialogStore.open({ type: 'category', mode: 'add', parentKey: selectedInPrev }) },
+          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project', mode: 'add', categoryKey: selectedInPrev }) },
+        ]);
+      } else if (prevItem?.type === 'subcategory' && prevItem.categoryKey) {
+        contextMenuStore.show(x, y, [
+          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project', mode: 'add', categoryKey: prevItem.categoryKey, subcategoryKey: selectedInPrev }) },
+        ]);
+      }
+    }
+  }
 </script>
 
 <div class="column-browser" bind:this={browserEl}>
@@ -86,7 +118,7 @@
     </div>
   {:else}
     {#each navigationStore.columns as column, i (i)}
-      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} />
+      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} />
     {/each}
   {/if}
 </div>
