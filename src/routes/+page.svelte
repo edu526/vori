@@ -9,15 +9,16 @@
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
 
-  let toolbarRef = $state<ReturnType<typeof Toolbar> | null>(null);
-  import DetailPanel from '$lib/components/DetailPanel.svelte';
   import ContextMenu from '$lib/components/context-menu/ContextMenu.svelte';
   import CategoryDialog from '$lib/components/dialogs/CategoryDialog.svelte';
   import ProjectDialog from '$lib/components/dialogs/ProjectDialog.svelte';
   import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
   import RecentsView from '$lib/components/RecentsView.svelte';
+  import SearchModal from '$lib/components/SearchModal.svelte';
   import type { SearchResult } from '$lib/api/types';
+
+  let searchModalOpen = $state(false);
 
   onMount(async () => {
     await configStore.load();
@@ -56,7 +57,7 @@
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        toolbarRef?.focusSearch();
+        searchModalOpen = true;
         return;
       }
 
@@ -134,16 +135,13 @@
     <div class="state-overlay error">Failed to load config: {configStore.error}</div>
   {:else}
     <Toolbar
-      bind:this={toolbarRef}
       onopenpreferences={() => dialogStore.open({ type: 'preferences' })}
-      onsearchresult={handleSearchResult}
+      onsearchopen={() => { searchModalOpen = true; }}
     />
     <div class="main-content">
       <ColumnBrowser />
       {#if navigationStore.columns[0]?.selectedKey === null && configStore.recents.length > 0}
         <RecentsView />
-      {:else if navigationStore.columns[0]?.selectedKey !== null}
-        <DetailPanel />
       {/if}
     </div>
   {/if}
@@ -151,6 +149,12 @@
 
 <!-- Global overlays -->
 <ContextMenu />
+{#if searchModalOpen}
+  <SearchModal
+    onclose={() => { searchModalOpen = false; }}
+    onresult={(result) => { searchModalOpen = false; handleSearchResult(result); }}
+  />
+{/if}
 {#if dialogStore.current?.type === 'category'}
   <CategoryDialog />
 {:else if dialogStore.current?.type === 'project'}

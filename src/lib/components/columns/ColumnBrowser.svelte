@@ -4,6 +4,8 @@
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { buildMenuItems } from '../context-menu/menuBuilder';
+  import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import Column from './Column.svelte';
 
@@ -69,6 +71,25 @@
     navigationStore.selectItem(columnIndex, key);
   }
 
+  async function handleOpen(item: NavItem) {
+    if (!item.path) return;
+    if (item.type === 'project') {
+      const recent = { path: item.path, name: item.label, type: 'project' as const, timestamp: Date.now() / 1000 };
+      await openProjectInEditor(item.path, configStore.preferences.default_editor);
+      addRecent(recent);
+      navigationStore.addRecentToView(recent);
+      configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== item.path)].slice(0, 20);
+      if (configStore.preferences.close_on_open_editor) await getCurrentWindow().close();
+    } else if (item.type === 'file') {
+      const recent = { path: item.path, name: item.label, type: 'file' as const, timestamp: Date.now() / 1000 };
+      await openFileInEditor(item.path, configStore.preferences.default_text_editor);
+      addRecent(recent);
+      navigationStore.addRecentToView(recent);
+      configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== item.path)].slice(0, 20);
+      if (configStore.preferences.close_on_open_file) await getCurrentWindow().close();
+    }
+  }
+
   function handleEmptyRightClick(columnIndex: number, x: number, y: number) {
     const col = navigationStore.columns[columnIndex];
 
@@ -118,7 +139,7 @@
     </div>
   {:else}
     {#each navigationStore.columns as column, i (i)}
-      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} />
+      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} onopen={handleOpen} />
     {/each}
   {/if}
 </div>

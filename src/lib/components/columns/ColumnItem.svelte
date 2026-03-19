@@ -7,11 +7,13 @@
     selected,
     onselect,
     onrightclick,
+    onopen,
   }: {
     item: NavItem;
     selected: boolean;
     onselect: () => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
+    onopen: (item: NavItem) => void;
   } = $props();
 </script>
 
@@ -22,6 +24,7 @@
     class="column-item"
     class:selected
     onclick={onselect}
+    ondblclick={() => { if (item.type === 'project' || item.type === 'file') onopen(item); }}
     oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
     title={item.path}
   >

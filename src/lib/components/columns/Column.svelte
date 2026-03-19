@@ -8,12 +8,14 @@
     onselect,
     onrightclick,
     onemptyrightclick,
+    onopen,
   }: {
     column: Column;
     columnIndex: number;
     onselect: (columnIndex: number, key: string) => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
     onemptyrightclick: (columnIndex: number, x: number, y: number) => void;
+    onopen: (item: NavItem) => void;
   } = $props();
 
   function handleContextMenu(e: MouseEvent) {
@@ -34,6 +36,7 @@
         selected={column.selectedKey === item.key}
         onselect={() => onselect(columnIndex, item.key)}
         onrightclick={onrightclick}
+        {onopen}
       />
     {/each}
     {#if column.items.length === 0}

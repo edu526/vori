@@ -129,13 +129,13 @@
 </script>
 
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
-  <DialogContent class="w-[440px] max-w-[90vw] gap-0 p-0" showCloseButton={false}>
+  <DialogContent class="w-[440px] max-w-[90vw] h-[460px] flex flex-col gap-0 p-0 overflow-hidden" showCloseButton={false}>
     <DialogHeader class="px-6 pt-5 pb-3">
       <DialogTitle>Preferences</DialogTitle>
     </DialogHeader>
 
-    <Tabs value={activeTab} onValueChange={(v) => (activeTab = v as typeof activeTab)}>
-      <TabsList class="mx-6">
+    <Tabs value={activeTab} onValueChange={(v) => (activeTab = v as typeof activeTab)} class="flex flex-col flex-1 min-h-0">
+      <TabsList class="mx-6 shrink-0">
         <TabsTrigger value="appearance">Appearance</TabsTrigger>
         <TabsTrigger value="editors">Editors</TabsTrigger>
         <TabsTrigger value="terminal">Terminal</TabsTrigger>
@@ -311,7 +311,8 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    height: 260px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 12px 24px 4px;
   }
