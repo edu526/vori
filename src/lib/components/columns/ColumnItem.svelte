@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { NavItem } from '$lib/stores/navigation.svelte';
+  import ItemIcon from '$lib/components/ItemIcon.svelte';
 
   let {
     item,
@@ -25,19 +26,7 @@
     title={item.path}
   >
     <span class="icon">
-      {#if item.type === 'category' || item.type === 'subcategory'}
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <path d="M1 3a1 1 0 0 1 1-1h3.586a1 1 0 0 1 .707.293L7 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3z"/>
-        </svg>
-      {:else if item.type === 'project'}
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <path d="M2 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2zm2 1v8h6V3H4z"/>
-        </svg>
-      {:else if item.type === 'file'}
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <path d="M3 1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5.414A1 1 0 0 0 11.707 4.707L8.293 1.293A1 1 0 0 0 7.586 1H3zm5 1.414L10.586 5H8.5a.5.5 0 0 1-.5-.5V2.414z"/>
-        </svg>
-      {/if}
+      <ItemIcon type={item.type} size={14} />
     </span>
     <span class="label">{item.label}</span>
     {#if item.isFavorite}

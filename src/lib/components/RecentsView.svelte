@@ -3,6 +3,7 @@
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import ItemIcon from '$lib/components/ItemIcon.svelte';
 
   const MAX_RECENTS = 8;
 
@@ -55,16 +56,7 @@
     {#each recents as item (item.path)}
       <li class="item">
         <div class="item-icon">
-          {#if item.type === 'file'}
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6l-4-4z"/>
-              <polyline points="9 2 9 6 13 6"/>
-            </svg>
-          {:else}
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M1 4.5A1.5 1.5 0 0 1 2.5 3H6l2 2h5.5A1.5 1.5 0 0 1 15 6.5v6a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-8z"/>
-            </svg>
-          {/if}
+          <ItemIcon type={item.type === 'file' ? 'file' : 'project'} size={16} />
         </div>
         <div class="item-info">
           <span class="item-name">{item.name}</span>
@@ -132,10 +124,6 @@
     color: var(--color-text-secondary);
   }
 
-  .item-icon svg {
-    width: 100%;
-    height: 100%;
-  }
 
   .item-info {
     flex: 1;
