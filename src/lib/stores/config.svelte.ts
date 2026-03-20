@@ -22,6 +22,8 @@ function createConfigStore() {
     editors_available: {},
     theme: 'system',
     autostart: true,
+    show_tray: true,
+    keep_background: true,
     hotkey: 'Super+Shift+KeyV',
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });

@@ -22,11 +22,8 @@ use state::AppState;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            // Second launch attempt — focus the existing window instead
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            // Second launch attempt — toggle the existing window
+            services::window::toggle(app);
         }))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
@@ -62,6 +59,14 @@ pub fn run() {
                 categories, projects, files, preferences.clone(), favorites, recents,
             ));
 
+            let is_autostart = std::env::args().any(|arg| arg == "--autostart");
+            if !is_autostart {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+
             // Apply autostart from preferences
             {
                 use tauri_plugin_autostart::ManagerExt;
@@ -82,52 +87,25 @@ pub fn run() {
                 })?;
             }
 
-            // Build tray icon + menu
-            let show_item =
-                MenuItem::with_id(app, "show", "Mostrar Vori", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
-
-            let tray_icon = tauri::image::Image::from_bytes(
-                include_bytes!("../icons/tray_icon.png")
-            ).unwrap_or_else(|_| app.default_window_icon().unwrap().clone());
-
-            TrayIconBuilder::new()
-                .icon(tray_icon)
-                .menu(&menu)
-                .tooltip("Vori")
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                    "quit" => app.exit(0),
-                    _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        services::window::toggle(tray.app_handle());
-                    }
-                })
-                .build(app)?;
+            // Build tray icon + menu (conditionally)
+            if preferences.show_tray {
+                let _ = services::window::setup_tray(app.handle());
+            }
 
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Close button → hide to tray instead of quitting
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
-                api.prevent_close();
+                let state = window.app_handle().state::<AppState>();
+                let prefs = state.preferences.lock().unwrap();
+                if prefs.keep_background || prefs.show_tray {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
+            quit_app,
             // Config — data
             get_app_data,
             // Config — categories

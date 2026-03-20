@@ -32,6 +32,14 @@ fn default_autostart() -> bool {
     true
 }
 
+fn default_show_tray() -> bool {
+    true
+}
+
+fn default_keep_background() -> bool {
+    true
+}
+
 fn default_hotkey() -> String {
     "Super+Shift+KeyV".to_string()
 }
@@ -53,6 +61,10 @@ pub struct Preferences {
     pub theme: Theme,
     #[serde(default = "default_autostart")]
     pub autostart: bool,
+    #[serde(default = "default_show_tray")]
+    pub show_tray: bool,
+    #[serde(default = "default_keep_background")]
+    pub keep_background: bool,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
 }
@@ -69,6 +81,8 @@ impl Default for Preferences {
             editors_available: HashMap::new(),
             theme: Theme::default(),
             autostart: true,
+            show_tray: true,
+            keep_background: true,
             hotkey: default_hotkey(),
         }
     }

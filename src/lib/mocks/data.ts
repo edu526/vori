@@ -81,6 +81,8 @@ export const mockAppData: AppData = {
     },
     theme: 'system',
     autostart: true,
+    show_tray: true,
+    keep_background: true,
     hotkey: 'Super+Shift+KeyV',
   },
   favorites: {

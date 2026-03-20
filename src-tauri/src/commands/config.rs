@@ -22,6 +22,11 @@ pub struct AppData {
 }
 
 #[tauri::command]
+pub fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
 pub fn get_app_data(state: State<AppState>) -> Result<AppData, String> {
     Ok(AppData {
         categories: state.categories.lock().unwrap().clone(),
@@ -187,6 +192,15 @@ pub fn update_preferences(
     state: State<AppState>,
 ) -> Result<(), String> {
     let old_hotkey = state.preferences.lock().unwrap().hotkey.clone();
+    let old_show_tray = state.preferences.lock().unwrap().show_tray;
+
+    if prefs.show_tray != old_show_tray {
+        if prefs.show_tray {
+            let _ = crate::services::window::setup_tray(&app);
+        } else {
+            crate::services::window::remove_tray(&app);
+        }
+    }
 
     // Apply autostart change
     {

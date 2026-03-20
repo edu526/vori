@@ -3,6 +3,7 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
   import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
+  import { type } from '@tauri-apps/plugin-os';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
@@ -25,11 +26,18 @@
     editors_available: {},
     theme: 'system',
     autostart: true,
+    show_tray: true,
+    keep_background: true,
     hotkey: 'Super+Shift+KeyV',
   });
 
   let recordingHotkey = $state(false);
   let hotkeyError = $state('');
+  let osType = $state('');
+  
+  $effect(() => {
+    osType = type();
+  });
 
   function startRecording() {
     recordingHotkey = true;
@@ -42,11 +50,27 @@
 
   function handleHotkeyKeydown(e: KeyboardEvent) {
     if (!recordingHotkey) return;
+    
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      recordingHotkey = false;
+      hotkeyError = '';
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
     // Ignore lone modifier presses
     if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) return;
+
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      prefs.hotkey = '';
+      hotkeyError = '';
+      recordingHotkey = false;
+      return;
+    }
 
     const parts: string[] = [];
     if (e.metaKey) parts.push('Super');
@@ -171,8 +195,20 @@
   };
 </script>
 
+
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
-  <DialogContent class="w-[440px] max-w-[90vw] h-[460px] flex flex-col gap-0 p-0 overflow-hidden" showCloseButton={false}>
+  <DialogContent 
+    class="w-[440px] max-w-[90vw] h-[460px] flex flex-col gap-0 p-0 overflow-hidden" 
+    showCloseButton={false}
+    escapeKeydownBehavior={recordingHotkey ? 'ignore' : 'close'}
+    onEscapeKeydown={(e) => { 
+      if (recordingHotkey) {
+        e.preventDefault();
+        recordingHotkey = false;
+        hotkeyError = '';
+      }
+    }}
+  >
     <DialogHeader class="px-6 pt-5 pb-3">
       <DialogTitle>Preferences</DialogTitle>
     </DialogHeader>
@@ -332,10 +368,27 @@
       <!-- System -->
       <TabsContent value="system" class="tab-body">
         <div class="field">
-          <Label>Startup</Label>
-          <label class="check-row">
-            <Checkbox bind:checked={prefs.autostart} />
-            <span>Launch Vori at login (stays in tray)</span>
+          <Label>Startup & Background Behavior</Label>
+          <label class="check-row flex items-start gap-2">
+            <Checkbox bind:checked={prefs.autostart} class="mt-1" />
+            <div class="flex flex-col">
+              <span>Launch automatically at login</span>
+              <span class="text-[0.78rem] text-muted-foreground">Start Vori silently in the background when your computer boots.</span>
+            </div>
+          </label>
+          <label class="check-row flex items-start gap-2">
+            <Checkbox bind:checked={prefs.keep_background} class="mt-1" />
+            <div class="flex flex-col">
+              <span>Keep running in background</span>
+              <span class="text-[0.78rem] text-muted-foreground">Closing the window hides it instead of quitting. Highly recommended so Vori stays instantly available.</span>
+            </div>
+          </label>
+          <label class="check-row flex items-start gap-2">
+            <Checkbox bind:checked={prefs.show_tray} class="mt-1" />
+            <div class="flex flex-col">
+              <span>Show icon in System Tray</span>
+              <span class="text-[0.78rem] text-muted-foreground">Provides an icon to easily summon or quit Vori.</span>
+            </div>
           </label>
         </div>
 
@@ -345,27 +398,39 @@
           <Label>Global shortcut</Label>
           <p class="hint">Press this combination anywhere to show or hide Vori.</p>
           <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div
-            class="hotkey-recorder"
-            class:recording={recordingHotkey}
-            tabindex="0"
-            role="button"
-            aria-label="Click to record shortcut"
-            onclick={startRecording}
-            onblur={stopRecording}
-            onkeydown={handleHotkeyKeydown}
-          >
-            {#if recordingHotkey}
-              <span class="hotkey-recording-label">Press your shortcut…</span>
-            {:else}
-              <kbd class="hotkey-display">{prefs.hotkey || 'Not set'}</kbd>
-              <span class="hotkey-hint">Click to change</span>
+          <div style="display: flex; gap: 8px; align-items: stretch;">
+            <div
+              class="hotkey-recorder"
+              style="flex: 1;"
+              class:recording={recordingHotkey}
+              tabindex="0"
+              role="button"
+              aria-label="Click to record shortcut"
+              onclick={startRecording}
+              onblur={stopRecording}
+              onkeydown={handleHotkeyKeydown}
+            >
+              {#if recordingHotkey}
+                <span class="hotkey-recording-label">Press your shortcut (Esc to cancel, Backspace to clear)…</span>
+              {:else}
+                <kbd class="hotkey-display">{prefs.hotkey || 'Not set'}</kbd>
+                <span class="hotkey-hint">Click to change</span>
+              {/if}
+            </div>
+            {#if prefs.hotkey && !recordingHotkey}
+              <Button variant="outline" onclick={(e) => { e.stopPropagation(); prefs.hotkey = ''; hotkeyError = ''; }}>Disable</Button>
             {/if}
           </div>
           {#if hotkeyError}
             <p class="error-msg">{hotkeyError}</p>
           {/if}
           <p class="hint">Format: <code>Super+Shift+KeyV</code> — modifiers: Super, Ctrl, Alt, Shift</p>
+          {#if osType === 'linux'}
+            <p class="hint" style="margin-top: 4px; color: #a1a1aa;">
+              <strong>Note for Linux/Wayland users:</strong> Due to OS security, this may only work when Vori has focus. 
+              For a true global hotkey, disable this and add a custom shortcut in your system settings to run the <code>vori</code> command.
+            </p>
+          {/if}
         </div>
       </TabsContent>
     </Tabs>

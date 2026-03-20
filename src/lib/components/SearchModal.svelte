@@ -64,6 +64,7 @@
   class="overlay"
   role="dialog"
   aria-modal="true"
+  tabindex="-1"
   onmousedown={(e) => { if (e.target === e.currentTarget) onclose(); }}
 >
   <div class="modal">

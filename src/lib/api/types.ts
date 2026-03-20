@@ -51,6 +51,8 @@ export interface Preferences {
   editors_available: Record<string, string>;
   theme: Theme;
   autostart: boolean;
+  show_tray: boolean;
+  keep_background: boolean;
   hotkey: string;
 }
 

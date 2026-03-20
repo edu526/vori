@@ -74,7 +74,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="overlay" onclick={onClose} onkeydown={handleKeydown}>
-  <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
     <div class="modal-header">
       <span>{title}</span>
       <button class="close-btn" onclick={onClose}>✕</button>
@@ -90,6 +90,7 @@
     </div>
 
     {#if mode === 'search'}
+      <!-- svelte-ignore a11y_autofocus -->
       <input
         class="search-input"
         type="text"
