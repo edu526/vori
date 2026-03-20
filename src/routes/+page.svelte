@@ -14,7 +14,7 @@
   import ProjectDialog from '$lib/components/dialogs/ProjectDialog.svelte';
   import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
-  import RecentsView from '$lib/components/RecentsView.svelte';
+  import HomeView from '$lib/components/HomeView.svelte';
   import SearchModal from '$lib/components/SearchModal.svelte';
   import type { SearchResult } from '$lib/api/types';
 
@@ -140,8 +140,8 @@
     />
     <div class="main-content">
       <ColumnBrowser />
-      {#if navigationStore.columns[0]?.selectedKey === null && configStore.recents.length > 0}
-        <RecentsView />
+      {#if navigationStore.columns[0]?.selectedKey === null}
+        <HomeView />
       {/if}
     </div>
   {/if}
