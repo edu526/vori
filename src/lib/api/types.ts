@@ -1,14 +1,7 @@
 // ── Category types ────────────────────────────────────────────────────────────
 
-export interface Subcategory {
-  description: string;
-  icon: string;
-}
-
 export interface Category {
-  description: string;
-  icon: string;
-  subcategories: Record<string, Subcategory>;
+  parent: string | null;
 }
 
 export type CategoriesMap = Record<string, Category>;
@@ -17,8 +10,8 @@ export type CategoriesMap = Record<string, Category>;
 
 export interface Project {
   path: string;
-  category: string;
-  subcategory?: string;
+  parent: string; // key of parent category node (any depth)
+  stack?: string;
 }
 
 export type ProjectsMap = Record<string, Project>;
@@ -86,13 +79,22 @@ export interface AppData {
   recents: RecentItem[];
 }
 
+// ── Scanner ───────────────────────────────────────────────────────────────────
+
+export interface ScannedProject {
+  name: string;
+  path: string;
+  stack: string;
+  /** Path relative to scan root, segments joined with '/'. E.g. "work/backend/api-service" */
+  relative_path: string;
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 
 export interface SearchResult {
   key: string;
   name: string;
-  result_type: string;
+  result_type: 'category' | 'project' | 'file';
   path?: string;
-  category?: string;
-  subcategory?: string;
+  parent?: string; // direct parent category key
 }

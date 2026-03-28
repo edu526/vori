@@ -1,16 +1,16 @@
 import type { CategoriesMap, Favorites, FilesMap, ProjectsMap, RecentItem } from '$lib/api/types';
 
-export type NavItemType = 'category' | 'subcategory' | 'project' | 'file' | 'section-header';
+export type NavItemType = 'category' | 'project' | 'file';
 
 export interface NavItem {
   key: string;
   label: string;
   type: NavItemType;
   path?: string;
-  categoryKey?: string;
-  subcategoryKey?: string;
+  parentKey?: string | null;
   hasChildren?: boolean;
   isFavorite?: boolean;
+  stack?: string;
 }
 
 export interface Column {
@@ -19,79 +19,82 @@ export interface Column {
   title?: string;
 }
 
+function itemHasChildren(key: string, categories: CategoriesMap, projects: ProjectsMap): boolean {
+  return (
+    Object.values(categories).some((c) => c.parent === key) ||
+    Object.values(projects).some((p) => p.parent === key)
+  );
+}
+
 function buildRootItems(
   categories: CategoriesMap,
   projects: ProjectsMap,
   files: FilesMap,
   favorites: Favorites,
-  recents: RecentItem[],
 ): NavItem[] {
   const items: NavItem[] = [];
 
-  // ── Categories ────────────────────────────────────────────────────────────
-  if (Object.keys(categories).length > 0) {
-    items.push({ key: '__categories__', label: 'Categories', type: 'section-header' });
+  // Root categories (parent === null)
+  for (const [key, cat] of Object.entries(categories).sort(([a], [b]) => a.localeCompare(b))) {
+    if (cat.parent === null) {
+      items.push({
+        key,
+        label: key.split('/').pop() ?? key,
+        type: 'category',
+        parentKey: null,
+        hasChildren: itemHasChildren(key, categories, projects),
+        isFavorite: favorites.categories.includes(key),
+      });
+    }
   }
-  for (const [key] of Object.entries(categories).sort(([a], [b]) => a.localeCompare(b))) {
+
+  // Files (always at root)
+  for (const [key, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
     items.push({
       key,
       label: key,
-      type: 'category',
-      hasChildren: true,
-      isFavorite: favorites.categories.includes(key),
+      type: 'file',
+      path: file.path,
+      isFavorite: favorites.files.includes(key),
     });
-  }
-
-  // ── Files ─────────────────────────────────────────────────────────────────
-  if (Object.keys(files).length > 0) {
-    items.push({ key: '__files__', label: 'Files', type: 'section-header' });
-    for (const [key, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
-      items.push({
-        key,
-        label: key,
-        type: 'file',
-        path: file.path,
-        isFavorite: favorites.files.includes(key),
-      });
-    }
   }
 
   return items;
 }
 
-function buildCategoryItems(
-  categoryKey: string,
+function buildChildItems(
+  parentKey: string,
   categories: CategoriesMap,
   projects: ProjectsMap,
   favorites: Favorites,
 ): NavItem[] {
-  const cat = categories[categoryKey];
-  if (!cat) return [];
-
   const items: NavItem[] = [];
-  const hasSubcats = Object.keys(cat.subcategories).length > 0;
 
-  if (hasSubcats) {
-    items.push({ key: '__subcats__', label: 'Subcategories', type: 'section-header' });
-    for (const [key] of Object.entries(cat.subcategories).sort(([a], [b]) => a.localeCompare(b))) {
-      items.push({ key, label: key, type: 'subcategory', categoryKey, hasChildren: true });
+  // Child categories
+  for (const [key, cat] of Object.entries(categories).sort(([a], [b]) => a.localeCompare(b))) {
+    if (cat.parent === parentKey) {
+      items.push({
+        key,
+        label: key.split('/').pop() ?? key,
+        type: 'category',
+        parentKey,
+        hasChildren: itemHasChildren(key, categories, projects),
+        isFavorite: favorites.categories.includes(key),
+      });
     }
   }
 
-  const directProjects = Object.entries(projects)
-    .filter(([, p]) => p.category === categoryKey && !p.subcategory)
-    .sort(([a], [b]) => a.localeCompare(b));
-
-  if (directProjects.length > 0) {
-    items.push({ key: '__projects__', label: 'Projects', type: 'section-header' });
-    for (const [key, proj] of directProjects) {
+  // Projects belonging to this parent
+  for (const [key, proj] of Object.entries(projects).sort(([a], [b]) => a.localeCompare(b))) {
+    if (proj.parent === parentKey) {
       items.push({
         key,
-        label: key,
+        label: proj.path.split('/').pop() ?? key,
         type: 'project',
         path: proj.path,
-        categoryKey,
+        parentKey,
         isFavorite: favorites.projects.includes(key),
+        stack: proj.stack,
       });
     }
   }
@@ -99,28 +102,13 @@ function buildCategoryItems(
   return items;
 }
 
-function buildSubcategoryItems(
-  categoryKey: string,
-  subcategoryKey: string,
-  projects: ProjectsMap,
-  favorites: Favorites,
-): NavItem[] {
-  return Object.entries(projects)
-    .filter(([, p]) => p.category === categoryKey && p.subcategory === subcategoryKey)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, proj]) => ({
-      key,
-      label: key,
-      type: 'project' as NavItemType,
-      path: proj.path,
-      categoryKey,
-      subcategoryKey,
-      isFavorite: favorites.projects.includes(key),
-    }));
+function selectableItems(col: Column): NavItem[] {
+  return col.items;
 }
 
-function selectableItems(col: Column): NavItem[] {
-  return col.items.filter((it) => it.type !== 'section-header');
+export interface WorkspaceEntry {
+  path: string;
+  label: string;
 }
 
 function createNavigationStore() {
@@ -131,6 +119,7 @@ function createNavigationStore() {
   let _files = $state<FilesMap>({});
   let _favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let _recents = $state<RecentItem[]>([]);
+  let _workspaceSelection = $state<Map<string, WorkspaceEntry>>(new Map());
 
   function init(
     cats: CategoriesMap,
@@ -147,7 +136,7 @@ function createNavigationStore() {
     activeColumnIndex = 0;
     columns = [
       {
-        items: buildRootItems(cats, projs, fls, favs, recents),
+        items: buildRootItems(cats, projs, fls, favs),
         selectedKey: null,
         title: 'Projects',
       },
@@ -156,7 +145,7 @@ function createNavigationStore() {
 
   function selectItem(columnIndex: number, key: string) {
     const item = columns[columnIndex]?.items.find((it) => it.key === key);
-    if (!item || item.type === 'section-header') return;
+    if (!item) return;
 
     activeColumnIndex = columnIndex;
 
@@ -164,19 +153,11 @@ function createNavigationStore() {
       .slice(0, columnIndex + 1)
       .map((col, i) => (i === columnIndex ? { ...col, selectedKey: key } : col));
 
-    let nextItems: NavItem[] = [];
-    let nextTitle: string | undefined;
-
     if (item.type === 'category') {
-      nextItems = buildCategoryItems(key, _categories, _projects, _favorites);
-      nextTitle = key;
-    } else if (item.type === 'subcategory' && item.categoryKey) {
-      nextItems = buildSubcategoryItems(item.categoryKey, key, _projects, _favorites);
-      nextTitle = key;
-    }
-
-    if (nextItems.length > 0) {
-      columns = [...columns, { items: nextItems, selectedKey: null, title: nextTitle }];
+      const nextItems = buildChildItems(key, _categories, _projects, _favorites);
+      if (nextItems.length > 0) {
+        columns = [...columns, { items: nextItems, selectedKey: null, title: key.split('/').pop() ?? key }];
+      }
     }
   }
 
@@ -202,20 +183,31 @@ function createNavigationStore() {
   }
 
   function expandRight() {
-    const nextCol = columns[activeColumnIndex + 1];
-    if (!nextCol) return;
-    const first = selectableItems(nextCol)[0];
-    if (first) {
-      activeColumnIndex = activeColumnIndex + 1;
-      selectItem(activeColumnIndex, first.key);
-    } else {
-      activeColumnIndex = activeColumnIndex + 1;
+    const col = columns[activeColumnIndex];
+    if (!col) return;
+
+    // Nothing selected — select first item in current column
+    if (!col.selectedKey) {
+      const first = selectableItems(col)[0];
+      if (first) selectItem(activeColumnIndex, first.key);
+      return;
     }
+
+    // Next column exists — move into it and select first item
+    const nextCol = columns[activeColumnIndex + 1];
+    if (nextCol) {
+      activeColumnIndex = activeColumnIndex + 1;
+      const first = selectableItems(nextCol)[0];
+      if (first) selectItem(activeColumnIndex, first.key);
+    }
+    // Leaf node (project/file) — Enter handles opening
   }
 
   function collapseLeft() {
     if (activeColumnIndex > 0) {
       activeColumnIndex = activeColumnIndex - 1;
+    } else {
+      columns = columns.slice(0, 1).map((col) => ({ ...col, selectedKey: null }));
     }
   }
 
@@ -249,7 +241,7 @@ function createNavigationStore() {
     const rootSelectedKey = columns[0]?.selectedKey ?? null;
     columns = [
       {
-        items: buildRootItems(cats, projs, fls, favs, recents),
+        items: buildRootItems(cats, projs, fls, favs),
         selectedKey: rootSelectedKey,
         title: 'Projects',
       },
@@ -265,7 +257,7 @@ function createNavigationStore() {
     const rootSelectedKey = columns[0]?.selectedKey ?? null;
     columns = [
       {
-        items: buildRootItems(_categories, _projects, _files, _favorites, _recents),
+        items: buildRootItems(_categories, _projects, _files, _favorites),
         selectedKey: rootSelectedKey,
         title: 'Projects',
       },
@@ -293,6 +285,20 @@ function createNavigationStore() {
     }));
   }
 
+  function toggleWorkspaceItem(key: string, path: string, label: string) {
+    const next = new Map(_workspaceSelection);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.set(key, { path, label });
+    }
+    _workspaceSelection = next;
+  }
+
+  function clearWorkspaceSelection() {
+    _workspaceSelection = new Map();
+  }
+
   return {
     get columns() {
       return columns;
@@ -300,11 +306,14 @@ function createNavigationStore() {
     get activeColumnIndex() {
       return activeColumnIndex;
     },
+    get workspaceSelection() {
+      return _workspaceSelection;
+    },
     get selectedItem(): NavItem | null {
       for (let i = columns.length - 1; i >= 0; i--) {
         if (columns[i].selectedKey) {
           const item = columns[i].items.find((it) => it.key === columns[i].selectedKey);
-          if (item && item.type !== 'section-header') return item;
+          if (item) return item;
         }
       }
       return null;
@@ -318,6 +327,8 @@ function createNavigationStore() {
     refresh,
     updateFavorites,
     addRecentToView,
+    toggleWorkspaceItem,
+    clearWorkspaceSelection,
   };
 }
 

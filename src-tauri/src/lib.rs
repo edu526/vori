@@ -13,6 +13,7 @@ mod state;
 
 use commands::config::*;
 use commands::launcher::*;
+use commands::scanner::*;
 use commands::search::*;
 use services::{config_manager, editor_detector, terminal};
 use state::AppState;
@@ -36,6 +37,7 @@ pub fn run() {
         .setup(|app| {
             // Migrate config from code-launcher → vori on first launch (no-op if already done)
             config_manager::migrate_from_legacy();
+            config_manager::migrate_to_flat_format();
 
             let categories = config_manager::load("categories.json").unwrap_or_default();
             let projects = config_manager::load("projects.json").unwrap_or_default();
@@ -112,13 +114,11 @@ pub fn run() {
             add_category,
             update_category,
             delete_category,
-            add_subcategory,
-            update_subcategory,
-            delete_subcategory,
             // Config — projects
             add_project,
             update_project,
             delete_project,
+            bulk_import_projects,
             // Config — files
             add_file,
             update_file,
@@ -134,11 +134,14 @@ pub fn run() {
             add_recent,
             // Launcher
             open_project_in_editor,
+            open_workspace_in_editor,
             open_file_in_editor,
             open_in_terminal,
             detect_terminals,
             detect_editors,
             get_installed_apps,
+            // Scanner
+            scan_folder,
             // Search
             search,
         ])

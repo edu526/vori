@@ -17,14 +17,11 @@
 
   let key = $state('');
   let path = $state('');
-  let selectedCategory = $state('');
-  let selectedSubcategory = $state('');
+  let selectedParent = $state('');
   let keyError = $state('');
 
-  const subcategories = $derived(
-    selectedCategory && configStore.categories[selectedCategory]
-      ? Object.keys(configStore.categories[selectedCategory].subcategories)
-      : [],
+  const categoryOptions = $derived(
+    Object.keys(configStore.categories).sort((a, b) => a.localeCompare(b)),
   );
 
   $effect(() => {
@@ -33,21 +30,13 @@
       const existing = configStore.projects[payload.key];
       key = payload.key;
       path = existing?.path ?? '';
-      selectedCategory = existing?.category ?? '';
-      selectedSubcategory = existing?.subcategory ?? '';
+      selectedParent = existing?.parent ?? '';
     } else {
       key = '';
       path = '';
-      selectedCategory = payload.categoryKey ?? '';
-      selectedSubcategory = payload.subcategoryKey ?? '';
+      selectedParent = payload.parentKey ?? '';
     }
     keyError = '';
-  });
-
-  $effect(() => {
-    if (selectedCategory && !subcategories.includes(selectedSubcategory)) {
-      selectedSubcategory = '';
-    }
   });
 
   async function handleBrowse() {
@@ -62,14 +51,11 @@
 
   async function handleSave() {
     if (!key) { keyError = 'Name is required.'; return; }
+    if (!selectedParent) { keyError = 'Parent category is required.'; return; }
     if (!payload) return;
     keyError = '';
     try {
-      const projectData = {
-        path,
-        category: selectedCategory,
-        subcategory: selectedSubcategory || undefined,
-      };
+      const projectData = { path, parent: selectedParent };
       if (payload.mode === 'edit') {
         await updateProject(payload.key, projectData);
       } else {
@@ -109,26 +95,14 @@
       </div>
 
       <div class="field">
-        <Label for="proj-category">Category</Label>
-        <select id="proj-category" bind:value={selectedCategory} class="native-select">
-          <option value="">(none)</option>
-          {#each Object.keys(configStore.categories) as catKey}
+        <Label for="proj-parent">Category</Label>
+        <select id="proj-parent" bind:value={selectedParent} class="native-select">
+          <option value="">(select category)</option>
+          {#each categoryOptions as catKey}
             <option value={catKey}>{catKey}</option>
           {/each}
         </select>
       </div>
-
-      {#if subcategories.length > 0}
-        <div class="field">
-          <Label for="proj-subcategory">Subcategory</Label>
-          <select id="proj-subcategory" bind:value={selectedSubcategory} class="native-select">
-            <option value="">(none)</option>
-            {#each subcategories as subKey}
-              <option value={subKey}>{subKey}</option>
-            {/each}
-          </select>
-        </div>
-      {/if}
     </div>
 
     <DialogFooter>
@@ -157,6 +131,13 @@
     padding: 7px 10px;
     outline: none;
     transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    color-scheme: light dark;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7080' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
   }
   .native-select:focus { border-color: var(--color-accent); }
 </style>

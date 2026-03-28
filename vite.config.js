@@ -23,7 +23,22 @@ const browserAlias = {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
+  plugins: [
+    sveltekit(),
+    // Strip JS import statements that bleed into Svelte virtual style modules.
+    // @tailwindcss/vite:generate:serve tries to parse them as CSS and logs
+    // "Invalid declaration" warnings for every import line it finds.
+    {
+      name: 'svelte-style-sanitize',
+      enforce: 'pre',
+      transform(code, id) {
+        if (id.includes('?svelte&type=style')) {
+          return { code: code.replace(/^[ \t]*import\s[^\n]+$/gm, ''), map: null };
+        }
+      },
+    },
+    tailwindcss(),
+  ],
 
   resolve: {
     alias: isTauri ? {} : browserAlias,

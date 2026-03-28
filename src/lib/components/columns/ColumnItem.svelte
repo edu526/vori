@@ -1,57 +1,74 @@
 <script lang="ts">
   import type { NavItem } from '$lib/stores/navigation.svelte';
+  import { navigationStore } from '$lib/stores/navigation.svelte';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
+  import StackIcon from '$lib/components/StackIcon.svelte';
 
   let {
     item,
     selected,
+    active,
     onselect,
     onrightclick,
     onopen,
   }: {
     item: NavItem;
     selected: boolean;
+    active: boolean;
     onselect: () => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
     onopen: (item: NavItem) => void;
   } = $props();
+
+  let el = $state<HTMLElement | null>(null);
+
+  let workspaceSelected = $derived(
+    item.type === 'project' && navigationStore.workspaceSelection.has(item.key),
+  );
+
+  $effect(() => {
+    if (selected && el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+
+  function handleClick(e: MouseEvent) {
+    if ((e.ctrlKey || e.metaKey) && item.type === 'project' && item.path) {
+      e.stopPropagation();
+      navigationStore.toggleWorkspaceItem(item.key, item.path, item.label);
+      return;
+    }
+    onselect();
+  }
 </script>
 
-{#if item.type === 'section-header'}
-  <div class="section-header">{item.label}</div>
-{:else}
-  <button
-    class="column-item"
-    class:selected
-    onclick={onselect}
-    ondblclick={() => { if (item.type === 'project' || item.type === 'file') onopen(item); }}
-    oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
-    title={item.path}
-  >
-    <span class="icon">
-      <ItemIcon type={item.type} size={14} />
-    </span>
-    <span class="label">{item.label}</span>
-    {#if item.isFavorite}
-      <span class="favorite">★</span>
-    {/if}
-    {#if item.hasChildren}
-      <span class="chevron">›</span>
-    {/if}
-  </button>
-{/if}
+<button
+  bind:this={el}
+  class="column-item"
+  class:selected
+  class:inactive={selected && !active}
+  class:workspace-selected={workspaceSelected}
+  onclick={handleClick}
+  ondblclick={() => { if (item.type === 'project' || item.type === 'file') onopen(item); }}
+  oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
+  title={item.path}
+>
+  <span class="icon">
+    <ItemIcon type={item.type} size={14} />
+  </span>
+  <span class="label">{item.label}</span>
+  {#if item.stack}
+    <StackIcon stack={item.stack} size={13} />
+  {/if}
+  {#if item.isFavorite}
+    <span class="favorite">★</span>
+  {/if}
+  {#if item.hasChildren}
+    <span class="chevron">›</span>
+  {/if}
+</button>
 
 <style>
-  .section-header {
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 10px 10px 3px;
-    color: var(--color-text-secondary);
-    user-select: none;
-  }
-
   .column-item {
     display: flex;
     align-items: center;
@@ -77,6 +94,20 @@
     color: white;
   }
 
+  .column-item.inactive {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  .column-item.workspace-selected {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+
+  .column-item.workspace-selected.selected {
+    outline-color: white;
+  }
+
   .icon {
     display: flex;
     align-items: center;
@@ -84,7 +115,7 @@
     opacity: 0.7;
   }
 
-  .column-item.selected .icon {
+  .column-item.selected:not(.inactive) .icon {
     opacity: 1;
   }
 
@@ -102,7 +133,7 @@
     line-height: 1;
   }
 
-  .column-item.selected .chevron {
+  .column-item.selected:not(.inactive) .chevron {
     opacity: 0.8;
   }
 
@@ -113,7 +144,7 @@
     color: var(--color-accent);
   }
 
-  .column-item.selected .favorite {
+  .column-item.selected:not(.inactive) .favorite {
     color: white;
     opacity: 0.9;
   }

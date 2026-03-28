@@ -14,7 +14,9 @@
   import ProjectDialog from '$lib/components/dialogs/ProjectDialog.svelte';
   import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
+  import ImportFolderModal from '$lib/components/dialogs/ImportFolderModal.svelte';
   import HomeView from '$lib/components/HomeView.svelte';
+  import WorkspaceBar from '$lib/components/WorkspaceBar.svelte';
   import SearchModal from '$lib/components/SearchModal.svelte';
   import type { SearchResult } from '$lib/api/types';
 
@@ -106,23 +108,35 @@
   });
 
   // ── Search navigation ───────────────────────────────────────────────────────
+  function buildAncestorChain(categoryKey: string): string[] {
+    const chain: string[] = [];
+    let current: string | null = categoryKey;
+    while (current) {
+      chain.unshift(current);
+      current = configStore.categories[current]?.parent ?? null;
+    }
+    return chain;
+  }
+
   function handleSearchResult(result: SearchResult) {
     if (result.result_type === 'category') {
-      navigationStore.selectItem(0, result.key);
-    } else if (result.result_type === 'subcategory' && result.category) {
-      navigationStore.selectItem(0, result.category);
-      setTimeout(() => navigationStore.selectItem(1, result.subcategory!), 50);
-    } else if (result.result_type === 'project' && result.category) {
-      navigationStore.selectItem(0, result.category);
-      setTimeout(() => {
-        if (result.subcategory) {
-          navigationStore.selectItem(1, result.subcategory);
-          setTimeout(() => navigationStore.selectItem(2, result.key), 50);
-        } else {
-          navigationStore.selectItem(1, result.key);
-        }
-      }, 50);
+      const chain = buildAncestorChain(result.key);
+      // Select each ancestor in sequence, then the category itself
+      let delay = 0;
+      chain.forEach((key, i) => {
+        setTimeout(() => navigationStore.selectItem(i, key), delay);
+        delay += 50;
+      });
+    } else if (result.result_type === 'project' && result.parent) {
+      const chain = buildAncestorChain(result.parent);
+      let delay = 0;
+      chain.forEach((key, i) => {
+        setTimeout(() => navigationStore.selectItem(i, key), delay);
+        delay += 50;
+      });
+      setTimeout(() => navigationStore.selectItem(chain.length, result.key), delay);
     } else if (result.result_type === 'file') {
+      // Files are always at root column
       navigationStore.selectItem(0, result.key);
     }
   }
@@ -148,6 +162,7 @@
 </div>
 
 <!-- Global overlays -->
+<WorkspaceBar />
 <ContextMenu />
 {#if searchModalOpen}
   <SearchModal
@@ -163,6 +178,8 @@
   <FileDialog />
 {:else if dialogStore.current?.type === 'preferences'}
   <PreferencesDialog />
+{:else if dialogStore.current?.type === 'import-folder'}
+  <ImportFolderModal />
 {/if}
 
 <style>

@@ -5,6 +5,7 @@
   let {
     column,
     columnIndex,
+    active,
     onselect,
     onrightclick,
     onemptyrightclick,
@@ -12,6 +13,7 @@
   }: {
     column: Column;
     columnIndex: number;
+    active: boolean;
     onselect: (columnIndex: number, key: string) => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
     onemptyrightclick: (columnIndex: number, x: number, y: number) => void;
@@ -25,7 +27,7 @@
   }
 </script>
 
-<div class="column" role="region" oncontextmenu={handleContextMenu}>
+<div class="column" class:active role="region" oncontextmenu={handleContextMenu}>
   {#if column.title}
     <div class="column-header">{column.title}</div>
   {/if}
@@ -34,6 +36,7 @@
       <ColumnItem
         {item}
         selected={column.selectedKey === item.key}
+        {active}
         onselect={() => onselect(columnIndex, item.key)}
         onrightclick={onrightclick}
         {onopen}
@@ -53,6 +56,11 @@
     flex-shrink: 0;
     border-right: 1px solid var(--color-border);
     overflow: hidden;
+    transition: background 0.1s;
+  }
+
+  .column.active {
+    background: color-mix(in srgb, var(--color-accent) 4%, transparent);
   }
 
   .column-header {

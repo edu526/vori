@@ -1,11 +1,12 @@
 type DialogPayload =
   | { type: 'category'; mode: 'add'; parentKey?: string }
   | { type: 'category'; mode: 'edit'; key: string; parentKey?: string }
-  | { type: 'project'; mode: 'add'; categoryKey?: string; subcategoryKey?: string }
+  | { type: 'project'; mode: 'add'; parentKey?: string }
   | { type: 'project'; mode: 'edit'; key: string }
   | { type: 'file'; mode: 'add' }
   | { type: 'file'; mode: 'edit'; key: string }
-  | { type: 'preferences' };
+  | { type: 'preferences' }
+  | { type: 'import-folder'; defaultParent?: string };
 
 function createDialogStore() {
   let current = $state<DialogPayload | null>(null);

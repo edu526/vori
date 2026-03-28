@@ -2,67 +2,48 @@ import type { AppData } from '$lib/api/types';
 
 export const mockAppData: AppData = {
   categories: {
-    personal: {
-      description: 'Personal projects',
-      icon: '🏠',
-      subcategories: {
-        'personal/web': { description: 'Web experiments', icon: '🌐' },
-        'personal/tools': { description: 'CLI tools & scripts', icon: '🔧' },
-      },
-    },
-    work: {
-      description: 'Work projects',
-      icon: '💼',
-      subcategories: {
-        'work/frontend': { description: 'Frontend apps', icon: '🎨' },
-        'work/backend': { description: 'Backend services', icon: '⚙️' },
-      },
-    },
-    open_source: {
-      description: 'Open source contributions',
-      icon: '🌍',
-      subcategories: {},
-    },
+    personal: { parent: null },
+    'personal/web': { parent: 'personal' },
+    'personal/tools': { parent: 'personal' },
+    work: { parent: null },
+    'work/frontend': { parent: 'work' },
+    'work/backend': { parent: 'work' },
+    open_source: { parent: null },
   },
   projects: {
-    'vori': {
+    vori: {
       path: '/home/user/projects/vori',
-      category: 'personal',
-      subcategory: 'personal/tools',
+      parent: 'personal/tools',
     },
-    'portfolio': {
+    portfolio: {
       path: '/home/user/projects/portfolio',
-      category: 'personal',
-      subcategory: 'personal/web',
+      parent: 'personal/web',
     },
-    'dotfiles': {
+    dotfiles: {
       path: '/home/user/dotfiles',
-      category: 'personal',
+      parent: 'personal',
     },
-    'dashboard': {
+    dashboard: {
       path: '/home/user/work/dashboard',
-      category: 'work',
-      subcategory: 'work/frontend',
+      parent: 'work/frontend',
     },
     'api-gateway': {
       path: '/home/user/work/api-gateway',
-      category: 'work',
-      subcategory: 'work/backend',
+      parent: 'work/backend',
     },
     'auth-service': {
       path: '/home/user/work/auth-service',
-      category: 'work',
-      subcategory: 'work/backend',
+      parent: 'work/backend',
     },
     'svelte-utils': {
       path: '/home/user/oss/svelte-utils',
-      category: 'open_source',
+      parent: 'open_source',
     },
   },
   files: {
-    'zshrc': { path: '/home/user/.zshrc' },
-    'vimrc': { path: '/home/user/.vimrc' },
-    'hosts': { path: '/etc/hosts' },
+    zshrc: { path: '/home/user/.zshrc' },
+    vimrc: { path: '/home/user/.vimrc' },
+    hosts: { path: '/etc/hosts' },
   },
   preferences: {
     default_editor: 'vscode',

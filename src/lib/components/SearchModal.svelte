@@ -55,7 +55,7 @@
   }
 
   const TYPE_LABELS: Record<string, string> = {
-    category: 'Category', subcategory: 'Subcategory', project: 'Project', file: 'File',
+    category: 'Category', project: 'Project', file: 'File',
   };
 </script>
 
@@ -98,7 +98,7 @@
               onclick={() => select(result)}
             >
               <span class="result-icon">
-                <ItemIcon type={result.result_type as 'category' | 'subcategory' | 'project' | 'file'} size={15} />
+                <ItemIcon type={result.result_type as 'category' | 'project' | 'file'} size={15} />
               </span>
               <span class="result-name">{result.name}</span>
               {#if result.path}

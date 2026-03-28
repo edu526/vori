@@ -8,8 +8,7 @@ pub struct SearchResult {
     pub name: String,
     pub result_type: String,
     pub path: Option<String>,
-    pub category: Option<String>,
-    pub subcategory: Option<String>,
+    pub parent: Option<String>, // direct parent category key
 }
 
 #[tauri::command]
@@ -17,7 +16,7 @@ pub fn search(query: String, state: State<AppState>) -> Vec<SearchResult> {
     let q = query.to_lowercase();
     let mut results = Vec::new();
 
-    // Search categories & subcategories
+    // Search categories
     {
         let cats = state.categories.lock().unwrap();
         for (key, cat) in cats.iter() {
@@ -27,21 +26,8 @@ pub fn search(query: String, state: State<AppState>) -> Vec<SearchResult> {
                     name: key.clone(),
                     result_type: "category".to_string(),
                     path: None,
-                    category: None,
-                    subcategory: None,
+                    parent: cat.parent.clone(),
                 });
-            }
-            for (sub_key, _) in cat.subcategories.iter() {
-                if sub_key.to_lowercase().contains(&q) {
-                    results.push(SearchResult {
-                        key: format!("{key}/{sub_key}"),
-                        name: sub_key.clone(),
-                        result_type: "subcategory".to_string(),
-                        path: None,
-                        category: Some(key.clone()),
-                        subcategory: Some(sub_key.clone()),
-                    });
-                }
             }
         }
     }
@@ -56,8 +42,7 @@ pub fn search(query: String, state: State<AppState>) -> Vec<SearchResult> {
                     name: key.clone(),
                     result_type: "project".to_string(),
                     path: Some(proj.path.clone()),
-                    category: Some(proj.category.clone()),
-                    subcategory: proj.subcategory.clone(),
+                    parent: Some(proj.parent.clone()),
                 });
             }
         }
@@ -73,21 +58,19 @@ pub fn search(query: String, state: State<AppState>) -> Vec<SearchResult> {
                     name: key.clone(),
                     result_type: "file".to_string(),
                     path: Some(file.path.clone()),
-                    category: None,
-                    subcategory: None,
+                    parent: None,
                 });
             }
         }
     }
 
-    // Sort: categories → subcategories → projects → files, then alphabetically
+    // Sort: categories → projects → files, then alphabetically
     results.sort_by(|a, b| {
         let order = |r: &SearchResult| match r.result_type.as_str() {
             "category" => 0,
-            "subcategory" => 1,
-            "project" => 2,
-            "file" => 3,
-            _ => 4,
+            "project" => 1,
+            "file" => 2,
+            _ => 3,
         };
         order(a).cmp(&order(b)).then_with(|| a.name.cmp(&b.name))
     });

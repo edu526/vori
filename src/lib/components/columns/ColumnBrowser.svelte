@@ -43,8 +43,6 @@
       onEdit: () => {
         if (item.type === 'category') {
           dialogStore.open({ type: 'category', mode: 'edit', key: item.key });
-        } else if (item.type === 'subcategory' && item.categoryKey) {
-          dialogStore.open({ type: 'category', mode: 'edit', key: item.key, parentKey: item.categoryKey });
         } else if (item.type === 'project') {
           dialogStore.open({ type: 'project', mode: 'edit', key: item.key });
         } else if (item.type === 'file') {
@@ -52,16 +50,14 @@
         }
       },
       onRefresh: refresh,
-      onAddSubcategory: () => {
+      onAddChildCategory: () => {
         dialogStore.open({ type: 'category', mode: 'add', parentKey: item.key });
       },
       onAddProject: () => {
-        dialogStore.open({
-          type: 'project',
-          mode: 'add',
-          categoryKey: item.categoryKey ?? item.key,
-          subcategoryKey: item.type === 'subcategory' ? item.key : undefined,
-        });
+        dialogStore.open({ type: 'project', mode: 'add', parentKey: item.key });
+      },
+      onImportFolder: () => {
+        dialogStore.open({ type: 'import-folder', defaultParent: item.key });
       },
     });
     contextMenuStore.show(x, y, menuItems);
@@ -93,12 +89,14 @@
   function handleEmptyRightClick(columnIndex: number, x: number, y: number) {
     const col = navigationStore.columns[columnIndex];
 
-    // Root column → New Category / Project / File
+    // Root column → New Category / Project / File / Import
     if (columnIndex === 0) {
       contextMenuStore.show(x, y, [
-        { label: 'New Category', action: () => dialogStore.open({ type: 'category', mode: 'add' }) },
-        { label: 'New Project',  action: () => dialogStore.open({ type: 'project',  mode: 'add' }) },
-        { label: 'New File',     action: () => dialogStore.open({ type: 'file',     mode: 'add' }) },
+        { label: 'New Category',    action: () => dialogStore.open({ type: 'category',      mode: 'add' }) },
+        { label: 'New Project',     action: () => dialogStore.open({ type: 'project',        mode: 'add' }) },
+        { label: 'New File',        action: () => dialogStore.open({ type: 'file',           mode: 'add' }) },
+        { label: '', action: () => {}, divider: true },
+        { label: 'Import folder…',  action: () => dialogStore.open({ type: 'import-folder' }) },
       ]);
       return;
     }
@@ -111,12 +109,10 @@
       );
       if (prevItem?.type === 'category') {
         contextMenuStore.show(x, y, [
-          { label: 'Add Subcategory', action: () => dialogStore.open({ type: 'category', mode: 'add', parentKey: selectedInPrev }) },
-          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project', mode: 'add', categoryKey: selectedInPrev }) },
-        ]);
-      } else if (prevItem?.type === 'subcategory' && prevItem.categoryKey) {
-        contextMenuStore.show(x, y, [
-          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project', mode: 'add', categoryKey: prevItem.categoryKey, subcategoryKey: selectedInPrev }) },
+          { label: 'Add Subcategory',  action: () => dialogStore.open({ type: 'category',     mode: 'add', parentKey: selectedInPrev }) },
+          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project',       mode: 'add', parentKey: selectedInPrev }) },
+          { label: '', action: () => {}, divider: true },
+          { label: 'Import folder…',   action: () => dialogStore.open({ type: 'import-folder', defaultParent: selectedInPrev }) },
         ]);
       }
     }
@@ -139,7 +135,7 @@
     </div>
   {:else}
     {#each navigationStore.columns as column, i (i)}
-      <Column {column} columnIndex={i} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} onopen={handleOpen} />
+      <Column {column} columnIndex={i} active={i === navigationStore.activeColumnIndex} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} onopen={handleOpen} />
     {/each}
   {/if}
 </div>

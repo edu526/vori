@@ -22,6 +22,23 @@ pub fn open_project_in_editor(
 }
 
 #[tauri::command]
+pub fn open_workspace_in_editor(
+    paths: Vec<String>,
+    editor_name: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let binary = {
+        let prefs = state.preferences.lock().unwrap();
+        prefs
+            .editors_available
+            .get(&editor_name)
+            .cloned()
+            .unwrap_or_else(|| editor_name.clone())
+    };
+    editor::open_workspace_in_editor(&paths, &binary)
+}
+
+#[tauri::command]
 pub fn open_file_in_editor(path: String, text_editor: Option<String>) -> Result<(), String> {
     editor::open_file_in_text_editor(&path, text_editor.as_deref())
 }

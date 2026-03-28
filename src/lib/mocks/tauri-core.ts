@@ -21,33 +21,28 @@ const handlers: Record<string, (args: Args) => any> = {
   get_app_data: () => structuredClone(state),
 
   // ── Categories ────────────────────────────────────────────────────────────
-  add_category: ({ key, category }: Args) => {
-    state.categories[key] = category;
+  add_category: ({ key, parent }: Args) => {
+    state.categories[key] = { parent: parent ?? null };
   },
-  update_category: ({ key, category }: Args) => {
-    state.categories[key] = { ...state.categories[key], ...category };
+  update_category: ({ key, parent }: Args) => {
+    state.categories[key] = { parent: parent ?? null };
   },
   delete_category: ({ key }: Args) => {
-    delete state.categories[key];
+    // Collect all descendants
+    const toDelete = new Set<string>();
+    const queue = [key];
+    while (queue.length > 0) {
+      const k = queue.pop()!;
+      toDelete.add(k);
+      for (const [ck, cat] of Object.entries(state.categories)) {
+        if (cat.parent === k) queue.push(ck);
+      }
+    }
+    for (const k of toDelete) {
+      delete state.categories[k];
+    }
     for (const [pk, p] of Object.entries(state.projects)) {
-      if (p.category === key) delete state.projects[pk];
-    }
-  },
-
-  // ── Subcategories ─────────────────────────────────────────────────────────
-  add_subcategory: ({ categoryKey, key, subcategory }: Args) => {
-    if (state.categories[categoryKey]) {
-      state.categories[categoryKey].subcategories[key] = subcategory;
-    }
-  },
-  update_subcategory: ({ categoryKey, key, subcategory }: Args) => {
-    if (state.categories[categoryKey]?.subcategories[key]) {
-      state.categories[categoryKey].subcategories[key] = subcategory;
-    }
-  },
-  delete_subcategory: ({ categoryKey, key }: Args) => {
-    if (state.categories[categoryKey]) {
-      delete state.categories[categoryKey].subcategories[key];
+      if (toDelete.has(p.parent)) delete state.projects[pk];
     }
   },
 
@@ -61,6 +56,11 @@ const handlers: Record<string, (args: Args) => any> = {
   delete_project: ({ key }: Args) => {
     delete state.projects[key];
     state.favorites.projects = state.favorites.projects.filter((k) => k !== key);
+  },
+  bulk_import_projects: ({ entries }: Args) => {
+    for (const [key, project] of entries) {
+      state.projects[key] = project;
+    }
   },
 
   // ── Files ─────────────────────────────────────────────────────────────────
@@ -119,28 +119,33 @@ const handlers: Record<string, (args: Args) => any> = {
     { name: 'Kitty', exec: '/usr/bin/kitty' },
   ],
 
+  // ── Scanner ───────────────────────────────────────────────────────────────
+  scan_folder: ({ path }: Args) => {
+    return [
+      { name: 'my-app',      path: `${path}/my-app`,             stack: 'node',   relative_path: 'my-app' },
+      { name: 'backend',     path: `${path}/work/backend`,       stack: 'rust',   relative_path: 'work/backend' },
+      { name: 'ml-model',    path: `${path}/work/ml-model`,      stack: 'python', relative_path: 'work/ml-model' },
+      { name: 'mobile-app',  path: `${path}/work/apps/mobile`,   stack: 'flutter',relative_path: 'work/apps/mobile' },
+    ];
+  },
+
   // ── Search ────────────────────────────────────────────────────────────────
   search: ({ query }: Args): SearchResult[] => {
     const q = query.toLowerCase();
     const results: SearchResult[] = [];
 
     for (const [key, cat] of Object.entries(state.categories)) {
-      if (key.includes(q) || cat.description.toLowerCase().includes(q)) {
-        results.push({ key, name: key, result_type: 'category' });
-      }
-      for (const [sk, sub] of Object.entries(cat.subcategories)) {
-        if (sk.includes(q) || sub.description.toLowerCase().includes(q)) {
-          results.push({ key: sk, name: sk, result_type: 'subcategory', category: key });
-        }
+      if (key.toLowerCase().includes(q)) {
+        results.push({ key, name: key, result_type: 'category', parent: cat.parent ?? undefined });
       }
     }
     for (const [key, proj] of Object.entries(state.projects)) {
-      if (key.includes(q) || proj.path.toLowerCase().includes(q)) {
-        results.push({ key, name: key, result_type: 'project', path: proj.path, category: proj.category, subcategory: proj.subcategory });
+      if (key.toLowerCase().includes(q) || proj.path.toLowerCase().includes(q)) {
+        results.push({ key, name: key, result_type: 'project', path: proj.path, parent: proj.parent });
       }
     }
     for (const [key, file] of Object.entries(state.files)) {
-      if (key.includes(q) || file.path.toLowerCase().includes(q)) {
+      if (key.toLowerCase().includes(q) || file.path.toLowerCase().includes(q)) {
         results.push({ key, name: key, result_type: 'file', path: file.path });
       }
     }

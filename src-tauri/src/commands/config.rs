@@ -1,7 +1,8 @@
 use tauri::State;
 
+use crate::services::stack_detector;
 use crate::models::{
-    category::{CategoriesMap, Category, Subcategory},
+    category::{CategoriesMap, Category},
     favorites::Favorites,
     file_entry::{FileEntry, FilesMap},
     preferences::Preferences,
@@ -40,100 +41,87 @@ pub fn get_app_data(state: State<AppState>) -> Result<AppData, String> {
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
+/// Collect all descendant keys of a category (including itself), for cascading deletes.
+fn collect_descendants(cats: &CategoriesMap, root: &str) -> Vec<String> {
+    let mut result = vec![root.to_string()];
+    for (key, cat) in cats.iter() {
+        if cat.parent.as_deref() == Some(root) {
+            result.extend(collect_descendants(cats, key));
+        }
+    }
+    result
+}
+
 #[tauri::command]
-pub fn add_category(key: String, category: Category, state: State<AppState>) -> Result<(), String> {
+pub fn add_category(key: String, parent: Option<String>, state: State<AppState>) -> Result<(), String> {
     let mut cats = state.categories.lock().unwrap();
-    cats.insert(key, category);
+    cats.insert(key, Category { parent });
     config_manager::save("categories.json", &*cats)
 }
 
 #[tauri::command]
-pub fn update_category(
-    key: String,
-    category: Category,
-    state: State<AppState>,
-) -> Result<(), String> {
+pub fn update_category(key: String, parent: Option<String>, state: State<AppState>) -> Result<(), String> {
     let mut cats = state.categories.lock().unwrap();
     if !cats.contains_key(&key) {
         return Err(format!("Category '{key}' not found"));
     }
-    cats.insert(key, category);
+    // Prevent setting a descendant as parent (would create cycle)
+    if let Some(ref p) = parent {
+        let descendants = collect_descendants(&cats, &key);
+        if descendants.contains(p) {
+            return Err("Cannot set a descendant as parent (circular reference)".to_string());
+        }
+    }
+    cats.insert(key, Category { parent });
     config_manager::save("categories.json", &*cats)
 }
 
 #[tauri::command]
 pub fn delete_category(key: String, state: State<AppState>) -> Result<(), String> {
+    let to_delete = {
+        let cats = state.categories.lock().unwrap();
+        collect_descendants(&*cats, &key)
+    };
     {
         let mut cats = state.categories.lock().unwrap();
-        cats.remove(&key);
+        for k in &to_delete { cats.remove(k); }
         config_manager::save("categories.json", &*cats)?;
     }
-    // Remove associated projects (drop cats lock first to avoid deadlock)
     let mut projs = state.projects.lock().unwrap();
-    projs.retain(|_, p| p.category != key);
-    config_manager::save("projects.json", &*projs)
-}
-
-#[tauri::command]
-pub fn add_subcategory(
-    category_key: String,
-    key: String,
-    subcategory: Subcategory,
-    state: State<AppState>,
-) -> Result<(), String> {
-    let mut cats = state.categories.lock().unwrap();
-    let cat = cats
-        .get_mut(&category_key)
-        .ok_or_else(|| format!("Category '{category_key}' not found"))?;
-    cat.subcategories.insert(key, subcategory);
-    config_manager::save("categories.json", &*cats)
-}
-
-#[tauri::command]
-pub fn update_subcategory(
-    category_key: String,
-    key: String,
-    subcategory: Subcategory,
-    state: State<AppState>,
-) -> Result<(), String> {
-    let mut cats = state.categories.lock().unwrap();
-    let cat = cats
-        .get_mut(&category_key)
-        .ok_or_else(|| format!("Category '{category_key}' not found"))?;
-    cat.subcategories.insert(key, subcategory);
-    config_manager::save("categories.json", &*cats)
-}
-
-#[tauri::command]
-pub fn delete_subcategory(
-    category_key: String,
-    key: String,
-    state: State<AppState>,
-) -> Result<(), String> {
-    {
-        let mut cats = state.categories.lock().unwrap();
-        let cat = cats
-            .get_mut(&category_key)
-            .ok_or_else(|| format!("Category '{category_key}' not found"))?;
-        cat.subcategories.remove(&key);
-        config_manager::save("categories.json", &*cats)?;
-    }
-    // Move orphaned projects: their subcategory becomes None
-    let mut projs = state.projects.lock().unwrap();
-    for p in projs.values_mut() {
-        if p.category == category_key && p.subcategory.as_deref() == Some(&key) {
-            p.subcategory = None;
-        }
-    }
+    projs.retain(|_, p| !to_delete.contains(&p.parent));
     config_manager::save("projects.json", &*projs)
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
 #[tauri::command]
-pub fn add_project(key: String, project: Project, state: State<AppState>) -> Result<(), String> {
+pub fn add_project(key: String, mut project: Project, state: State<AppState>) -> Result<(), String> {
+    if project.stack.is_none() {
+        let stack = stack_detector::detect_stack(std::path::Path::new(&project.path));
+        if stack != "unknown" {
+            project.stack = Some(stack);
+        }
+    }
     let mut projs = state.projects.lock().unwrap();
     projs.insert(key, project);
+    config_manager::save("projects.json", &*projs)
+}
+
+#[tauri::command]
+pub fn bulk_import_projects(
+    entries: Vec<(String, Project)>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let mut projs = state.projects.lock().unwrap();
+    for (key, mut project) in entries {
+        if project.stack.is_none() {
+            let stack = stack_detector::detect_stack(std::path::Path::new(&project.path));
+            if stack != "unknown" {
+                project.stack = Some(stack);
+            }
+        }
+        projs.insert(key, project);
+    }
     config_manager::save("projects.json", &*projs)
 }
 

@@ -2,14 +2,13 @@ import { invoke } from '@tauri-apps/api/core';
 
 import type {
   AppData,
-  Category,
   Favorites,
   FileEntry,
   Preferences,
   Project,
   RecentItem,
+  ScannedProject,
   SearchResult,
-  Subcategory,
 } from './types';
 
 // ── Data loading ──────────────────────────────────────────────────────────────
@@ -18,22 +17,13 @@ export const getAppData = () => invoke<AppData>('get_app_data');
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
-export const addCategory = (key: string, category: Category) =>
-  invoke<void>('add_category', { key, category });
+export const addCategory = (key: string, parent: string | null) =>
+  invoke<void>('add_category', { key, parent });
 
-export const updateCategory = (key: string, category: Category) =>
-  invoke<void>('update_category', { key, category });
+export const updateCategory = (key: string, parent: string | null) =>
+  invoke<void>('update_category', { key, parent });
 
 export const deleteCategory = (key: string) => invoke<void>('delete_category', { key });
-
-export const addSubcategory = (categoryKey: string, key: string, subcategory: Subcategory) =>
-  invoke<void>('add_subcategory', { categoryKey, key, subcategory });
-
-export const updateSubcategory = (categoryKey: string, key: string, subcategory: Subcategory) =>
-  invoke<void>('update_subcategory', { categoryKey, key, subcategory });
-
-export const deleteSubcategory = (categoryKey: string, key: string) =>
-  invoke<void>('delete_subcategory', { categoryKey, key });
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
@@ -44,6 +34,9 @@ export const updateProject = (key: string, project: Project) =>
   invoke<void>('update_project', { key, project });
 
 export const deleteProject = (key: string) => invoke<void>('delete_project', { key });
+
+export const bulkImportProjects = (entries: [string, Project][]) =>
+  invoke<void>('bulk_import_projects', { entries });
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 
@@ -80,6 +73,9 @@ export const addRecent = (item: RecentItem) => invoke<void>('add_recent', { item
 export const openProjectInEditor = (path: string, editorName: string) =>
   invoke<void>('open_project_in_editor', { path, editorName });
 
+export const openWorkspaceInEditor = (paths: string[], editorName: string) =>
+  invoke<void>('open_workspace_in_editor', { paths, editorName });
+
 export const openFileInEditor = (path: string, textEditor?: string) =>
   invoke<void>('open_file_in_editor', { path, textEditor });
 
@@ -94,6 +90,11 @@ export const detectEditors = () =>
 
 export const getInstalledApps = () =>
   invoke<{ name: string; exec: string }[]>('get_installed_apps');
+
+// ── Scanner ───────────────────────────────────────────────────────────────────
+
+export const scanFolder = (path: string, maxDepth?: number) =>
+  invoke<ScannedProject[]>('scan_folder', { path, maxDepth });
 
 // ── Search ────────────────────────────────────────────────────────────────────
 
