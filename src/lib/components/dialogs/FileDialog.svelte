@@ -99,7 +99,7 @@
 <style>
   .fields { display: flex; flex-direction: column; gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
-  .error-msg { font-size: 0.8rem; color: #e53e3e; margin: 0; }
+  .error-msg { font-size: var(--text-sm); color: #e53e3e; margin: 0; }
 
   .path-row { display: flex; gap: 6px; align-items: center; }
   .path-row :global(input) { flex: 1; }

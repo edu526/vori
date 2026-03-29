@@ -8,5 +8,7 @@ export function getCurrentWindow() {
     toggleMaximize: () => console.info('[mock] window.toggleMaximize()'),
     isMaximized: async () => false,
     startDragging: () => console.info('[mock] window.startDragging()'),
+    setSize: async (size: { width: number; height: number }) =>
+      console.info(`[mock] window.setSize(${size.width}x${size.height})`),
   };
 }

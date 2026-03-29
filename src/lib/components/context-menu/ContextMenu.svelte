@@ -98,7 +98,7 @@
     border: none;
     background: none;
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     cursor: pointer;
     border-radius: 5px;
   }

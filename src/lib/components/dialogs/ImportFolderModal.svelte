@@ -463,7 +463,7 @@
 
   .path-display {
     flex: 1;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     padding: 6px 10px;
     border: 1px solid var(--color-border);
     border-radius: 6px;
@@ -482,7 +482,7 @@
   }
 
   .field-label {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     font-weight: 500;
     color: var(--color-text-secondary);
   }
@@ -498,7 +498,7 @@
 
   .mode-btn {
     padding: 4px 12px;
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
     font-family: inherit;
     border: none;
     background: transparent;
@@ -517,7 +517,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     font-family: inherit;
     padding: 5px 10px;
     outline: none;
@@ -527,7 +527,7 @@
   .native-input::placeholder { color: var(--color-text-secondary); }
 
   .nested-hint {
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     font-style: italic;
   }
@@ -536,7 +536,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text-secondary);
     padding: 8px 0;
   }
@@ -553,7 +553,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     cursor: pointer;
     user-select: none;
@@ -611,7 +611,7 @@
   }
 
   .node-name {
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text);
     flex-shrink: 0;
   }
@@ -619,7 +619,7 @@
   .folder-name { font-weight: 600; }
 
   .node-count {
-    font-size: 0.72rem;
+    font-size: var(--text-xs);
     color: var(--color-text-secondary);
     background: var(--color-hover);
     border-radius: 10px;
@@ -650,7 +650,7 @@
   }
 
   .flat-path {
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -660,7 +660,7 @@
   }
 
   .error-msg {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     color: #e53e3e;
     margin: 0;
   }

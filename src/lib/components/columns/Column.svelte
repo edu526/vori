@@ -6,6 +6,7 @@
     column,
     columnIndex,
     active,
+    width = 220,
     onselect,
     onrightclick,
     onemptyrightclick,
@@ -14,6 +15,7 @@
     column: Column;
     columnIndex: number;
     active: boolean;
+    width?: number;
     onselect: (columnIndex: number, key: string) => void;
     onrightclick: (item: NavItem, x: number, y: number) => void;
     onemptyrightclick: (columnIndex: number, x: number, y: number) => void;
@@ -27,7 +29,7 @@
   }
 </script>
 
-<div class="column" class:active role="region" oncontextmenu={handleContextMenu}>
+<div class="column" class:active role="region" oncontextmenu={handleContextMenu} style="width: {width}px">
   {#if column.title}
     <div class="column-header">{column.title}</div>
   {/if}
@@ -52,8 +54,8 @@
   .column {
     display: flex;
     flex-direction: column;
-    width: 220px;
     flex-shrink: 0;
+    min-height: 0;
     border-right: 1px solid var(--color-border);
     overflow: hidden;
     transition: background 0.1s;
@@ -65,7 +67,7 @@
 
   .column-header {
     padding: 6px 10px;
-    font-size: 0.72rem;
+    font-size: var(--text-xs);
     font-weight: 600;
     color: var(--color-text-secondary);
     border-bottom: 1px solid var(--color-border);
@@ -83,7 +85,7 @@
 
   .empty-state {
     padding: 16px 10px;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     text-align: center;
     font-style: italic;

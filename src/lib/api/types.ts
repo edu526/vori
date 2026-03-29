@@ -47,6 +47,7 @@ export interface Preferences {
   show_tray: boolean;
   keep_background: boolean;
   hotkey: string;
+  ui_scale: number;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────

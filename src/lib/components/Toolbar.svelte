@@ -127,7 +127,7 @@
   }
 
   .app-name {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -156,7 +156,7 @@
     border: none;
     background: transparent;
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: var(--text-sm);
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
@@ -218,7 +218,7 @@
     border-radius: 5px;
     cursor: pointer;
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: var(--text-sm);
     font-family: inherit;
     text-align: left;
     transition: border-color 0.1s;
@@ -241,7 +241,7 @@
   }
 
   .search-trigger kbd {
-    font-size: 10px;
+    font-size: var(--text-2xs);
     padding: 1px 5px;
     border: 1px solid var(--color-border);
     border-radius: 3px;

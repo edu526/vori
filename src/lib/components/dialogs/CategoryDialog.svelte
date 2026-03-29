@@ -109,7 +109,7 @@
 <style>
   .fields { display: flex; flex-direction: column; gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
-  .error-msg { font-size: 0.8rem; color: #e53e3e; margin: 0; }
+  .error-msg { font-size: var(--text-sm); color: #e53e3e; margin: 0; }
 
   .native-select {
     width: 100%;
@@ -117,7 +117,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     font-family: inherit;
     padding: 7px 10px;
     outline: none;

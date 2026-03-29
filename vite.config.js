@@ -18,26 +18,51 @@ function mock(file) {
 const browserAlias = {
   "@tauri-apps/api/core": mock("tauri-core.ts"),
   "@tauri-apps/api/window": mock("tauri-window.ts"),
+  "@tauri-apps/api/webviewWindow": mock("tauri-webviewwindow.ts"),
+  "@tauri-apps/api/dpi": mock("tauri-dpi.ts"),
   "@tauri-apps/plugin-dialog": mock("tauri-dialog.ts"),
 };
+
+/**
+ * Wrap @tailwindcss/vite plugins to exclude Svelte virtual style modules
+ * from Tailwind's CSS transform pipeline.
+ *
+ * WHY: Tailwind tries to parse every file matching /&lang\.css/ as CSS.
+ * Svelte virtual style modules (?svelte&type=style&lang.css) sometimes have
+ * JS code bleeding in, causing "Invalid declaration" errors. Tailwind doesn't
+ * need to transform these modules — it detects utility classes by scanning
+ * the raw .svelte files directly via its Oxide scanner. Excluding the virtual
+ * modules from the CSS transform is the clean fix.
+ */
+function tailwindExcludeSvelte() {
+  const plugins = tailwindcss();
+  const arr = Array.isArray(plugins) ? plugins : [plugins];
+  return arr.map((p) => {
+    if (!p?.transform?.filter?.id) return p;
+    return {
+      ...p,
+      transform: {
+        ...p.transform,
+        filter: {
+          ...p.transform.filter,
+          id: {
+            ...p.transform.filter.id,
+            exclude: [
+              ...(p.transform.filter.id.exclude ?? []),
+              /[?&]svelte/, // exclude all Svelte virtual modules
+            ],
+          },
+        },
+      },
+    };
+  });
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     sveltekit(),
-    // Strip JS import statements that bleed into Svelte virtual style modules.
-    // @tailwindcss/vite:generate:serve tries to parse them as CSS and logs
-    // "Invalid declaration" warnings for every import line it finds.
-    {
-      name: 'svelte-style-sanitize',
-      enforce: 'pre',
-      transform(code, id) {
-        if (id.includes('?svelte&type=style')) {
-          return { code: code.replace(/^[ \t]*import\s[^\n]+$/gm, ''), map: null };
-        }
-      },
-    },
-    tailwindcss(),
+    ...tailwindExcludeSvelte(),
   ],
 
   resolve: {

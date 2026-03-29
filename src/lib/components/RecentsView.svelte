@@ -87,7 +87,7 @@
   }
 
   .title {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -134,7 +134,7 @@
   }
 
   .item-name {
-    font-size: 13px;
+    font-size: var(--text-base);
     font-weight: 500;
     color: var(--color-text);
     white-space: nowrap;
@@ -143,7 +143,7 @@
   }
 
   .item-path {
-    font-size: 11px;
+    font-size: var(--text-xs);
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -163,7 +163,7 @@
   }
 
   .item-actions button {
-    font-size: 11px;
+    font-size: var(--text-xs);
     padding: 3px 8px;
     border-radius: 4px;
     border: 1px solid var(--color-border);

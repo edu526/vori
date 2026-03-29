@@ -67,6 +67,12 @@ pub struct Preferences {
     pub keep_background: bool,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
+    #[serde(default = "default_ui_scale")]
+    pub ui_scale: f32,
+}
+
+fn default_ui_scale() -> f32 {
+    1.0
 }
 
 impl Default for Preferences {
@@ -84,6 +90,7 @@ impl Default for Preferences {
             show_tray: true,
             keep_background: true,
             hotkey: default_hotkey(),
+            ui_scale: 1.0,
         }
     }
 }

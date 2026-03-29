@@ -4,6 +4,16 @@
   --font-family: 'Figtree Variable', system-ui, sans-serif;
   --font-size-base: 14px;
 
+  /* Type scale — html root is 14px so 1rem = 14px throughout */
+  --text-2xs:  0.714rem;  /* ~10px  tiny counts, decorative */
+  --text-xs:   0.786rem;  /* ~11px  column headers, badges, meta */
+  --text-sm:   0.857rem;  /* ~12px  secondary text, hints */
+  --text-base: 1rem;      /*  14px  primary content text */
+  --text-md:   1.071rem;  /* ~15px  slightly prominent */
+  --text-lg:   1.143rem;  /* ~16px  titles, modal headings */
+  --text-xl:   1.286rem;  /* ~18px  section titles */
+  --text-2xl:  2.286rem;  /* ~32px  display / large icons */
+
   /* Vori-specific tokens (no cubiertos por shadcn) */
   --color-bg: #f0f2f5;
   --color-surface: #ffffff;

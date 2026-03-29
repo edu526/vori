@@ -162,7 +162,7 @@
     justify-content: space-between;
     padding: 14px 16px 10px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: var(--text-md);
     color: var(--color-text);
     border-bottom: 1px solid var(--color-border);
   }
@@ -172,7 +172,7 @@
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     padding: 2px 6px;
     border-radius: 4px;
   }
@@ -198,7 +198,7 @@
     border-radius: 5px;
     background: transparent;
     color: var(--color-text-secondary);
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -217,7 +217,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     outline: none;
   }
 
@@ -250,13 +250,13 @@
   }
 
   .app-name {
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text);
     font-weight: 500;
   }
 
   .app-exec {
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -266,7 +266,7 @@
   .state-msg {
     text-align: center;
     color: var(--color-text-secondary);
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     padding: 24px;
   }
 
@@ -278,7 +278,7 @@
   }
 
   .browse-path {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     color: var(--color-text-secondary);
     word-break: break-all;
     background: var(--color-bg);
@@ -294,7 +294,7 @@
   }
 
   .field label {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     font-weight: 500;
   }
@@ -305,7 +305,7 @@
     border-radius: 6px;
     background: var(--color-bg);
     color: var(--color-text);
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     outline: none;
   }
 
@@ -316,7 +316,7 @@
   .btn {
     padding: 7px 16px;
     border-radius: 6px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     font-weight: 500;
     cursor: pointer;
     border: none;

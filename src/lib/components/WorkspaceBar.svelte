@@ -106,7 +106,7 @@
     background: color-mix(in srgb, var(--color-accent) 15%, transparent);
     color: var(--color-accent);
     border-radius: 99px;
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     font-weight: 500;
     white-space: nowrap;
     max-width: 150px;
@@ -121,7 +121,7 @@
     color: inherit;
     cursor: pointer;
     padding: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-md);
     opacity: 0.7;
     line-height: 1;
   }
@@ -139,7 +139,7 @@
 
   .editor-select {
     padding: 4px 6px;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     border: 1px solid var(--color-border);
     border-radius: 5px;
     background: var(--color-surface);
@@ -156,7 +156,7 @@
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
@@ -174,7 +174,7 @@
     height: 18px;
     background: rgba(255, 255, 255, 0.25);
     border-radius: 99px;
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
     font-weight: 600;
   }
 
@@ -184,7 +184,7 @@
     border: 1px solid var(--color-border);
     border-radius: 5px;
     color: var(--color-text-secondary);
-    font-size: 1rem;
+    font-size: var(--text-lg);
     cursor: pointer;
     line-height: 1;
   }

@@ -14,6 +14,10 @@
     padding: 0;
   }
 
+  html {
+    font-size: 14px; /* 1rem = 14px — single knob to scale the whole UI */
+  }
+
   html,
   body {
     height: 100%;

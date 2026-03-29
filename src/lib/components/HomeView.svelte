@@ -171,20 +171,20 @@
   }
 
   .empty-icon {
-    font-size: 2rem;
+    font-size: var(--text-2xl);
     opacity: 0.3;
     margin-bottom: 4px;
   }
 
   .empty-title {
-    font-size: 0.9rem;
+    font-size: var(--text-md);
     font-weight: 500;
     margin: 0;
     color: var(--color-text-secondary);
   }
 
   .empty-hint {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     margin: 0;
     opacity: 0.7;
   }
@@ -197,7 +197,7 @@
   }
 
   .section-title {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -255,7 +255,7 @@
   }
 
   .item-name {
-    font-size: 13px;
+    font-size: var(--text-base);
     font-weight: 500;
     color: var(--color-text);
     white-space: nowrap;
@@ -264,7 +264,7 @@
   }
 
   .item-path {
-    font-size: 11px;
+    font-size: var(--text-xs);
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -284,7 +284,7 @@
   }
 
   .item-actions button {
-    font-size: 11px;
+    font-size: var(--text-xs);
     padding: 3px 8px;
     border-radius: 4px;
     border: 1px solid var(--color-border);

@@ -9,14 +9,31 @@
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import Column from './Column.svelte';
 
-  let browserEl = $state<HTMLDivElement | null>(null);
+  const MIN_COL = 180; // minimum column width before sliding kicks in
+  const MAX_COL = 280; // maximum column width — avoids stretched columns on wide windows
 
-  $effect(() => {
-    // Reading columns.length establishes the reactive dependency
-    if (navigationStore.columns.length > 0 && browserEl) {
-      browserEl.scrollTo({ left: browserEl.scrollWidth, behavior: 'smooth' });
-    }
-  });
+  let browserWidth = $state(0);
+
+  const columnCount = $derived(navigationStore.columns.length);
+  const isSingleCol = $derived(columnCount <= 1);
+
+  // How many columns fit at MIN_COL width
+  const maxVisible = $derived(Math.max(1, Math.floor((browserWidth || 600) / MIN_COL)));
+
+  // Each column gets an equal share, clamped between MIN_COL and MAX_COL.
+  // Fixed 220px when paired with HomeView (single-column root state).
+  const colWidth = $derived(
+    isSingleCol
+      ? 220
+      : Math.min(MAX_COL, (browserWidth || 600) / Math.min(columnCount, maxVisible))
+  );
+
+  // Slide offset: keeps the rightmost maxVisible columns in view
+  const trackOffset = $derived(
+    columnCount > maxVisible ? (columnCount - maxVisible) * colWidth : 0
+  );
+
+  const hasHidden = $derived(trackOffset > 0);
 
   let isEmpty = $derived(
     Object.keys(configStore.categories).length === 0 &&
@@ -119,7 +136,12 @@
   }
 </script>
 
-<div class="column-browser" bind:this={browserEl}>
+<div
+  class="column-browser"
+  class:multi={!isSingleCol}
+  class:has-hidden={hasHidden}
+  bind:clientWidth={browserWidth}
+>
   {#if isEmpty}
     <div class="onboarding">
       <svg class="onboarding-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -134,19 +156,63 @@
       </button>
     </div>
   {:else}
-    {#each navigationStore.columns as column, i (i)}
-      <Column {column} columnIndex={i} active={i === navigationStore.activeColumnIndex} onselect={handleSelect} onrightclick={handleRightClick} onemptyrightclick={handleEmptyRightClick} onopen={handleOpen} />
-    {/each}
+    <div class="column-track" style="transform: translateX(-{trackOffset}px)">
+      {#each navigationStore.columns as column, i (i)}
+        <Column
+          {column}
+          columnIndex={i}
+          active={i === navigationStore.activeColumnIndex}
+          width={colWidth}
+          onselect={handleSelect}
+          onrightclick={handleRightClick}
+          onemptyrightclick={handleEmptyRightClick}
+          onopen={handleOpen}
+        />
+      {/each}
+    </div>
   {/if}
 </div>
 
 <style>
   .column-browser {
+    position: relative;
     display: flex;
     flex: 0 0 auto;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: hidden;
     background: var(--color-surface);
+  }
+
+  /* Fills remaining space when navigating (HomeView is gone) */
+  .column-browser.multi {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Inner track — slides left via transform, never scrolls */
+  .column-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  /* Left-edge fade when columns are hidden behind the left boundary */
+  .column-browser::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 18px;
+    background: linear-gradient(to right, var(--color-surface), transparent);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .column-browser.has-hidden::before {
+    opacity: 1;
   }
 
   .onboarding {
@@ -168,14 +234,14 @@
   }
 
   .onboarding-title {
-    font-size: 1rem;
+    font-size: var(--text-lg);
     font-weight: 600;
     color: var(--color-text);
     margin: 0;
   }
 
   .onboarding-sub {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     margin: 0;
     text-align: center;
   }
@@ -187,7 +253,7 @@
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     font-weight: 500;
     cursor: pointer;
   }

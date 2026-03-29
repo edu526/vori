@@ -5,7 +5,8 @@
   import { themeStore } from '$lib/stores/theme.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
-  import { openProjectInEditor, openFileInEditor, addRecent } from '$lib/api/commands';
+  import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences } from '$lib/api/commands';
+  import { LogicalSize } from '@tauri-apps/api/dpi';
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
 
@@ -25,6 +26,7 @@
   onMount(async () => {
     await configStore.load();
     themeStore.apply(configStore.preferences.theme ?? 'system');
+    themeStore.applyScale(configStore.preferences.ui_scale ?? 1.0);
     if (!configStore.error) {
       navigationStore.init(
         configStore.categories,
@@ -43,6 +45,17 @@
     return () => window.removeEventListener('contextmenu', block);
   });
 
+  // ── Scale persistence helper ────────────────────────────────────────────────
+  async function persistScale(scale: number) {
+    const updated = { ...configStore.preferences, ui_scale: scale };
+    configStore.preferences = updated;
+    await updatePreferences(updated);
+  }
+
+  // Default window dimensions (matches tauri.conf.json)
+  const DEFAULT_W = 960;
+  const DEFAULT_H = 640;
+
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   $effect(() => {
     function handleKeydown(e: KeyboardEvent) {
@@ -54,12 +67,28 @@
       }
       if (dialogStore.current) return;
       if (contextMenuStore.visible) return;
-      // Don't intercept when typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         searchModalOpen = true;
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        persistScale(themeStore.step(0.1, configStore.preferences.ui_scale ?? 1.0));
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+        e.preventDefault();
+        persistScale(themeStore.step(-0.1, configStore.preferences.ui_scale ?? 1.0));
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        themeStore.applyScale(1.0);
+        persistScale(1.0);
+        getCurrentWindow().setSize(new LogicalSize(DEFAULT_W, DEFAULT_H));
         return;
       }
 
@@ -202,7 +231,7 @@
     justify-content: center;
     height: 100vh;
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--text-md);
   }
 
   .state-overlay.error {

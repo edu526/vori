@@ -65,6 +65,7 @@ export const mockAppData: AppData = {
     show_tray: true,
     keep_background: true,
     hotkey: 'Super+Shift+KeyV',
+    ui_scale: 1.0,
   },
   favorites: {
     projects: ['vori', 'dashboard'],

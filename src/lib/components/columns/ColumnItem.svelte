@@ -80,7 +80,7 @@
     text-align: left;
     cursor: pointer;
     border-radius: 5px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text);
     transition: background 0.08s;
   }
@@ -129,7 +129,7 @@
   .chevron {
     flex-shrink: 0;
     opacity: 0.4;
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
     line-height: 1;
   }
 
@@ -139,7 +139,7 @@
 
   .favorite {
     flex-shrink: 0;
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     opacity: 0.6;
     color: var(--color-accent);
   }

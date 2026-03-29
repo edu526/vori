@@ -159,7 +159,7 @@
     flex: 1;
     border: none;
     background: transparent;
-    font-size: 16px;
+    font-size: var(--text-lg);
     color: var(--color-text);
     outline: none;
     min-width: 0;
@@ -170,7 +170,7 @@
   }
 
   kbd {
-    font-size: 11px;
+    font-size: var(--text-xs);
     padding: 2px 6px;
     border: 1px solid var(--color-border);
     border-radius: 4px;
@@ -224,13 +224,13 @@
   }
 
   .result-name {
-    font-size: 14px;
+    font-size: var(--text-base);
     font-weight: 500;
     flex-shrink: 0;
   }
 
   .result-path {
-    font-size: 12px;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     flex: 1;
     overflow: hidden;
@@ -244,7 +244,7 @@
   }
 
   .result-type {
-    font-size: 11px;
+    font-size: var(--text-xs);
     padding: 2px 7px;
     border-radius: 4px;
     background: var(--color-hover);
@@ -259,7 +259,7 @@
 
   .empty {
     padding: 20px 16px;
-    font-size: 13px;
+    font-size: var(--text-base);
     color: var(--color-text-secondary);
     text-align: center;
     margin: 0;

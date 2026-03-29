@@ -29,11 +29,13 @@
     show_tray: true,
     keep_background: true,
     hotkey: 'Super+Shift+KeyV',
+    ui_scale: 1.0,
   });
 
   let recordingHotkey = $state(false);
   let hotkeyError = $state('');
   let osType = $state('');
+  let originalScale = $state(1.0);
   
   $effect(() => {
     osType = type();
@@ -133,9 +135,22 @@
   $effect(() => {
     if (!isOpen) return;
     prefs = JSON.parse(JSON.stringify(configStore.preferences));
+    originalScale = configStore.preferences.ui_scale ?? 1.0;
     detectError = '';
     activeTab = 'appearance';
   });
+
+  // Live preview while dialog is open
+  $effect(() => {
+    if (!isOpen) return;
+    void prefs.ui_scale; // track reactively
+    themeStore.applyScale(prefs.ui_scale ?? 1.0);
+  });
+
+  function adjustScale(delta: number) {
+    const current = Math.round((prefs.ui_scale ?? 1.0) * 10) / 10;
+    prefs.ui_scale = Math.max(0.8, Math.min(1.5, Math.round((current + delta) * 10) / 10));
+  }
 
   $effect(() => {
     if (showAddEditor) return dialogStore.pushEscape(() => (showAddEditor = false));
@@ -175,6 +190,7 @@
       await updatePreferences(prefs);
       configStore.preferences = prefs;
       themeStore.apply(prefs.theme);
+      originalScale = prefs.ui_scale ?? 1.0; // mark as saved so close doesn't revert
       dialogStore.close();
     } catch (e) {
       detectError = String(e);
@@ -196,7 +212,7 @@
 </script>
 
 
-<Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
+<Dialog open={isOpen} onOpenChange={(o) => { if (!o) { themeStore.applyScale(originalScale); dialogStore.close(); } }}>
   <DialogContent 
     class="w-[440px] max-w-[90vw] h-[460px] flex flex-col gap-0 p-0 overflow-hidden" 
     showCloseButton={false}
@@ -256,6 +272,33 @@
               </div>
               <span>System</span>
             </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <Label>Zoom</Label>
+          <div class="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onclick={() => adjustScale(-0.1)}
+              disabled={(prefs.ui_scale ?? 1.0) <= 0.8}
+              aria-label="Decrease scale"
+            >−</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              class="min-w-[58px] font-mono"
+              onclick={() => (prefs.ui_scale = 1.0)}
+              title="Reset to 100%"
+            >{Math.round((prefs.ui_scale ?? 1.0) * 100)}%</Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onclick={() => adjustScale(0.1)}
+              disabled={(prefs.ui_scale ?? 1.0) >= 1.5}
+              aria-label="Increase scale"
+            >+</Button>
           </div>
         </div>
       </TabsContent>
@@ -483,7 +526,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text);
     cursor: pointer;
     flex: 1;
@@ -493,7 +536,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.875rem;
+    font-size: var(--text-base);
     color: var(--color-text);
     cursor: pointer;
   }
@@ -503,7 +546,7 @@
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     padding: 2px 5px;
     border-radius: 4px;
     opacity: 0;
@@ -518,8 +561,8 @@
 
   .detect-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .hint { font-size: 0.8rem; color: var(--color-text-secondary); margin: 0; }
-  .error-msg { color: #e53e3e; font-size: 0.8rem; }
+  .hint { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; }
+  .error-msg { color: #e53e3e; font-size: var(--text-sm); }
 
   .spinner {
     width: 12px; height: 12px;
@@ -554,7 +597,7 @@
 
   .hotkey-display {
     font-family: ui-monospace, monospace;
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     background: var(--color-hover);
     border: 1px solid var(--color-border);
     border-radius: 4px;
@@ -562,11 +605,11 @@
     color: var(--color-text);
   }
   .hotkey-hint {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     color: var(--color-text-secondary);
   }
   .hotkey-recording-label {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     color: var(--color-accent);
     font-style: italic;
   }
@@ -583,7 +626,7 @@
     padding: 8px;
     border: 2px solid var(--color-border);
     border-radius: 8px;
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
     cursor: pointer;
     background: var(--color-bg);
@@ -611,4 +654,5 @@
   .tp-half--dark  { background: #191b2f; }
   .tp-half--light .tp-sidebar { background: #e4e7f0; width: 40%; }
   .tp-half--dark  .tp-sidebar { background: #252845; width: 40%; }
+
 </style>
