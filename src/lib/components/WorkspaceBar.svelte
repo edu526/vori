@@ -145,6 +145,23 @@
     background: var(--color-surface);
     color: var(--color-text);
     cursor: pointer;
+    color-scheme: light;
+  }
+
+  .editor-select option {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  :global([data-theme='dark']) .editor-select,
+  :global(.dark) .editor-select {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .editor-select {
+      color-scheme: dark;
+    }
   }
 
   .btn-open {
