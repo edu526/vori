@@ -6,8 +6,7 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
   import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences } from '$lib/api/commands';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { LogicalSize } from '@tauri-apps/api/dpi';
+
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
 
@@ -59,7 +58,7 @@
 
   // ── Keyboard navigation ─────────────────────────────────────────────────────
   $effect(() => {
-    function handleKeydown(e: KeyboardEvent) {
+    async function handleKeydown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         if (dialogStore.handleEscape()) return;
         if (contextMenuStore.visible) { contextMenuStore.hide(); return; }
@@ -89,6 +88,8 @@
         e.preventDefault();
         themeStore.applyScale(1.0);
         persistScale(1.0);
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const { LogicalSize } = await import('@tauri-apps/api/dpi');
         getCurrentWindow().setSize(new LogicalSize(DEFAULT_W, DEFAULT_H));
         return;
       }
