@@ -7,7 +7,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/bump-version.mjs ${nextRelease.version} && cargo update --manifest-path src-tauri/Cargo.toml vori vori_lib"
+        "prepareCmd": "node scripts/bump-version.mjs ${nextRelease.version} && cargo update --manifest-path src-tauri/Cargo.toml vori"
       }
     ],
     [
