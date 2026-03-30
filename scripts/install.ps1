@@ -4,7 +4,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 
-$Repo = "your-username/vori"
+$Repo = "edu526/vori"
 $Api  = "https://api.github.com/repos/$Repo/releases/latest"
 
 function Write-Info  { param($msg) Write-Host "==> $msg" -ForegroundColor Blue }

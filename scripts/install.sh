@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-REPO="your-username/vori"
+REPO="edu526/vori"
 API="https://api.github.com/repos/$REPO/releases/latest"
 
 # ── helpers ──────────────────────────────────────────────────────────────────

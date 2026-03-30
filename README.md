@@ -13,13 +13,13 @@ Cross-platform: Linux, macOS, Windows.
 **Linux / macOS**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/your-username/vori/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/edu526/vori/main/scripts/install.sh | sh
 ```
 
 **Windows** (PowerShell, run as Administrator)
 
 ```powershell
-irm https://raw.githubusercontent.com/your-username/vori/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/edu526/vori/main/scripts/install.ps1 | iex
 ```
 
 The script auto-detects your OS and architecture, downloads the right package from the [latest release](../../releases/latest), and installs it.
@@ -90,7 +90,7 @@ sudo apt-get install -y \
 ### Steps
 
 ```bash
-git clone https://github.com/your-username/vori
+git clone https://github.com/edu526/vori
 cd vori
 npm install
 npm run tauri build
