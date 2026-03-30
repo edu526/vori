@@ -3,7 +3,7 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
   import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
-  import { type } from '@tauri-apps/plugin-os';
+  import { open } from '@tauri-apps/plugin-dialog';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
@@ -38,7 +38,9 @@
   let originalScale = $state(1.0);
   
   $effect(() => {
-    osType = type();
+    import('@tauri-apps/plugin-os').then(({ type }) => {
+      osType = type();
+    });
   });
 
   function startRecording() {
@@ -338,7 +340,6 @@
           <div class="input-row">
             <Input id="pref-text-editor" bind:value={prefs.default_text_editor} placeholder="xdg-open" />
             <Button variant="outline" size="sm" onclick={async () => {
-              const { open } = await import('@tauri-apps/plugin-dialog');
               const sel = await open({ multiple: false, title: 'Select text editor binary' });
               if (sel) prefs.default_text_editor = typeof sel === 'string' ? sel : sel[0];
             }}>Browse</Button>

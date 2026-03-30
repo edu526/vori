@@ -6,6 +6,7 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
   import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences } from '$lib/api/commands';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { LogicalSize } from '@tauri-apps/api/dpi';
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';

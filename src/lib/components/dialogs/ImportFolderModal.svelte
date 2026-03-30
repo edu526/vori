@@ -3,6 +3,7 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { scanFolder, bulkImportProjects, addCategory } from '$lib/api/commands';
+  import { open } from '@tauri-apps/plugin-dialog';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
   import { Button } from '$lib/components/ui/button';
   import StackIcon from '$lib/components/StackIcon.svelte';
@@ -156,7 +157,6 @@
 
   async function handleBrowse() {
     try {
-      const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({ directory: true });
       if (typeof result === 'string') {
         folderPath = result;

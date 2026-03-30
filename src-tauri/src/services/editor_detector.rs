@@ -4,6 +4,7 @@ use std::process::Command;
 
 pub struct EditorDef {
     pub key: &'static str,
+    #[allow(dead_code)]
     pub display: &'static str,
     /// Binary name for PATH lookup (which/where)
     pub bin: &'static str,
@@ -227,6 +228,7 @@ pub fn detect_editors() -> HashMap<String, String> {
     found
 }
 
+#[allow(dead_code)]
 pub fn display_name(key: &str) -> String {
     KNOWN_EDITORS
         .iter()

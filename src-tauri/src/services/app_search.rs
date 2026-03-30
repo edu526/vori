@@ -147,7 +147,7 @@ fn get_apps_windows() -> Vec<InstalledApp> {
     let mut dirs: Vec<PathBuf> = vec![];
     for var in &["PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"] {
         if let Ok(val) = std::env::var(var) {
-            dirs.push(PathBuf::from(val));
+            dirs.push(PathBuf::from(val.clone()));
             if *var == "LOCALAPPDATA" {
                 dirs.push(PathBuf::from(val).join("Programs"));
             }
