@@ -34,7 +34,7 @@ VERSION=$(printf '%s' "$RELEASE" | grep -o '"tag_name": *"[^"]*"' | grep -o '"v[
 info "Latest version: $VERSION"
 
 asset_url() {
-  printf '%s' "$RELEASE" | grep -o '"browser_download_url": *"[^"]*'"$1"'[^"]*"' | grep -o 'https://[^"]*' | head -1
+  printf '%s' "$RELEASE" | grep -o '"browser_download_url": *"[^"]*'"$1"'' | grep -o 'https://[^"]*' | head -1
 }
 
 # ── install ───────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ asset_url() {
 case "$OS" in
   Linux)
     if [ -f /etc/debian_version ]; then
-      URL=$(asset_url '\.deb"')
+      URL=$(asset_url '\.deb')
       [ -z "$URL" ] && die "No .deb asset found in latest release."
       TMP=$(mktemp /tmp/vori.XXXXXX.deb)
       info "Downloading $URL..."
@@ -52,7 +52,7 @@ case "$OS" in
       rm -f "$TMP"
 
     elif [ -f /etc/redhat-release ] || [ -f /etc/fedora-release ] || [ -f /etc/os-release ] && grep -q 'ID_LIKE=.*rhel\|ID=fedora\|ID=rhel' /etc/os-release 2>/dev/null; then
-      URL=$(asset_url '\.rpm"')
+      URL=$(asset_url '\.rpm')
       [ -z "$URL" ] && die "No .rpm asset found in latest release."
       TMP=$(mktemp /tmp/vori.XXXXXX.rpm)
       info "Downloading $URL..."
@@ -62,7 +62,7 @@ case "$OS" in
       rm -f "$TMP"
 
     else
-      URL=$(asset_url '\.AppImage"')
+      URL=$(asset_url '\.AppImage')
       [ -z "$URL" ] && die "No .AppImage asset found in latest release."
       DEST="$HOME/.local/bin/vori"
       mkdir -p "$HOME/.local/bin"
@@ -75,8 +75,8 @@ case "$OS" in
     ;;
 
   Darwin)
-    URL=$(printf '%s' "$RELEASE" | grep -o '"browser_download_url": *"[^"]*'"$ARCH_TAG"'[^"]*\.dmg"' | grep -o 'https://[^"]*' | head -1)
-    [ -z "$URL" ] && URL=$(asset_url '\.dmg"')
+    URL=$(printf '%s' "$RELEASE" | grep -o '"browser_download_url": *"[^"]*'"$ARCH_TAG"'[^"]*\.dmg' | grep -o 'https://[^"]*' | head -1)
+    [ -z "$URL" ] && URL=$(asset_url '\.dmg')
     [ -z "$URL" ] && die "No .dmg asset found in latest release."
 
     TMP=$(mktemp /tmp/vori.XXXXXX.dmg)
