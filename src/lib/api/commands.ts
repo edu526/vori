@@ -70,17 +70,45 @@ export const addRecent = (item: RecentItem) => invoke<void>('add_recent', { item
 
 // ── Launcher ──────────────────────────────────────────────────────────────────
 
-export const openProjectInEditor = (path: string, editorName: string) =>
-  invoke<void>('open_project_in_editor', { path, editorName });
+export const openProjectInEditor = async (path: string, editorName: string) => {
+  console.info('[vori][frontend] openProjectInEditor', { path, editorName });
+  try {
+    await invoke<void>('open_project_in_editor', { path, editorName });
+  } catch (e) {
+    console.error('[vori][frontend] openProjectInEditor FAILED', e);
+    throw e;
+  }
+};
 
-export const openWorkspaceInEditor = (paths: string[], editorName: string) =>
-  invoke<void>('open_workspace_in_editor', { paths, editorName });
+export const openWorkspaceInEditor = async (paths: string[], editorName: string) => {
+  console.info('[vori][frontend] openWorkspaceInEditor', { paths, editorName });
+  try {
+    await invoke<void>('open_workspace_in_editor', { paths, editorName });
+  } catch (e) {
+    console.error('[vori][frontend] openWorkspaceInEditor FAILED', e);
+    throw e;
+  }
+};
 
-export const openFileInEditor = (path: string, textEditor?: string) =>
-  invoke<void>('open_file_in_editor', { path, textEditor });
+export const openFileInEditor = async (path: string, textEditor?: string) => {
+  console.info('[vori][frontend] openFileInEditor', { path, textEditor });
+  try {
+    await invoke<void>('open_file_in_editor', { path, textEditor });
+  } catch (e) {
+    console.error('[vori][frontend] openFileInEditor FAILED', e);
+    throw e;
+  }
+};
 
-export const openInTerminal = (path?: string) =>
-  invoke<void>('open_in_terminal', { path });
+export const openInTerminal = async (path?: string) => {
+  console.info('[vori][frontend] openInTerminal', { path });
+  try {
+    await invoke<void>('open_in_terminal', { path });
+  } catch (e) {
+    console.error('[vori][frontend] openInTerminal FAILED', e);
+    throw e;
+  }
+};
 
 export const detectTerminals = () =>
   invoke<Record<string, string>>('detect_terminals');

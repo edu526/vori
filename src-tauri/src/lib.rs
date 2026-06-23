@@ -47,23 +47,30 @@ pub fn run() {
             if preferences.terminal.available.is_empty() {
                 preferences.terminal.available = terminal::detect_terminals();
             }
+            // Pick a default preferred terminal if the user hasn't chosen one
+            if preferences.terminal.preferred.is_none() && !preferences.terminal.available.is_empty() {
+                let priority: &[&str] = if cfg!(windows) {
+                    &["wt", "powershell", "pwsh", "cmd"]
+                } else {
+                    &["warp", "gnome-terminal", "konsole", "alacritty", "kitty", "tilix", "xterm"]
+                };
+                let chosen = priority.iter()
+                    .find(|p| preferences.terminal.available.contains_key(**p))
+                    .map(|s| s.to_string())
+                    .or_else(|| preferences.terminal.available.keys().next().cloned());
+                preferences.terminal.preferred = chosen;
+            }
             // Auto-detect editors on first launch (when none are configured yet)
             if preferences.editors_available.is_empty() {
                 preferences.editors_available = editor_detector::detect_editors();
             }
             let _ = config_manager::save("preferences.json", &preferences);
 
-            app.manage(AppState::new(
-                categories, projects, files, preferences.clone(), favorites, recents,
-            ));
-
             let is_autostart = std::env::args().any(|arg| arg == "--autostart");
-            if !is_autostart {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }
+
+            app.manage(AppState::new(
+                categories, projects, files, preferences.clone(), favorites, recents, is_autostart,
+            ));
 
             // Apply autostart from preferences
             {
@@ -72,6 +79,18 @@ pub fn run() {
                     let _ = app.autolaunch().enable();
                 } else {
                     let _ = app.autolaunch().disable();
+                }
+            }
+
+            // Show the window early. Belt-and-suspenders: `on_page_load` also
+            // shows it (after the page paints, to avoid a white flash), but
+            // `on_page_load` doesn't always fire reliably. Showing here too
+            // ensures the window appears even in dev mode where Vite may
+            // hold the load event for a while.
+            if !is_autostart || !preferences.show_tray {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
                 }
             }
 
@@ -102,11 +121,31 @@ pub fn run() {
 
             Ok(())
         })
+        .on_page_load(|window, payload| {
+            // Show the window only after the page finishes loading, so the
+            // webview paints with the theme background instead of a white
+            // flash. Skip on --autostart launches (stay hidden in tray) —
+            // UNLESS the tray is disabled, in which case the app would
+            // otherwise be running invisible with no way to open it.
+            if payload.event() == tauri::webview::PageLoadEvent::Finished {
+                let state = window.app_handle().state::<AppState>();
+                let autostart = state.is_autostart.load(std::sync::atomic::Ordering::Relaxed);
+                let show_tray = state.preferences.lock().unwrap().show_tray;
+                if !autostart || !show_tray {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let state = window.app_handle().state::<AppState>();
                 let prefs = state.preferences.lock().unwrap();
-                if prefs.keep_background || prefs.show_tray {
+                // Only hide if the user has a way to reopen the window.
+                // Hiding when `show_tray = false` would leave the app running
+                // invisible (no tray, and the global hotkey may not have
+                // registered if it collided with another app).
+                if prefs.keep_background && prefs.show_tray {
                     let _ = window.hide();
                     api.prevent_close();
                 }

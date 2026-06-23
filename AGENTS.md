@@ -59,6 +59,15 @@ The default hotkey is `Super+Shift+KeyV` (`models/preferences.rs:44`). On Window
 
 Note the asymmetry: `update_preferences` (`commands/config.rs:204`) *does* propagate hotkey errors back to the frontend as `Err(String)` — that's correct, it's a user-facing action that should surface the failure.
 
+## Window visibility — tray off
+
+The window defaults to `visible: false` in `tauri.conf.json` and is shown in `on_page_load` (`lib.rs:112`) when the page finishes loading. Two guards prevent the app from being stranded in a "running but unreachable" state when `show_tray = false`:
+
+1. **Autostart launches** (`lib.rs:118`): the condition to show the window is `!autostart || !show_tray`. If the user disabled the tray, autostart launches show the window directly — otherwise the app would be running invisible at login.
+2. **Close handler** (`lib.rs:131`): the condition to *hide* the window on close is `keep_background && show_tray`. If the user disabled the tray, closing the window actually closes the app — otherwise the window would hide with no tray (and the hotkey may have failed to register) and the user couldn't reopen it.
+
+Don't add similar visibility logic without considering both paths.
+
 ## UI conventions
 
 - **UI strings are in Spanish** (e.g. tray menu "Mostrar Vori" / "Salir" in `services/window.rs`). Match this when adding user-facing text.

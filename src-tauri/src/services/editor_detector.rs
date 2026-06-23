@@ -158,11 +158,16 @@ pub const KNOWN_EDITORS: &[EditorDef] = &[
         ],
     },
     EditorDef {
-        key: "antigravity", display: "Antigravity", bin: "antigravity",
+        key: "antigravity", display: "Antigravity", bin: "antigravity-ide",
         fallbacks: &[
-            "/usr/bin/antigravity",
-            "~/.local/bin/antigravity",
-            "/opt/antigravity/antigravity",
+            // Linux
+            "/usr/bin/antigravity-ide",
+            "~/.local/bin/antigravity-ide",
+            "/opt/antigravity/antigravity-ide",
+            // macOS
+            "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
+            // Windows
+            "%LOCALAPPDATA%/Programs/Antigravity IDE/bin/antigravity-ide.cmd",
         ],
     },
 ];
@@ -198,8 +203,10 @@ fn probe(def: &EditorDef) -> Option<String> {
                 .trim()
                 .to_string();
             if !path.is_empty() {
-                println!("[detect] {} → found via PATH: {}", def.key, path);
-                return Some(path);
+                if let Some(resolved) = resolve_executable(&path) {
+                    println!("[detect] {} → found via PATH: {}", def.key, resolved);
+                    return Some(resolved);
+                }
             }
         }
     }
@@ -208,14 +215,43 @@ fn probe(def: &EditorDef) -> Option<String> {
     for raw in def.fallbacks {
         if let Some(p) = expand_path(raw) {
             if p.is_file() {
-                println!("[detect] {} → found via fallback: {}", def.key, p.display());
-                return Some(p.to_string_lossy().into_owned());
+                if let Some(resolved) = resolve_executable(&p.to_string_lossy()) {
+                    println!("[detect] {} → found via fallback: {}", def.key, resolved);
+                    return Some(resolved);
+                }
             }
         }
     }
 
     println!("[detect] {} → not found", def.key);
     None
+}
+
+/// On Windows, `where code` may return an un-extensioned wrapper (`code`) next to the real
+/// `code.cmd`. Pick the extensioned sibling if present, since CreateProcessW can't run
+/// files without an executable extension.
+fn resolve_executable(path: &str) -> Option<String> {
+    if !cfg!(windows) {
+        return Some(path.to_string());
+    }
+    let p = std::path::Path::new(path);
+    let has_exec_ext = p
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| matches!(e.to_ascii_lowercase().as_str(), "exe" | "cmd" | "bat" | "com"));
+    if has_exec_ext {
+        return Some(path.to_string());
+    }
+    // Look for a sibling with .cmd / .bat / .exe
+    let dir = p.parent()?;
+    let stem = p.file_stem()?.to_str()?;
+    for ext in &["cmd", "bat", "exe"] {
+        let candidate = dir.join(format!("{stem}.{ext}"));
+        if candidate.is_file() {
+            return Some(candidate.to_string_lossy().into_owned());
+        }
+    }
+    Some(path.to_string())
 }
 
 pub fn detect_editors() -> HashMap<String, String> {

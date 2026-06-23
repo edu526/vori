@@ -12,11 +12,19 @@ pub fn open_project_in_editor(
     // Resolve editor key → binary path from detected editors, fall back to raw name
     let binary = {
         let prefs = state.preferences.lock().unwrap();
-        prefs
+        let b = prefs
             .editors_available
             .get(&editor_name)
             .cloned()
-            .unwrap_or_else(|| editor_name.clone())
+            .unwrap_or_else(|| editor_name.clone());
+        eprintln!(
+            "[vori][launcher] open_project_in_editor path={path:?} editor_name={editor_name:?} resolved_binary={b:?}"
+        );
+        eprintln!(
+            "[vori][launcher] editors_available={:?}",
+            prefs.editors_available
+        );
+        b
     };
     editor::open_in_editor(&path, &binary)
 }
@@ -51,15 +59,26 @@ pub fn open_in_terminal(path: Option<String>, state: State<AppState>) -> Result<
             .terminal
             .preferred
             .clone()
-            .unwrap_or_else(|| "xterm".to_string());
+            .unwrap_or_else(|| {
+                if cfg!(windows) { "powershell".to_string() } else { "xterm".to_string() }
+            });
+        eprintln!(
+            "[vori][launcher] open_in_terminal path={path:?} preferred={preferred:?}"
+        );
+        eprintln!(
+            "[vori][launcher] terminal.available={:?}",
+            prefs.terminal.available
+        );
         // Resolve name → full binary path from the detected terminals map.
         // Falls back to the name itself so plain commands like "xterm" still work.
-        prefs
+        let resolved = prefs
             .terminal
             .available
             .get(&preferred)
             .cloned()
-            .unwrap_or(preferred)
+            .unwrap_or(preferred);
+        eprintln!("[vori][launcher] resolved terminal binary={resolved:?}");
+        resolved
     };
     terminal::open_terminal(path.as_deref(), &terminal_cmd)
 }

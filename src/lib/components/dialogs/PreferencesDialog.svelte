@@ -188,6 +188,10 @@
   }
 
   async function handleSave() {
+    // Sync keep_background and show_tray — the UI now exposes them as a
+    // single "When closing the window" dropdown, so they must always match.
+    // Done here (not on load) to avoid a reactive loop in the load $effect.
+    prefs.keep_background = prefs.show_tray;
     try {
       await updatePreferences(prefs);
       configStore.preferences = prefs;
@@ -420,20 +424,27 @@
               <span class="text-[0.78rem] text-muted-foreground">Start Vori silently in the background when your computer boots.</span>
             </div>
           </label>
-          <label class="check-row flex items-start gap-2">
-            <Checkbox bind:checked={prefs.keep_background} class="mt-1" />
-            <div class="flex flex-col">
-              <span>Keep running in background</span>
-              <span class="text-[0.78rem] text-muted-foreground">Closing the window hides it instead of quitting. Highly recommended so Vori stays instantly available.</span>
-            </div>
-          </label>
-          <label class="check-row flex items-start gap-2">
-            <Checkbox bind:checked={prefs.show_tray} class="mt-1" />
-            <div class="flex flex-col">
-              <span>Show icon in System Tray</span>
-              <span class="text-[0.78rem] text-muted-foreground">Provides an icon to easily summon or quit Vori.</span>
-            </div>
-          </label>
+          <div class="sub-field">
+            <Label for="close-behavior">When closing the window</Label>
+            <select
+              id="close-behavior"
+              class="native-select"
+              value={prefs.show_tray ? 'tray' : 'quit'}
+              onchange={(e) => {
+                const v = (e.currentTarget as HTMLSelectElement).value;
+                prefs.show_tray = v === 'tray';
+                prefs.keep_background = v === 'tray';
+              }}
+            >
+              <option value="tray">Hide in system tray</option>
+              <option value="quit">Close the app</option>
+            </select>
+            <p class="text-[0.78rem] text-muted-foreground">
+              {prefs.show_tray
+                ? 'Vori keeps running in the system tray. Click the tray icon or use the global shortcut to reopen the window.'
+                : 'Vori quits completely when you close the window. Relaunch it from the Start menu or app launcher.'}
+            </p>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -656,4 +667,25 @@
   .tp-half--light .tp-sidebar { background: #e4e7f0; width: 40%; }
   .tp-half--dark  .tp-sidebar { background: #252845; width: 40%; }
 
+  .sub-field { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+  .native-select {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: var(--text-base);
+    font-family: inherit;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    color-scheme: light dark;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7080' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .native-select:focus { border-color: var(--color-accent); }
 </style>

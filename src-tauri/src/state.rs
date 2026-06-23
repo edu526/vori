@@ -1,3 +1,4 @@
+use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 
 use crate::models::{
@@ -16,6 +17,7 @@ pub struct AppState {
     pub preferences: Mutex<Preferences>,
     pub favorites: Mutex<Favorites>,
     pub recents: Mutex<RecentsList>,
+    pub is_autostart: AtomicBool,
 }
 
 impl AppState {
@@ -26,6 +28,7 @@ impl AppState {
         preferences: Preferences,
         favorites: Favorites,
         recents: RecentsList,
+        is_autostart: bool,
     ) -> Self {
         Self {
             categories: Mutex::new(categories),
@@ -34,6 +37,7 @@ impl AppState {
             preferences: Mutex::new(preferences),
             favorites: Mutex::new(favorites),
             recents: Mutex::new(recents),
+            is_autostart: AtomicBool::new(is_autostart),
         }
     }
 }
