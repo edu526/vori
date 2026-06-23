@@ -22,14 +22,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Semantic Release
         id: semantic
@@ -68,10 +72,14 @@ jobs:
         with:
           ref: ${{ needs.release.outputs.tag }}
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -93,10 +101,10 @@ jobs:
           workspaces: ./src-tauri -> target
           key: ${{ matrix.target }}
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Build Tauri
-        run: npm run tauri build -- --target ${{ matrix.target }}
+        run: pnpm tauri build -- --target ${{ matrix.target }}
 
       - name: Upload artifacts
         shell: bash

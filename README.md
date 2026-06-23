@@ -92,8 +92,8 @@ sudo apt-get install -y \
 ```bash
 git clone https://github.com/edu526/vori
 cd vori
-npm install
-npm run tauri build
+pnpm install
+pnpm tauri build
 ```
 
 Binaries will be in `src-tauri/target/release/bundle/`.
@@ -101,9 +101,9 @@ Binaries will be in `src-tauri/target/release/bundle/`.
 ### Development
 
 ```bash
-npm run tauri dev   # hot reload
-npm run dev         # frontend only (no Rust, faster)
-npm run check       # type check
+pnpm tauri dev   # hot reload
+pnpm dev         # frontend only (no Rust, faster)
+pnpm check       # type check
 ```
 
 ---

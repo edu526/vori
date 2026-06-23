@@ -75,14 +75,24 @@ pub fn run() {
                 }
             }
 
-            // Register global shortcut from preferences
+            // Register global shortcut from preferences.
+            // Non-fatal: if the hotkey is already taken by another app, log a warning
+            // and continue. The app remains usable (tray icon can toggle the window),
+            // and the user can pick a different hotkey from Preferences.
             if !preferences.hotkey.is_empty() {
                 let hotkey = preferences.hotkey.clone();
-                app.global_shortcut().on_shortcut(hotkey.as_str(), |app, _, event| {
+                if let Err(e) = app.global_shortcut().on_shortcut(hotkey.as_str(), |app, _, event| {
                     if event.state() == ShortcutState::Pressed {
                         services::window::toggle(app);
                     }
-                })?;
+                }) {
+                    eprintln!(
+                        "[vori] Could not register global hotkey '{}': {}.
+                         The window can still be toggled via the tray icon or by launching the app again. \
+                         Pick a different hotkey in Preferences to fix this.",
+                        preferences.hotkey, e
+                    );
+                }
             }
 
             // Build tray icon + menu (conditionally)
