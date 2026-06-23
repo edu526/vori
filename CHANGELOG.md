@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/edu526/vori/compare/v1.0.0...v1.1.0) (2026-06-23)
+
+
+### Bug Fixes
+
+* **ci:** drop duplicate pnpm version in release workflow ([ab42b00](https://github.com/edu526/vori/commit/ab42b00045d644dea6e08765cd4e0ab50c6e3037))
+* split filesystem paths on both slash directions so project name shows on Windows ([0563f02](https://github.com/edu526/vori/commit/0563f02816e62eafd37b850cb2eef0df61d4a72e))
+
+
+### Features
+
+* implement project launcher and terminal/editor detection services with global preference management ([0580399](https://github.com/edu526/vori/commit/058039922563db5e89113efd1cb99d8153a942c6))
+
 # 1.0.0 (2026-03-30)
 
 
