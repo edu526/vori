@@ -23,8 +23,6 @@ jobs:
           persist-credentials: false
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -73,8 +71,6 @@ jobs:
           ref: ${{ needs.release.outputs.tag }}
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
