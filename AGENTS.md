@@ -17,7 +17,7 @@ There is no test suite, no lint script, no formatter config. `pnpm check` is the
 ### Setup gotchas (Windows)
 
 - **Rust + MSVC required** for `tauri dev`/`tauri build`: install Visual Studio 2022 Build Tools with the `VCTools` workload (MSVC + Windows SDK), then `rustup`. `cargo check` first run downloads ~440 crates and takes ~2 min.
-- **Node is managed via `fnm`** and may not be on the system PATH outside this OpenCode session. If `pnpm`/`node` aren't found, run `fnm env --use-on-cd | Out-String | Invoke-Expression` first (or path the fnm dir explicitly). Node 18+ required. The repo pins pnpm via the `packageManager` field in `package.json` (`pnpm@10.34.3`); enable it with `corepack enable pnpm` (or `npm i -g pnpm`).
+- **Node is managed via `fnm`** and may not be on the system PATH outside this OpenCode session. If `pnpm`/`node` aren't found, run `fnm env --use-on-cd | Out-String | Invoke-Expression` first (or path the fnm dir explicitly). **Node 24 LTS** required (pinned via `.node-version`). The repo pins pnpm via the `packageManager` field in `package.json` (`pnpm@10.34.3`); enable it with `corepack enable pnpm` (or `npm i -g pnpm`).
 - `tauri dev` watches `src-tauri/` and rebuilds Rust on change; Vite ignores `src-tauri/**` and handles the frontend. Strict port 1420 only under Tauri (`strictPort: isTauri` in `vite.config.js`).
 
 ## Two dev modes — important
