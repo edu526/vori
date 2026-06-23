@@ -56,7 +56,7 @@
     browsePath = path;
     if (!browseName) {
       // Use filename without extension as default name
-      browseName = path.split('/').pop()?.replace(/\.[^.]+$/, '') ?? '';
+      browseName = path.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') ?? '';
     }
   }
 

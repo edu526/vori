@@ -89,7 +89,7 @@ function buildChildItems(
     if (proj.parent === parentKey) {
       items.push({
         key,
-        label: proj.path.split('/').pop() ?? key,
+        label: proj.path.split(/[\\/]/).pop() ?? key,
         type: 'project',
         path: proj.path,
         parentKey,

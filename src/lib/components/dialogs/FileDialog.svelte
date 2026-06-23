@@ -38,7 +38,7 @@
       const result = await open({ directory: false });
       if (typeof result === 'string') {
         path = result;
-        if (!key) key = result.split('/').pop()?.replace(/\.[^.]+$/, '') ?? '';
+        if (!key) key = result.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') ?? '';
       }
     } catch (e) {
       console.error('Failed to open file picker:', e);
