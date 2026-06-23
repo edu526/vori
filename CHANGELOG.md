@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/edu526/vori/compare/v1.1.0...v1.1.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* **ci:** pass --target before -- in tauri build so CLI tracks output path ([007f466](https://github.com/edu526/vori/commit/007f466bbb5a88ae56832aaa9b80107f3cb30a3a))
+
 # [1.1.0](https://github.com/edu526/vori/compare/v1.0.0...v1.1.0) (2026-06-23)
 
 
