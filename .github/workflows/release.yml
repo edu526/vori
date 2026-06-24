@@ -114,6 +114,6 @@ jobs:
       contents: write
     steps:
       - name: Publish release
-        run: gh release edit ${{ needs.release.outputs.tag }} --draft=false
+        run: gh release edit "${{ needs.release.outputs.tag }}" --draft=false --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
