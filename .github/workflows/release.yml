@@ -121,3 +121,11 @@ jobs:
         run: gh release edit "${{ needs.release.outputs.tag }}" --draft=false --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup on failure
+        if: failure() || cancelled()
+        run: |
+          echo "Publish failed, cleaning up draft + tag ${{ needs.release.outputs.tag }}"
+          gh release delete "${{ needs.release.outputs.tag }}" --cleanup-tag --yes --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
