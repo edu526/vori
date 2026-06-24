@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/edu526/vori/compare/v1.2.0...v1.2.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* **ci:** pass --repo to gh release edit so it runs without git context ([2c95122](https://github.com/edu526/vori/commit/2c951227048662e1702987bf26acc97441ff0f8d))
+
 # [1.2.0](https://github.com/edu526/vori/compare/v1.1.1...v1.2.0) (2026-06-24)
 
 
