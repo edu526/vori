@@ -1,3 +1,17 @@
+# [1.2.0](https://github.com/edu526/vori/compare/v1.1.1...v1.2.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* center window on initial launch ([e3200dd](https://github.com/edu526/vori/commit/e3200dd6cb9441b554e157914cc8b182c248810a))
+* **ci:** checkout the bumped tag in the build matrix ([2d94835](https://github.com/edu526/vori/commit/2d94835e128c6fe8caa5b064217b91a54b4e0422))
+* **ci:** pass --repo to gh release edit so it runs without git context ([2c95122](https://github.com/edu526/vori/commit/2c951227048662e1702987bf26acc97441ff0f8d))
+
+
+### Features
+
+* add in-app updater with signed GitHub releases ([7936489](https://github.com/edu526/vori/commit/7936489a18785950a833707944a3a3287f63504c))
+
 ## [1.2.1](https://github.com/edu526/vori/compare/v1.2.0...v1.2.1) (2026-06-24)
 
 
