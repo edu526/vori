@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/edu526/vori/compare/v1.1.1...v1.2.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* center window on initial launch ([e3200dd](https://github.com/edu526/vori/commit/e3200dd6cb9441b554e157914cc8b182c248810a))
+
+
+### Features
+
+* add in-app updater with signed GitHub releases ([7936489](https://github.com/edu526/vori/commit/7936489a18785950a833707944a3a3287f63504c))
+
 ## [1.1.1](https://github.com/edu526/vori/compare/v1.1.0...v1.1.1) (2026-06-23)
 
 
