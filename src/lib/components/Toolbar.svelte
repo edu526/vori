@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import AppVersion from './AppVersion.svelte';
 
   let {
     onopenpreferences,
@@ -55,6 +56,7 @@
   <!-- Left: app name -->
   <div class="toolbar-left">
     <span class="app-name">Vori</span>
+    <AppVersion />
   </div>
 
   <!-- Center: search trigger -->
@@ -123,7 +125,8 @@
 
   .toolbar-left {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    gap: 10px;
   }
 
   .app-name {

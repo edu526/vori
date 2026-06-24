@@ -1,6 +1,10 @@
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
+// @ts-expect-error node:fs types not in tsconfig; safe at runtime
+import { readFileSync } from "node:fs";
+
+const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -21,6 +25,7 @@ const browserAlias = {
   "@tauri-apps/api/webviewWindow": mock("tauri-webviewwindow.ts"),
   "@tauri-apps/api/dpi": mock("tauri-dpi.ts"),
   "@tauri-apps/plugin-dialog": mock("tauri-dialog.ts"),
+  "@tauri-apps/plugin-updater": mock("tauri-updater.ts"),
 };
 
 /**
@@ -60,6 +65,9 @@ function tailwindExcludeSvelte() {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     sveltekit(),
     ...tailwindExcludeSvelte(),

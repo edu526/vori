@@ -3,7 +3,8 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
   import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
-  import { open } from '@tauri-apps/plugin-dialog';
+  import { updaterStore } from '$lib/stores/updater.svelte';
+  import { open, ask, message } from '@tauri-apps/plugin-dialog';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
@@ -102,6 +103,24 @@
   let detectingEditors = $state(false);
   let showAddEditor = $state(false);
   let showAddTerminal = $state(false);
+
+  async function handleCheckForUpdate() {
+    if (updaterStore.state === 'checking') return;
+    await updaterStore.refresh();
+    if (updaterStore.state === 'available') {
+      await updaterStore.promptInstall();
+    } else if (updaterStore.state === 'up-to-date') {
+      await message(`You're on the latest version (v${__APP_VERSION__}).`, {
+        title: 'Vori is up to date',
+        kind: 'info',
+      });
+    } else if (updaterStore.state === 'error') {
+      await message(`Could not check for updates.\n\n${updaterStore.lastError}`, {
+        title: 'Update check failed',
+        kind: 'error',
+      });
+    }
+  }
 
   function handleAddEditor(name: string, exec: string) {
     const key = name.toLowerCase().replace(/\s+/g, '_');
@@ -482,10 +501,29 @@
           <p class="hint">Format: <code>Super+Shift+KeyV</code> — modifiers: Super, Ctrl, Alt, Shift</p>
           {#if osType === 'linux'}
             <p class="hint" style="margin-top: 4px; color: #a1a1aa;">
-              <strong>Note for Linux/Wayland users:</strong> Due to OS security, this may only work when Vori has focus. 
+              <strong>Note for Linux/Wayland users:</strong> Due to OS security, this may only work when Vori has focus.
               For a true global hotkey, disable this and add a custom shortcut in your system settings to run the <code>vori</code> command.
             </p>
           {/if}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label>Updates</Label>
+          <p class="hint">Current version: <strong>v{__APP_VERSION__}</strong>{updaterStore.available ? ` → v${updaterStore.available.version} available` : ''}.</p>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <Button variant="outline" onclick={handleCheckForUpdate} disabled={updaterStore.state === 'checking'}>
+              {updaterStore.state === 'checking' ? 'Checking…' : 'Check for updates'}
+            </Button>
+            {#if updaterStore.state === 'up-to-date'}
+              <span class="text-[0.82rem] text-muted-foreground">Up to date</span>
+            {:else if updaterStore.state === 'available'}
+              <span class="text-[0.82rem]" style="color: var(--color-accent);">v{updaterStore.available?.version} available</span>
+            {:else if updaterStore.state === 'error'}
+              <span class="text-[0.82rem]" style="color: #c0392b;">Check failed</span>
+            {/if}
+          </div>
         </div>
       </TabsContent>
     </Tabs>

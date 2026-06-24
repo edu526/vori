@@ -54,21 +54,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-          - runner: macos-latest
-            target: aarch64-apple-darwin
-          - runner: macos-latest
-            target: x86_64-apple-darwin
-          - runner: windows-latest
-            target: x86_64-pc-windows-msvc
-
-    runs-on: ${{ matrix.runner }}
-
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.release.outputs.tag }}
 
       - uses: pnpm/action-setup@v4
 
@@ -79,10 +73,14 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
 
       - name: Install Linux system dependencies
-        if: matrix.runner == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -92,29 +90,21 @@ jobs:
             patchelf \
             libayatana-appindicator3-dev
 
-      - uses: swatinem/rust-cache@v2
-        with:
-          workspaces: ./src-tauri -> target
-          key: ${{ matrix.target }}
-
       - run: pnpm install --frozen-lockfile
 
-      - name: Build Tauri
-        run: pnpm tauri build --target ${{ matrix.target }}
-
-      - name: Upload artifacts
-        shell: bash
-        run: |
-          find src-tauri/target/${{ matrix.target }}/release/bundle \
-            \( -path "*/deb/*.deb" \
-            -o -path "*/rpm/*.rpm" \
-            -o -path "*/appimage/*.AppImage" \
-            -o -path "*/dmg/*.dmg" \
-            -o -path "*/msi/*.msi" \
-            -o -path "*/nsis/*.exe" \) \
-            -exec gh release upload ${{ needs.release.outputs.tag }} {} --clobber \;
+      - name: Build, sign and publish
+        uses: tauri-apps/tauri-action@v0
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ needs.release.outputs.tag }}
+          releaseName: "Vori v__VERSION__"
+          releaseBody: "See CHANGELOG.md for details."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
 
   publish:
     needs: [release, build]
@@ -124,6 +114,6 @@ jobs:
       contents: write
     steps:
       - name: Publish release
-        run: gh release edit ${{ needs.release.outputs.tag }} --draft=false --repo ${{ github.repository }}
+        run: gh release edit ${{ needs.release.outputs.tag }} --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

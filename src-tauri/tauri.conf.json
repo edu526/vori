@@ -27,6 +27,17 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/heyedudev/vori/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ0Mzg2RTgwQUU3RkZFMDcKUldRSC9uK3VnRzQ0UkxPV1BwL1hWTmd5dHZKRlpNQUEwSVNydi8xUkJSUHlabDZYRkV2THlKY00K",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

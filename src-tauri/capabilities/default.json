@@ -15,6 +15,7 @@
     "dialog:default",
     "dialog:allow-ask",
     "dialog:allow-open",
-    "global-shortcut:default"
+    "global-shortcut:default",
+    "updater:default"
   ]
 }
