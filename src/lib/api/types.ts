@@ -2,6 +2,7 @@
 
 export interface Category {
   parent: string | null;
+  source_path?: string | null;
 }
 
 export type CategoriesMap = Record<string, Category>;

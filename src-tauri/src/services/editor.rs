@@ -1,17 +1,28 @@
 use std::process::Command;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 /// On Windows, .cmd/.bat files cannot be executed directly via CreateProcessW.
 /// Wrap them with `cmd /c` so editors like VSCode (code.cmd) launch correctly.
 fn build_editor_command(binary: &str) -> Command {
-    if cfg!(windows) {
+    let mut cmd = if cfg!(windows) {
         let lower = binary.to_ascii_lowercase();
         if lower.ends_with(".cmd") || lower.ends_with(".bat") {
-            let mut cmd = Command::new("cmd");
-            cmd.arg("/c").arg(binary);
-            return cmd;
+            let mut c = Command::new("cmd");
+            c.arg("/c").arg(binary);
+            c
+        } else {
+            Command::new(binary)
         }
-    }
-    Command::new(binary)
+    } else {
+        Command::new(binary)
+    };
+    
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    cmd
 }
 
 /// Open a path in an editor. `binary` is the full path or command resolved by the detector.
@@ -59,9 +70,10 @@ pub fn open_file_in_text_editor(path: &str, text_editor: Option<&str>) -> Result
     #[cfg(windows)]
     {
         eprintln!("[vori][editor] no editor set, using: cmd /c start \"\" {path}");
-        Command::new("cmd")
-            .args(["/c", "start", "", path])
-            .spawn()
+        let mut cmd = Command::new("cmd");
+        cmd.args(["/c", "start", "", path]);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.spawn()
             .map_err(|e| format!("Failed to open file: {e}"))?;
     }
     #[cfg(target_os = "macos")]

@@ -36,7 +36,7 @@ export function buildMenuItems(
     onRefresh: () => void;
     onAddChildCategory?: () => void;
     onAddProject?: () => void;
-    onImportFolder?: () => void;
+    onImportFolder?: (autoScanPath?: string) => void;
   },
 ): MenuItem[] {
   const primaryLabel = editorLabel(opts.defaultEditor);
@@ -59,6 +59,14 @@ export function buildMenuItems(
           label: 'Import folder…',
           action: () => opts.onImportFolder?.(),
         },
+        ...(configStore.categories[item.key]?.source_path
+          ? [
+              {
+                label: 'Refresh Import Tree…',
+                action: () => opts.onImportFolder?.(configStore.categories[item.key].source_path as string),
+              },
+            ]
+          : []),
         { label: '', action: () => {}, divider: true },
         {
           label: 'Edit Category',

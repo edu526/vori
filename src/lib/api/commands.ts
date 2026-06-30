@@ -17,11 +17,11 @@ export const getAppData = () => invoke<AppData>('get_app_data');
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
-export const addCategory = (key: string, parent: string | null) =>
-  invoke<void>('add_category', { key, parent });
+export const addCategory = (key: string, parent: string | null, sourcePath?: string | null) =>
+  invoke<void>('add_category', { key, parent, sourcePath });
 
-export const updateCategory = (key: string, parent: string | null) =>
-  invoke<void>('update_category', { key, parent });
+export const updateCategory = (key: string, parent: string | null, sourcePath?: string | null) =>
+  invoke<void>('update_category', { key, parent, sourcePath });
 
 export const deleteCategory = (key: string) => invoke<void>('delete_category', { key });
 

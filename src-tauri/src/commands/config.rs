@@ -53,14 +53,14 @@ fn collect_descendants(cats: &CategoriesMap, root: &str) -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn add_category(key: String, parent: Option<String>, state: State<AppState>) -> Result<(), String> {
+pub fn add_category(key: String, parent: Option<String>, source_path: Option<String>, state: State<AppState>) -> Result<(), String> {
     let mut cats = state.categories.lock().unwrap();
-    cats.insert(key, Category { parent });
+    cats.insert(key, Category { parent, source_path });
     config_manager::save("categories.json", &*cats)
 }
 
 #[tauri::command]
-pub fn update_category(key: String, parent: Option<String>, state: State<AppState>) -> Result<(), String> {
+pub fn update_category(key: String, parent: Option<String>, source_path: Option<String>, state: State<AppState>) -> Result<(), String> {
     let mut cats = state.categories.lock().unwrap();
     if !cats.contains_key(&key) {
         return Err(format!("Category '{key}' not found"));
@@ -72,7 +72,7 @@ pub fn update_category(key: String, parent: Option<String>, state: State<AppStat
             return Err("Cannot set a descendant as parent (circular reference)".to_string());
         }
     }
-    cats.insert(key, Category { parent });
+    cats.insert(key, Category { parent, source_path });
     config_manager::save("categories.json", &*cats)
 }
 

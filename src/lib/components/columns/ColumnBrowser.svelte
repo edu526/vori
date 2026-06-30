@@ -73,8 +73,8 @@
       onAddProject: () => {
         dialogStore.open({ type: 'project', mode: 'add', parentKey: item.key });
       },
-      onImportFolder: () => {
-        dialogStore.open({ type: 'import-folder', defaultParent: item.key });
+      onImportFolder: (autoScanPath?: string) => {
+        dialogStore.open({ type: 'import-folder', defaultParent: item.key, autoScanPath } as any);
       },
     });
     contextMenuStore.show(x, y, menuItems);

@@ -88,11 +88,6 @@
     const code = e.code; // already in the right format for Tauri
     parts.push(code);
 
-    if (parts.length < 2) {
-      hotkeyError = 'Use at least one modifier (Super, Ctrl, Alt, Shift)';
-      return;
-    }
-
     prefs.hotkey = parts.join('+');
     hotkeyError = '';
     recordingHotkey = false;

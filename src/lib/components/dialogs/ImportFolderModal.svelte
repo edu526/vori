@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
-  import { scanFolder, bulkImportProjects, addCategory } from '$lib/api/commands';
+  import { scanFolder, bulkImportProjects, addCategory, updateCategory } from '$lib/api/commands';
   import { open } from '@tauri-apps/plugin-dialog';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
   import { Button } from '$lib/components/ui/button';
@@ -79,7 +80,7 @@
   let scanned = $state<ScannedProject[]>([]);
   let selected = $state<Set<string>>(new Set());
   let selectedParent = $state('');
-  let mode = $state<'flat' | 'nested'>('flat');
+  let mode = $state<'flat' | 'nested'>('nested');
   let collapsed = $state<Set<string>>(new Set());
   let importing = $state(false);
   let error = $state('');
@@ -93,15 +94,21 @@
 
   $effect(() => {
     if (payload) {
-      selectedParent = payload.defaultParent ?? '';
-      folderPath = '';
-      scanned = [];
-      selected = new Set();
-      collapsed = new Set();
-      error = '';
-      hasScanned = false;
-      scanning = false;
-      importing = false;
+      untrack(() => {
+        selectedParent = payload.defaultParent ?? '';
+        folderPath = (payload as any).autoScanPath ?? '';
+        scanned = [];
+        selected = new Set();
+        collapsed = new Set();
+        error = '';
+        hasScanned = false;
+        scanning = false;
+        importing = false;
+        
+        if (folderPath) {
+          handleScan();
+        }
+      });
     }
   });
 
@@ -174,7 +181,9 @@
     hasScanned = false;
     collapsed = new Set();
     try {
-      scanned = await scanFolder(folderPath);
+      const rawScanned = await scanFolder(folderPath);
+      const existingPaths = new Set(Object.values(configStore.projects).map(p => p.path));
+      scanned = rawScanned.filter(p => !existingPaths.has(p.path));
       selected = new Set(scanned.map((p) => p.path));
       hasScanned = true;
       // Auto-set parent to the scanned folder name (existing or will be created on import)
@@ -238,7 +247,11 @@
     try {
       // Create the root category if it doesn't exist yet
       if (selectedParent && !configStore.categories[selectedParent]) {
-        await addCategory(selectedParent, null);
+        await addCategory(selectedParent, null, folderPath);
+      } else if (selectedParent) {
+        // If it exists, bind its source_path to this folder
+        const existingCat = configStore.categories[selectedParent];
+        await updateCategory(selectedParent, existingCat.parent, folderPath);
       }
 
       if (mode === 'nested') {

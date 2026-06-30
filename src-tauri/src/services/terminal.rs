@@ -64,6 +64,13 @@ pub fn open_terminal(path: Option<&str>, terminal_cmd: &str) -> Result<(), Strin
         if let Some(p) = path {
             cmd.arg("-d").arg(p);
         }
+        
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+
         eprintln!("[vori][terminal] spawning (wt via cmd): {:?}", cmd);
         match cmd.spawn() {
             Ok(_) => { eprintln!("[vori][terminal] wt spawned ok"); Ok(()) }
