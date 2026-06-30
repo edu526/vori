@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/edu526/vori/compare/v1.2.0...v1.3.0) (2026-06-30)
+
+
+### Features
+
+* implement column browser UI, context menu system, and backend integration for project management ([93a0ade](https://github.com/edu526/vori/commit/93a0adeb553856aaa4e97422fb0edd3fac123ded))
+
 # [1.2.0](https://github.com/edu526/vori/compare/v1.1.1...v1.2.0) (2026-06-24)
 
 
