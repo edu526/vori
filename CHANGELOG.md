@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/edu526/vori/compare/v1.3.0...v1.4.0) (2026-06-30)
+
+
+### Features
+
+* initialize tauri.conf.json with application metadata and update configuration ([7cf4f50](https://github.com/edu526/vori/commit/7cf4f507f5a5c816d0aed3ed17281cf20fa6efd9))
+
 # [1.3.0](https://github.com/edu526/vori/compare/v1.2.0...v1.3.0) (2026-06-30)
 
 
