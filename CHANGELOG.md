@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/edu526/vori/compare/v1.4.0...v1.4.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **tauri:** update application identifier to correct reverse domain format ([354abe2](https://github.com/edu526/vori/commit/354abe2f379bca77a68ba93c415b2f417e4c786f))
+
 # [1.4.0](https://github.com/edu526/vori/compare/v1.3.0...v1.4.0) (2026-06-30)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "vori",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Finder-style project launcher for VSCode and Kiro",
   "type": "module",
   "scripts": {
