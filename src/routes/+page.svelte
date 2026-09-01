@@ -50,6 +50,23 @@
     return () => window.removeEventListener('contextmenu', block);
   });
 
+  // ── Editor close → deselect deepest column ──────────────────────────────────
+  // ponytail: the file column was selected for the editor; once it's gone,
+  // collapse the deepest selection so HomeView (recents) reappears. But only
+  // when no other navigation happened (back button, breadcrumb, category
+  // click) — those paths already reshape the columns themselves.
+  let prevEditorOpen = false;
+  let prevSelectedKey: string | null = null;
+  $effect(() => {
+    const editorOpen = dialogStore.current?.type === 'editor';
+    const selectedKey = navigationStore.selectedItem?.key ?? null;
+    if (prevEditorOpen && !editorOpen && selectedKey === prevSelectedKey) {
+      navigationStore.collapseDeepest();
+    }
+    prevEditorOpen = editorOpen;
+    prevSelectedKey = selectedKey;
+  });
+
   // ── Scale persistence helper ────────────────────────────────────────────────
   async function persistScale(scale: number) {
     const updated = { ...configStore.preferences, ui_scale: scale };
