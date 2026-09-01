@@ -15,6 +15,9 @@
 
   const isOpen = $derived(!!payload);
   const isEdit = $derived(payload?.mode === 'edit');
+  const parentKey = $derived(
+    payload && payload.mode === 'add' ? payload.parentKey ?? null : null,
+  );
 
   let key = $state('');
   let path = $state('');
@@ -51,9 +54,9 @@
     keyError = '';
     try {
       if (payload.mode === 'edit') {
-        await updateFile(payload.key, { path });
+        await updateFile(payload.key, { path, parent: parentKey });
       } else {
-        await addFile(key, { path });
+        await addFile(key, { path, parent: parentKey });
       }
       await configStore.load();
       navigationStore.refresh(
@@ -70,7 +73,7 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
   <DialogContent class="w-[420px] max-w-[90vw]" showCloseButton={false}>
     <DialogHeader>
-      <DialogTitle>{isEdit ? 'Edit File' : 'Add File'}</DialogTitle>
+      <DialogTitle>{isEdit ? 'Edit File' : (parentKey ? 'Add File to ' + parentKey.split('/').pop() : 'Add File')}</DialogTitle>
     </DialogHeader>
 
     <div class="fields">

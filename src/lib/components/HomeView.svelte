@@ -1,7 +1,10 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config.svelte';
+  import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { openEditor } from '$lib/utils/openEditor';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { isTextFile } from '$lib/utils/textExtensions';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
 
@@ -69,6 +72,10 @@
     trackRecent(path, name, 'file');
     if (configStore.preferences.close_on_open_file) await getCurrentWindow().close();
   }
+
+  function editFile(path: string, name: string) {
+    openEditor(path, name);
+  }
 </script>
 
 <div class="home-view" role="region" oncontextmenu={(e) => e.preventDefault()}>
@@ -101,6 +108,8 @@
                     Open in {editorLabel(defaultEditor)}
                   </button>
                   <button onclick={() => openTerminal(item.path)}>Terminal</button>
+                {:else if isTextFile(item.path)}
+                  <button onclick={() => editFile(item.path, item.name)}>Edit</button>
                 {:else}
                   <button onclick={() => openFile(item.path, item.name)}>Open</button>
                 {/if}
@@ -134,6 +143,8 @@
                     Open in {editorLabel(defaultEditor)}
                   </button>
                   <button onclick={() => openTerminal(item.path)}>Terminal</button>
+                {:else if isTextFile(item.path)}
+                  <button onclick={() => editFile(item.path, item.name)}>Edit</button>
                 {:else}
                   <button onclick={() => openFile(item.path, item.name)}>Open</button>
                 {/if}

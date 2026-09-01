@@ -48,6 +48,17 @@ export const updateFile = (key: string, file: FileEntry) =>
 
 export const deleteFile = (key: string) => invoke<void>('delete_file', { key });
 
+// ── Files — read/write text content ───────────────────────────────────────────
+
+export const readTextFile = (path: string) =>
+  invoke<string>('read_text_file', { path });
+
+export const writeTextFile = (path: string, content: string) =>
+  invoke<void>('write_text_file', { path, content });
+
+export const writeTextFileElevated = (path: string, content: string) =>
+  invoke<void>('write_text_file_elevated', { path, content });
+
 // ── Preferences ───────────────────────────────────────────────────────────────
 
 export const getPreferences = () => invoke<Preferences>('get_preferences');

@@ -6,6 +6,8 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
   import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences } from '$lib/api/commands';
+  import { isTextFile } from '$lib/utils/textExtensions';
+  import { openEditor } from '$lib/utils/openEditor';
 
   import ColumnBrowser from '$lib/components/columns/ColumnBrowser.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
@@ -20,6 +22,8 @@
   import WorkspaceBar from '$lib/components/WorkspaceBar.svelte';
   import SearchModal from '$lib/components/SearchModal.svelte';
   import type { SearchResult } from '$lib/api/types';
+
+  const isEditorOpen = $derived(dialogStore.current?.type === 'editor');
 
   let searchModalOpen = $state(false);
 
@@ -122,6 +126,10 @@
               configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== recent.path)].slice(0, 20);
             });
           } else if (item?.type === 'file' && item.path) {
+            if (isTextFile(item.path)) {
+              await openEditor(item.path, item.label);
+              return;
+            }
             const recent = { path: item.path, name: item.label, type: 'file' as const, timestamp: Date.now() / 1000 };
             openFileInEditor(item.path, configStore.preferences.default_text_editor).then(() => {
               addRecent(recent);
@@ -185,7 +193,7 @@
     />
     <div class="main-content">
       <ColumnBrowser />
-      {#if navigationStore.columns[0]?.selectedKey === null}
+      {#if !isEditorOpen && navigationStore.columns[0]?.selectedKey === null}
         <HomeView />
       {/if}
     </div>

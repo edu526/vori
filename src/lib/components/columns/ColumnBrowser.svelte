@@ -5,35 +5,93 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { buildMenuItems } from '../context-menu/menuBuilder';
   import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { openEditor } from '$lib/utils/openEditor';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { isTextFile } from '$lib/utils/textExtensions';
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import Column from './Column.svelte';
+  import EditorPane from '../editor/EditorPane.svelte';
 
-  const MIN_COL = 180; // minimum column width before sliding kicks in
-  const MAX_COL = 280; // maximum column width — avoids stretched columns on wide windows
+  const MIN_COL = 180;
+  const MAX_COL = 280;
+  const EDIT_PANE_COL = 240;
 
   let browserWidth = $state(0);
 
   const columnCount = $derived(navigationStore.columns.length);
   const isSingleCol = $derived(columnCount <= 1);
 
-  // How many columns fit at MIN_COL width
+  const editorPayload = $derived(
+    dialogStore.current?.type === 'editor' ? dialogStore.current : null,
+  );
+  const isEditing = $derived(!!editorPayload);
+
+  const fileColumnIndex = $derived.by(() => {
+    if (!editorPayload) return -1;
+    const target = editorPayload.filePath;
+    for (let i = 0; i < navigationStore.columns.length; i++) {
+      if (navigationStore.columns[i].items.some((it) => it.path === target)) {
+        if (typeof console !== 'undefined') console.log('[vori] fileColumnIndex =', i, 'columns:', navigationStore.columns.length);
+        return i;
+      }
+    }
+    if (typeof console !== 'undefined') console.log('[vori] fileColumnIndex = -1 (not found in', navigationStore.columns.length, 'columns)');
+    return -1;
+  });
+
+  const breadcrumb = $derived.by(() => {
+    if (!editorPayload || fileColumnIndex < 0) return [];
+    const segs: { label: string; depth: number }[] = [];
+    for (let i = 0; i < fileColumnIndex; i++) {
+      const col = navigationStore.columns[i];
+      segs.push({ label: col?.title ?? '', depth: i });
+    }
+    // Last segment is the filename (no navigation on click)
+    segs.push({ label: editorPayload.fileName, depth: fileColumnIndex });
+    return segs;
+  });
+
+  function handleBack() {
+    if (fileColumnIndex > 0) {
+      navigationStore.collapseToDepth(fileColumnIndex - 1);
+    }
+    dialogStore.close();
+  }
+
+  function handleBreadcrumbNavigate(depth: number) {
+    if (depth !== fileColumnIndex) {
+      navigationStore.collapseToDepth(depth);
+    }
+    dialogStore.close();
+  }
+
+  const visibleColumns = $derived.by(() => {
+    if (!isEditing) return navigationStore.columns;
+    if (fileColumnIndex < 0) {
+      // File not in any column (e.g. parent points to a deleted category).
+      // Show all columns rather than an empty column.
+      return navigationStore.columns;
+    }
+    return navigationStore.columns.slice(fileColumnIndex, fileColumnIndex + 1);
+  });
+
   const maxVisible = $derived(Math.max(1, Math.floor((browserWidth || 600) / MIN_COL)));
 
-  // Each column gets an equal share, clamped between MIN_COL and MAX_COL.
-  // Fixed 220px when paired with HomeView (single-column root state).
   const colWidth = $derived(
-    isSingleCol
-      ? 220
-      : Math.min(MAX_COL, (browserWidth || 600) / Math.min(columnCount, maxVisible))
+    isEditing
+      ? EDIT_PANE_COL
+      : isSingleCol
+        ? 220
+        : Math.min(MAX_COL, (browserWidth || 600) / Math.min(columnCount, maxVisible)),
   );
 
-  // Slide offset: keeps the rightmost maxVisible columns in view
   const trackOffset = $derived(
-    columnCount > maxVisible ? (columnCount - maxVisible) * colWidth : 0
+    isEditing
+      ? 0  // visibleColumns is already sliced to the file's column; no slide needed.
+      : columnCount > maxVisible ? (columnCount - maxVisible) * colWidth : 0,
   );
 
-  const hasHidden = $derived(trackOffset > 0);
+  const hasHidden = $derived(!isEditing && trackOffset > 0);
 
   let isEmpty = $derived(
     Object.keys(configStore.categories).length === 0 &&
@@ -81,6 +139,15 @@
   }
 
   function handleSelect(columnIndex: number, key: string) {
+    // If editing and the user clicks a category, close the editor first so
+    // the sub-columns become visible (the slice hides all but the file's
+    // column when editing).
+    if (isEditing) {
+      const item = navigationStore.columns[columnIndex]?.items.find((it) => it.key === key);
+      if (item?.type === 'category') {
+        dialogStore.close();
+      }
+    }
     navigationStore.selectItem(columnIndex, key);
   }
 
@@ -94,6 +161,10 @@
       configStore.recents = [recent, ...configStore.recents.filter(r => r.path !== item.path)].slice(0, 20);
       if (configStore.preferences.close_on_open_editor) await getCurrentWindow().close();
     } else if (item.type === 'file') {
+      if (isTextFile(item.path)) {
+        await openEditor(item.path, item.label);
+        return;
+      }
       const recent = { path: item.path, name: item.label, type: 'file' as const, timestamp: Date.now() / 1000 };
       await openFileInEditor(item.path, configStore.preferences.default_text_editor);
       addRecent(recent);
@@ -106,7 +177,6 @@
   function handleEmptyRightClick(columnIndex: number, x: number, y: number) {
     const col = navigationStore.columns[columnIndex];
 
-    // Root column → New Category / Project / File / Import
     if (columnIndex === 0) {
       contextMenuStore.show(x, y, [
         { label: 'New Category',    action: () => dialogStore.open({ type: 'category',      mode: 'add' }) },
@@ -118,7 +188,6 @@
       return;
     }
 
-    // Category column → Add Subcategory / Add Project
     const selectedInPrev = navigationStore.columns[columnIndex - 1]?.selectedKey;
     if (selectedInPrev && col?.title) {
       const prevItem = navigationStore.columns[columnIndex - 1].items.find(
@@ -128,6 +197,7 @@
         contextMenuStore.show(x, y, [
           { label: 'Add Subcategory',  action: () => dialogStore.open({ type: 'category',     mode: 'add', parentKey: selectedInPrev }) },
           { label: 'Add Project here', action: () => dialogStore.open({ type: 'project',       mode: 'add', parentKey: selectedInPrev }) },
+          { label: 'Add File here',    action: () => dialogStore.open({ type: 'file',          mode: 'add', parentKey: selectedInPrev }) },
           { label: '', action: () => {}, divider: true },
           { label: 'Import folder…',   action: () => dialogStore.open({ type: 'import-folder', defaultParent: selectedInPrev }) },
         ]);
@@ -138,8 +208,9 @@
 
 <div
   class="column-browser"
-  class:multi={!isSingleCol}
+  class:multi={!isSingleCol || isEditing}
   class:has-hidden={hasHidden}
+  class:editing={isEditing}
   bind:clientWidth={browserWidth}
 >
   {#if isEmpty}
@@ -156,9 +227,10 @@
       </button>
     </div>
   {:else}
-    <div class="column-track" style="transform: translateX(-{trackOffset}px)">
-      {#each navigationStore.columns as column, i (i)}
-        <Column
+    <div class="columns-area">
+      <div class="column-track" style="transform: translateX(-{trackOffset}px)">
+        {#each visibleColumns as column, i (i)}
+<Column
           {column}
           columnIndex={i}
           active={i === navigationStore.activeColumnIndex}
@@ -168,8 +240,21 @@
           onemptyrightclick={handleEmptyRightClick}
           onopen={handleOpen}
         />
-      {/each}
+        {/each}
+      </div>
     </div>
+    {#if isEditing && editorPayload}
+      <div class="editor-area">
+        <EditorPane
+          filePath={editorPayload.filePath}
+          fileName={editorPayload.fileName}
+          breadcrumb={breadcrumb}
+          onclose={() => dialogStore.close()}
+          onback={handleBack}
+          onnavigate={handleBreadcrumbNavigate}
+        />
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -182,13 +267,36 @@
     background: var(--color-surface);
   }
 
-  /* Fills remaining space when navigating (HomeView is gone) */
   .column-browser.multi {
     flex: 1;
     min-width: 0;
   }
 
-  /* Inner track — slides left via transform, never scrolls */
+  .columns-area {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    transition: flex-basis 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .column-browser.editing .columns-area {
+    flex: 0 0 240px;
+  }
+
+  .editor-area {
+    flex: 0 1 0;
+    min-width: 0;
+    overflow: hidden;
+    transition: flex-basis 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid transparent;
+  }
+
+  .column-browser.editing .editor-area {
+    flex: 1 1 auto;
+    border-left-color: var(--color-border);
+  }
+
   .column-track {
     display: flex;
     height: 100%;
@@ -196,7 +304,6 @@
     will-change: transform;
   }
 
-  /* Left-edge fade when columns are hidden behind the left boundary */
   .column-browser::before {
     content: '';
     position: absolute;

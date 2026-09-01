@@ -26,6 +26,9 @@ function createConfigStore() {
     keep_background: true,
     hotkey: 'Super+Shift+KeyV',
     ui_scale: 1.0,
+    editor_text_wrap: false,
+    editor_tab_size: 2,
+    editor_font_size: 13,
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);

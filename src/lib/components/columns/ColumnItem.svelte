@@ -39,18 +39,25 @@
       return;
     }
     onselect();
+    // Single click on a file opens it (in-app for text, externally for binary).
+    if (item.type === 'file') {
+      onopen(item);
+    }
   }
 </script>
 
-<button
+<div
   bind:this={el}
   class="column-item"
   class:selected
   class:inactive={selected && !active}
   class:workspace-selected={workspaceSelected}
+  role="button"
+  tabindex="0"
   onclick={handleClick}
-  ondblclick={() => { if (item.type === 'project' || item.type === 'file') onopen(item); }}
+  ondblclick={() => { if (item.type === 'project') onopen(item); }}
   oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
+  onkeydown={(e) => { if (e.key === 'Enter' && (item.type === 'project' || item.type === 'file')) { e.preventDefault(); onopen(item); } }}
   title={item.path}
 >
   <span class="icon">
@@ -66,7 +73,7 @@
   {#if item.hasChildren}
     <span class="chevron">›</span>
   {/if}
-</button>
+</div>
 
 <style>
   .column-item {
@@ -83,6 +90,11 @@
     font-size: var(--text-base);
     color: var(--color-text);
     transition: background 0.08s;
+  }
+
+  .column-item:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
   }
 
   .column-item:hover {

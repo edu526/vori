@@ -8,6 +8,7 @@ mod services;
 mod state;
 
 use commands::config::*;
+use commands::files_io::*;
 use commands::launcher::*;
 use commands::scanner::*;
 use commands::search::*;
@@ -169,6 +170,10 @@ pub fn run() {
             add_file,
             update_file,
             delete_file,
+            // Files — read/write
+            read_text_file,
+            write_text_file,
+            write_text_file_elevated,
             // Config — preferences
             get_preferences,
             update_preferences,

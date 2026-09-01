@@ -31,6 +31,9 @@
     keep_background: true,
     hotkey: 'Super+Shift+KeyV',
     ui_scale: 1.0,
+    editor_text_wrap: false,
+    editor_tab_size: 2,
+    editor_font_size: 13,
   });
 
   let recordingHotkey = $state(false);
@@ -361,6 +364,50 @@
               const sel = await open({ multiple: false, title: 'Select text editor binary' });
               if (sel) prefs.default_text_editor = typeof sel === 'string' ? sel : sel[0];
             }}>Browse</Button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label>In-app editor</Label>
+          <label class="check-row">
+            <Checkbox bind:checked={prefs.editor_text_wrap} />
+            <span>Wrap long lines</span>
+          </label>
+          <div class="pref-row">
+            <Label for="pref-tab-size">Tab size</Label>
+            <select
+              id="pref-tab-size"
+              class="native-select"
+              value={prefs.editor_tab_size}
+              onchange={(e) => {
+                prefs.editor_tab_size = Number((e.currentTarget as HTMLSelectElement).value);
+              }}
+            >
+              <option value={2}>2 spaces</option>
+              <option value={4}>4 spaces</option>
+            </select>
+          </div>
+          <div class="pref-row">
+            <Label for="pref-font-size">Font size</Label>
+            <div class="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onclick={() => prefs.editor_font_size = Math.max(11, prefs.editor_font_size - 1)}
+                disabled={prefs.editor_font_size <= 11}
+                aria-label="Decrease font size"
+              >−</Button>
+              <span class="font-mono text-sm min-w-[36px] text-center">{prefs.editor_font_size}px</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onclick={() => prefs.editor_font_size = Math.min(20, prefs.editor_font_size + 1)}
+                disabled={prefs.editor_font_size >= 20}
+                aria-label="Increase font size"
+              >+</Button>
+            </div>
           </div>
         </div>
 
@@ -701,6 +748,17 @@
   .tp-half--dark  .tp-sidebar { background: #252845; width: 40%; }
 
   .sub-field { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+
+  .pref-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .pref-row :global(label) { flex: 1; margin: 0; }
+  .pref-row :global(.native-select),
+  .pref-row :global(.flex) { flex: 0 0 auto; }
+  .pref-row :global(.native-select) { width: auto; min-width: 110px; padding: 5px 28px 5px 10px; }
   .native-select {
     width: 100%;
     border: 1px solid var(--color-border);

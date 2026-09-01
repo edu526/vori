@@ -44,6 +44,18 @@ fn default_hotkey() -> String {
     "Super+Shift+KeyV".to_string()
 }
 
+fn default_editor_text_wrap() -> bool {
+    false
+}
+
+fn default_editor_tab_size() -> u8 {
+    2
+}
+
+fn default_editor_font_size() -> u8 {
+    13
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Preferences {
     pub default_editor: String,
@@ -69,6 +81,12 @@ pub struct Preferences {
     pub hotkey: String,
     #[serde(default = "default_ui_scale")]
     pub ui_scale: f32,
+    #[serde(default = "default_editor_text_wrap")]
+    pub editor_text_wrap: bool,
+    #[serde(default = "default_editor_tab_size")]
+    pub editor_tab_size: u8,
+    #[serde(default = "default_editor_font_size")]
+    pub editor_font_size: u8,
 }
 
 fn default_ui_scale() -> f32 {
@@ -91,6 +109,9 @@ impl Default for Preferences {
             keep_background: true,
             hotkey: default_hotkey(),
             ui_scale: 1.0,
+            editor_text_wrap: false,
+            editor_tab_size: 2,
+            editor_font_size: 13,
         }
     }
 }

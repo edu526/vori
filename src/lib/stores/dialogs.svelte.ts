@@ -3,8 +3,9 @@ type DialogPayload =
   | { type: 'category'; mode: 'edit'; key: string; parentKey?: string }
   | { type: 'project'; mode: 'add'; parentKey?: string }
   | { type: 'project'; mode: 'edit'; key: string }
-  | { type: 'file'; mode: 'add' }
+  | { type: 'file'; mode: 'add'; parentKey?: string }
   | { type: 'file'; mode: 'edit'; key: string }
+  | { type: 'editor'; filePath: string; fileName: string }
   | { type: 'preferences' }
   | { type: 'import-folder'; defaultParent?: string };
 

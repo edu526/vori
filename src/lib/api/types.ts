@@ -21,6 +21,7 @@ export type ProjectsMap = Record<string, Project>;
 
 export interface FileEntry {
   path: string;
+  parent?: string | null;
 }
 
 export type FilesMap = Record<string, FileEntry>;
@@ -49,6 +50,9 @@ export interface Preferences {
   keep_background: boolean;
   hotkey: string;
   ui_scale: number;
+  editor_text_wrap: boolean;
+  editor_tab_size: number;
+  editor_font_size: number;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────

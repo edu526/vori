@@ -19,10 +19,11 @@ export interface Column {
   title?: string;
 }
 
-function itemHasChildren(key: string, categories: CategoriesMap, projects: ProjectsMap): boolean {
+function itemHasChildren(key: string, categories: CategoriesMap, projects: ProjectsMap, files: FilesMap): boolean {
   return (
     Object.values(categories).some((c) => c.parent === key) ||
-    Object.values(projects).some((p) => p.parent === key)
+    Object.values(projects).some((p) => p.parent === key) ||
+    Object.values(files).some((f) => f.parent === key)
   );
 }
 
@@ -42,21 +43,24 @@ function buildRootItems(
         label: key.split('/').pop() ?? key,
         type: 'category',
         parentKey: null,
-        hasChildren: itemHasChildren(key, categories, projects),
+        hasChildren: itemHasChildren(key, categories, projects, files),
         isFavorite: favorites.categories.includes(key),
       });
     }
   }
 
-  // Files (always at root)
+  // Root files: either parent is null/missing, or parent points to a
+  // category that no longer exists (orphan files fallback to root).
   for (const [key, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
-    items.push({
-      key,
-      label: key,
-      type: 'file',
-      path: file.path,
-      isFavorite: favorites.files.includes(key),
-    });
+    if (!file.parent || !categories[file.parent]) {
+      items.push({
+        key,
+        label: key,
+        type: 'file',
+        path: file.path,
+        isFavorite: favorites.files.includes(key),
+      });
+    }
   }
 
   return items;
@@ -66,6 +70,7 @@ function buildChildItems(
   parentKey: string,
   categories: CategoriesMap,
   projects: ProjectsMap,
+  files: FilesMap,
   favorites: Favorites,
 ): NavItem[] {
   const items: NavItem[] = [];
@@ -78,7 +83,7 @@ function buildChildItems(
         label: key.split('/').pop() ?? key,
         type: 'category',
         parentKey,
-        hasChildren: itemHasChildren(key, categories, projects),
+        hasChildren: itemHasChildren(key, categories, projects, files),
         isFavorite: favorites.categories.includes(key),
       });
     }
@@ -95,6 +100,19 @@ function buildChildItems(
         parentKey,
         isFavorite: favorites.projects.includes(key),
         stack: proj.stack,
+      });
+    }
+  }
+
+  // Files belonging to this parent
+  for (const [key, file] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
+    if (file.parent === parentKey) {
+      items.push({
+        key,
+        label: key,
+        type: 'file',
+        path: file.path,
+        isFavorite: favorites.files.includes(key),
       });
     }
   }
@@ -154,10 +172,10 @@ function createNavigationStore() {
       .map((col, i) => (i === columnIndex ? { ...col, selectedKey: key } : col));
 
     if (item.type === 'category') {
-      const nextItems = buildChildItems(key, _categories, _projects, _favorites);
-      if (nextItems.length > 0) {
-        columns = [...columns, { items: nextItems, selectedKey: null, title: key.split('/').pop() ?? key }];
-      }
+      const nextItems = buildChildItems(key, _categories, _projects, _files, _favorites);
+      // Always create the column — even if empty — so the user can
+      // right-click the empty area to add subcategories/projects/files.
+      columns = [...columns, { items: nextItems, selectedKey: null, title: key.split('/').pop() ?? key }];
     }
   }
 
@@ -224,6 +242,12 @@ function createNavigationStore() {
       }
     }
     return false;
+  }
+
+  function collapseToDepth(depth: number) {
+    if (depth < 0) return;
+    columns = columns.slice(0, depth + 1);
+    activeColumnIndex = Math.min(activeColumnIndex, depth);
   }
 
   function refresh(
@@ -324,6 +348,7 @@ function createNavigationStore() {
     expandRight,
     collapseLeft,
     collapseDeepest,
+    collapseToDepth,
     refresh,
     updateFavorites,
     addRecentToView,

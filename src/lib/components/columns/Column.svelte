@@ -51,15 +51,27 @@
 </div>
 
 <style>
-  .column {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    min-height: 0;
-    border-right: 1px solid var(--color-border);
-    overflow: hidden;
-    transition: background 0.1s;
+.column {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0;
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: background 0.1s;
+  animation: column-slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes column-slide-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
   }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
   .column.active {
     background: color-mix(in srgb, var(--color-accent) 4%, transparent);

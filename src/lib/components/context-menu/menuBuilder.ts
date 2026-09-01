@@ -2,6 +2,7 @@ import { ask } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import { navigationStore } from '$lib/stores/navigation.svelte';
 import { configStore } from '$lib/stores/config.svelte';
+import { dialogStore } from '$lib/stores/dialogs.svelte';
 import { openWorkspaceInEditor } from '$lib/api/commands';
 import type { Favorites } from '$lib/api/types';
 import type { MenuItem } from '$lib/stores/contextMenu.svelte';
@@ -144,10 +145,6 @@ export function buildMenuItems(
     case 'file': {
       const isFav = opts.favorites.files.includes(item.key);
       return [
-        {
-          label: 'Open File',
-          action: () => openFileInEditor(item.path!),
-        },
         { label: '', action: () => {}, divider: true },
         {
           label: isFav ? 'Remove from Favorites' : 'Add to Favorites',

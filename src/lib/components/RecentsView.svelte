@@ -1,8 +1,11 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
+  import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { openEditor } from '$lib/utils/openEditor';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { isTextFile } from '$lib/utils/textExtensions';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
 
   const MAX_RECENTS = 8;
@@ -45,6 +48,10 @@
     if (configStore.preferences.close_on_open_file) await getCurrentWindow().close();
   }
 
+  function handleEditFile(path: string, name: string) {
+    openEditor(path, name);
+  }
+
   function formatPath(path: string) {
     return path.replace(/^\/home\/[^/]+/, '~');
   }
@@ -68,6 +75,8 @@
               Open in {editorLabel(defaultEditor)}
             </button>
             <button onclick={() => handleOpenTerminal(item.path)}>Terminal</button>
+          {:else if isTextFile(item.path)}
+            <button onclick={() => handleEditFile(item.path, item.name)}>Edit</button>
           {:else}
             <button onclick={() => handleOpenFile(item.path, item.name)}>Open</button>
           {/if}
