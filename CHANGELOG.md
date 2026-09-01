@@ -1,3 +1,17 @@
+# [1.5.0](https://github.com/edu526/vori/compare/v1.4.1...v1.5.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* **editor:** collapse deepest column when editor closes without navigation ([8066dba](https://github.com/edu526/vori/commit/8066dba1b1be90ae9ce732026d8c7ca4eb37606f))
+
+
+### Features
+
+* autodetect VSCode workspaces inside category folders ([e85e774](https://github.com/edu526/vori/commit/e85e774baf54b817ed1960e4598fda9c15a85f40))
+* bind category source path and persist workspace selection ([197cefb](https://github.com/edu526/vori/commit/197cefb8502f32d17bf0e7e2fe5876c3681698a8))
+* **editor:** in-app text editor with cross-OS admin elevation ([155121d](https://github.com/edu526/vori/commit/155121daff713257d2326729d3a0af11b6466568))
+
 ## [1.4.1](https://github.com/edu526/vori/compare/v1.4.0...v1.4.1) (2026-07-01)
 
 
