@@ -217,6 +217,24 @@ pub fn update_preferences(
     config_manager::save("preferences.json", &prefs)
 }
 
+// ── Workspace selection (Ctrl+click selection that survives across restarts) ──
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct WorkspaceSelectionEntry {
+    pub path: String,
+    pub label: String,
+}
+
+#[tauri::command]
+pub fn get_workspace_selection() -> Vec<WorkspaceSelectionEntry> {
+    config_manager::load("workspace_selection.json").unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn set_workspace_selection(entries: Vec<WorkspaceSelectionEntry>) -> Result<(), String> {
+    config_manager::save("workspace_selection.json", &entries)
+}
+
 // ── Favorites ─────────────────────────────────────────────────────────────────
 
 #[tauri::command]

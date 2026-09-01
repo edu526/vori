@@ -180,6 +180,9 @@ pub fn run() {
             // Config — favorites
             get_favorites,
             toggle_favorite,
+            // Workspace selection persistence
+            get_workspace_selection,
+            set_workspace_selection,
             // Config — recents
             get_recents,
             add_recent,

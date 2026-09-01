@@ -7,6 +7,7 @@ import type { AppData, Favorites, RecentItem, SearchResult } from '$lib/api/type
 
 // Mutable state — cloned so tests don't share reference with the exported constant
 const state: AppData = structuredClone(mockAppData);
+let workspaceSelection: { path: string; label: string }[] = [];
 
 function delay<T>(value: T, ms = 80): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
@@ -21,11 +22,15 @@ const handlers: Record<string, (args: Args) => any> = {
   get_app_data: () => structuredClone(state),
 
   // ── Categories ────────────────────────────────────────────────────────────
-  add_category: ({ key, parent }: Args) => {
-    state.categories[key] = { parent: parent ?? null };
+  add_category: ({ key, parent, sourcePath }: Args) => {
+    state.categories[key] = { parent: parent ?? null, source_path: sourcePath ?? null };
   },
-  update_category: ({ key, parent }: Args) => {
-    state.categories[key] = { parent: parent ?? null };
+  update_category: ({ key, parent, sourcePath }: Args) => {
+    const existing = state.categories[key] ?? {};
+    state.categories[key] = {
+      parent: parent ?? null,
+      source_path: sourcePath === undefined ? existing.source_path : (sourcePath ?? null),
+    };
   },
   delete_category: ({ key }: Args) => {
     // Collect all descendants
@@ -99,6 +104,12 @@ const handlers: Record<string, (args: Args) => any> = {
   get_recents: () => structuredClone(state.recents),
   add_recent: ({ item }: Args) => {
     state.recents = [item, ...state.recents.filter((r: RecentItem) => r.path !== item.path)].slice(0, 20);
+  },
+
+  // ── Workspace selection ─────────────────────────────────────────────────────
+  get_workspace_selection: () => workspaceSelection.slice(),
+  set_workspace_selection: ({ entries }: Args) => {
+    workspaceSelection = entries.slice();
   },
 
   // ── Launcher ──────────────────────────────────────────────────────────────

@@ -80,6 +80,19 @@ export const getRecents = () => invoke<RecentItem[]>('get_recents');
 
 export const addRecent = (item: RecentItem) => invoke<void>('add_recent', { item });
 
+// ── Workspace selection ────────────────────────────────────────────────────────
+
+export interface WorkspaceSelectionEntry {
+  path: string;
+  label: string;
+}
+
+export const getWorkspaceSelection = () =>
+  invoke<WorkspaceSelectionEntry[]>('get_workspace_selection');
+
+export const setWorkspaceSelection = (entries: WorkspaceSelectionEntry[]) =>
+  invoke<void>('set_workspace_selection', { entries });
+
 // ── Launcher ──────────────────────────────────────────────────────────────────
 
 export const openProjectInEditor = async (path: string, editorName: string) => {

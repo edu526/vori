@@ -3,6 +3,7 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { addCategory, updateCategory } from '$lib/api/commands';
+  import { open } from '@tauri-apps/plugin-dialog';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
   import { Label } from '$lib/components/ui/label';
   import { Input } from '$lib/components/ui/input';
@@ -17,6 +18,7 @@
 
   let key = $state('');
   let selectedParent = $state<string>('');
+  let sourcePath = $state<string>('');
   let keyError = $state('');
 
   // All category keys, sorted — used for parent dropdown
@@ -30,9 +32,11 @@
     if (payload.mode === 'edit') {
       key = payload.key;
       selectedParent = configStore.categories[payload.key]?.parent ?? '';
+      sourcePath = configStore.categories[payload.key]?.source_path ?? '';
     } else {
       key = '';
       selectedParent = payload.parentKey ?? '';
+      sourcePath = '';
     }
     keyError = '';
   });
@@ -46,14 +50,20 @@
     return true;
   }
 
+  async function handleBrowse() {
+    const picked = await open({ directory: true });
+    if (typeof picked === 'string') sourcePath = picked;
+  }
+
   async function handleSave() {
     if (!validateKey() || !payload) return;
     const parent = selectedParent || null;
+    const trimmedSource = sourcePath.trim() || null;
     try {
       if (payload.mode === 'add') {
-        await addCategory(key, parent);
+        await addCategory(key, parent, trimmedSource);
       } else if (payload.mode === 'edit') {
-        await updateCategory(payload.key, parent);
+        await updateCategory(payload.key, parent, trimmedSource);
       }
       await configStore.load();
       navigationStore.refresh(
@@ -97,6 +107,20 @@
           {/each}
         </select>
       </div>
+
+      <div class="field">
+        <Label for="cat-source">Folder (optional)</Label>
+        <div class="path-row">
+          <Input
+            id="cat-source"
+            class="path-input"
+            bind:value={sourcePath}
+            placeholder="/path/to/folder"
+          />
+          <Button type="button" variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
+        </div>
+        <span class="hint">Bind a folder to auto-detect workspaces and enable Refresh Import Tree</span>
+      </div>
     </div>
 
     <DialogFooter>
@@ -110,6 +134,9 @@
   .fields { display: flex; flex-direction: column; gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 4px; }
   .error-msg { font-size: var(--text-sm); color: #e53e3e; margin: 0; }
+
+  .path-row { display: flex; gap: 6px; align-items: stretch; }
+  .hint { font-size: var(--text-xs); color: var(--color-text-secondary); font-style: italic; }
 
   .native-select {
     width: 100%;

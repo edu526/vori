@@ -7,6 +7,10 @@ pub enum RecentType {
     File,
     Category,
     Workspace,
+    // ponytail: forward-compat — older Rust builds reading newer recents.json
+    // won't error on unknown variants.
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

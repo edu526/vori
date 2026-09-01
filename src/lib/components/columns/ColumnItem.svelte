@@ -23,7 +23,9 @@
   let el = $state<HTMLElement | null>(null);
 
   let workspaceSelected = $derived(
-    item.type === 'project' && navigationStore.workspaceSelection.has(item.key),
+    (item.type === 'project' || item.type === 'workspace') &&
+    !!item.path &&
+    navigationStore.workspaceSelection.has(item.path),
   );
 
   $effect(() => {

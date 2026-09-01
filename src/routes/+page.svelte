@@ -39,6 +39,7 @@
         configStore.favorites,
         configStore.recents,
       );
+      await navigationStore.loadWorkspaceSelection();
     }
   });
 

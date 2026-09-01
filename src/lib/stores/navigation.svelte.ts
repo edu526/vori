@@ -1,5 +1,9 @@
 import type { CategoriesMap, DetectedWorkspace, Favorites, FilesMap, ProjectsMap, RecentItem } from '$lib/api/types';
-import { detectWorkspacesInFolder } from '$lib/api/commands';
+import {
+  detectWorkspacesInFolder,
+  getWorkspaceSelection,
+  setWorkspaceSelection,
+} from '$lib/api/commands';
 
 export type NavItemType = 'category' | 'project' | 'file' | 'workspace';
 
@@ -353,17 +357,30 @@ function createNavigationStore() {
   }
 
   function toggleWorkspaceItem(key: string, path: string, label: string) {
+    // ponytail: dedup by path so the selection survives project-key renames
+    // and is consistent for both project and workspace items.
     const next = new Map(_workspaceSelection);
-    if (next.has(key)) {
-      next.delete(key);
+    if (next.has(path)) {
+      next.delete(path);
     } else {
-      next.set(key, { path, label });
+      next.set(path, { path, label });
     }
     _workspaceSelection = next;
+    void setWorkspaceSelection([...next.values()]);
   }
 
   function clearWorkspaceSelection() {
     _workspaceSelection = new Map();
+    void setWorkspaceSelection([]);
+  }
+
+  async function loadWorkspaceSelection() {
+    const entries = await getWorkspaceSelection();
+    const map = new Map<string, WorkspaceEntry>();
+    for (const e of entries) {
+      map.set(e.path, e);
+    }
+    _workspaceSelection = map;
   }
 
   return {
@@ -400,6 +417,7 @@ function createNavigationStore() {
     addRecentToView,
     toggleWorkspaceItem,
     clearWorkspaceSelection,
+    loadWorkspaceSelection,
     detectWorkspaces,
   };
 }

@@ -130,7 +130,7 @@ export function buildMenuItems(
 
     case 'project': {
       const isFav = opts.favorites.projects.includes(item.key);
-      const inWorkspace = navigationStore.workspaceSelection.has(item.key);
+      const inWorkspace = !!item.path && navigationStore.workspaceSelection.has(item.path);
       const workspaceSize = navigationStore.workspaceSelection.size;
       return [
         {
@@ -189,7 +189,7 @@ export function buildMenuItems(
     case 'workspace': {
       // ponytail: detected workspaces are ephemeral — no favorites, no edit, no delete.
       // User can "Import as project" to make one persistent.
-      const inWorkspace = navigationStore.workspaceSelection.has(item.key);
+      const inWorkspace = !!item.path && navigationStore.workspaceSelection.has(item.path);
       const workspaceSize = navigationStore.workspaceSelection.size;
       return [
         {
