@@ -1,6 +1,7 @@
-import type { CategoriesMap, Favorites, FilesMap, ProjectsMap, RecentItem } from '$lib/api/types';
+import type { CategoriesMap, DetectedWorkspace, Favorites, FilesMap, ProjectsMap, RecentItem } from '$lib/api/types';
+import { detectWorkspacesInFolder } from '$lib/api/commands';
 
-export type NavItemType = 'category' | 'project' | 'file';
+export type NavItemType = 'category' | 'project' | 'file' | 'workspace';
 
 export interface NavItem {
   key: string;
@@ -138,6 +139,8 @@ function createNavigationStore() {
   let _favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let _recents = $state<RecentItem[]>([]);
   let _workspaceSelection = $state<Map<string, WorkspaceEntry>>(new Map());
+  let _workspaceDetections = $state<Record<string, DetectedWorkspace[]>>({});
+  let _activeCategoryKey = $state<string | null>(null);
 
   function init(
     cats: CategoriesMap,
@@ -172,11 +175,51 @@ function createNavigationStore() {
       .map((col, i) => (i === columnIndex ? { ...col, selectedKey: key } : col));
 
     if (item.type === 'category') {
+      _activeCategoryKey = key;
       const nextItems = buildChildItems(key, _categories, _projects, _files, _favorites);
-      // Always create the column — even if empty — so the user can
-      // right-click the empty area to add subcategories/projects/files.
-      columns = [...columns, { items: nextItems, selectedKey: null, title: key.split('/').pop() ?? key }];
+      const wsItems = workspaceItemsFor(key);
+      columns = [...columns, {
+        items: [...nextItems, ...wsItems],
+        selectedKey: null,
+        title: key.split('/').pop() ?? key,
+      }];
+
+      const sourcePath = _categories[key]?.source_path;
+      if (sourcePath && _workspaceDetections[key] === undefined) {
+        detectWorkspaces(key, sourcePath);
+      }
+    } else {
+      _activeCategoryKey = null;
     }
+  }
+
+  function workspaceItemsFor(key: string): NavItem[] {
+    return (_workspaceDetections[key] ?? []).map((ws) => ({
+      key: `__ws:${ws.workspace_file}`,
+      label: ws.name,
+      type: 'workspace',
+      path: ws.workspace_file,
+      parentKey: key,
+    }));
+  }
+
+  function detectWorkspaces(key: string, sourcePath: string) {
+    detectWorkspacesInFolder(sourcePath)
+      .then((workspaces) => {
+        _workspaceDetections = { ..._workspaceDetections, [key]: workspaces };
+        if (_activeCategoryKey !== key) return;
+        const colIdx = columns.length - 1;
+        if (colIdx <= 0) return;
+        const baseItems = buildChildItems(key, _categories, _projects, _files, _favorites);
+        const wsItems = workspaceItemsFor(key);
+        columns = [
+          ...columns.slice(0, colIdx),
+          { ...columns[colIdx], items: [...baseItems, ...wsItems] },
+        ];
+      })
+      .catch((err) => {
+        console.warn('[vori] workspace detection failed for', key, err);
+      });
   }
 
   // ── Keyboard navigation ───────────────────────────────────────────────────
@@ -333,6 +376,9 @@ function createNavigationStore() {
     get workspaceSelection() {
       return _workspaceSelection;
     },
+    get workspaceDetections() {
+      return _workspaceDetections;
+    },
     get selectedItem(): NavItem | null {
       for (let i = columns.length - 1; i >= 0; i--) {
         if (columns[i].selectedKey) {
@@ -354,6 +400,7 @@ function createNavigationStore() {
     addRecentToView,
     toggleWorkspaceItem,
     clearWorkspaceSelection,
+    detectWorkspaces,
   };
 }
 

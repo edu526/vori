@@ -13,6 +13,15 @@
   let recents = $derived(configStore.recents.slice(0, MAX_RECENTS));
   let defaultEditor = $derived(configStore.preferences.default_editor);
 
+  // ponytail: recents typed 'file' before workspaces existed stay in storage as-is.
+  // Fix the icon for those by sniffing the extension.
+  function iconTypeFor(item: { type: string; path: string }): 'category' | 'project' | 'workspace' | 'file' {
+    if (item.type === 'workspace') return 'workspace';
+    if (item.type === 'project') return 'project';
+    if (item.path.endsWith('.code-workspace')) return 'workspace';
+    return 'file';
+  }
+
   const EDITOR_LABELS: Record<string, string> = {
     vscode: 'VSCode', 'vscode-insiders': 'VSCode Insiders', cursor: 'Cursor',
     windsurf: 'Windsurf', kiro: 'Kiro', zed: 'Zed', fleet: 'Fleet',
@@ -63,18 +72,20 @@
     {#each recents as item (item.path)}
       <li class="item">
         <div class="item-icon">
-          <ItemIcon type={item.type === 'file' ? 'file' : 'project'} size={16} />
+          <ItemIcon type={iconTypeFor(item)} size={16} />
         </div>
         <div class="item-info">
           <span class="item-name">{item.name}</span>
           <span class="item-path">{formatPath(item.path)}</span>
         </div>
         <div class="item-actions">
-          {#if item.type === 'project'}
+          {#if item.type === 'project' || item.type === 'workspace' || item.path.endsWith('.code-workspace')}
             <button onclick={() => handleOpenProject(item.path, item.name, defaultEditor)}>
               Open in {editorLabel(defaultEditor)}
             </button>
-            <button onclick={() => handleOpenTerminal(item.path)}>Terminal</button>
+            {#if item.type === 'project'}
+              <button onclick={() => handleOpenTerminal(item.path)}>Terminal</button>
+            {/if}
           {:else if isTextFile(item.path)}
             <button onclick={() => handleEditFile(item.path, item.name)}>Edit</button>
           {:else}

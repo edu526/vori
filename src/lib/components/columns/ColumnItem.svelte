@@ -33,7 +33,7 @@
   });
 
   function handleClick(e: MouseEvent) {
-    if ((e.ctrlKey || e.metaKey) && item.type === 'project' && item.path) {
+    if ((e.ctrlKey || e.metaKey) && (item.type === 'project' || item.type === 'workspace') && item.path) {
       e.stopPropagation();
       navigationStore.toggleWorkspaceItem(item.key, item.path, item.label);
       return;
@@ -55,9 +55,9 @@
   role="button"
   tabindex="0"
   onclick={handleClick}
-  ondblclick={() => { if (item.type === 'project') onopen(item); }}
+  ondblclick={() => { if (item.type === 'project' || item.type === 'workspace') onopen(item); }}
   oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
-  onkeydown={(e) => { if (e.key === 'Enter' && (item.type === 'project' || item.type === 'file')) { e.preventDefault(); onopen(item); } }}
+  onkeydown={(e) => { if (e.key === 'Enter' && (item.type === 'project' || item.type === 'file' || item.type === 'workspace')) { e.preventDefault(); onopen(item); } }}
   title={item.path}
 >
   <span class="icon">

@@ -193,6 +193,7 @@ pub fn run() {
             get_installed_apps,
             // Scanner
             scan_folder,
+            detect_workspaces_in_folder,
             // Search
             search,
         ])

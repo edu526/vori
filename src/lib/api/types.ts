@@ -65,7 +65,7 @@ export interface Favorites {
 
 // ── Recents ───────────────────────────────────────────────────────────────────
 
-export type RecentType = 'project' | 'file' | 'category';
+export type RecentType = 'project' | 'file' | 'category' | 'workspace';
 
 export interface RecentItem {
   path: string;
@@ -92,6 +92,17 @@ export interface ScannedProject {
   path: string;
   stack: string;
   /** Path relative to scan root, segments joined with '/'. E.g. "work/backend/api-service" */
+  relative_path: string;
+}
+
+export interface DetectedWorkspace {
+  /** Display name (workspace file stem, e.g. "frontend" for frontend.code-workspace) */
+  name: string;
+  /** Folder containing the .code-workspace file */
+  path: string;
+  /** Full path to the .code-workspace file */
+  workspace_file: string;
+  /** Folder path relative to scan root, '/' separated */
   relative_path: string;
 }
 

@@ -18,6 +18,14 @@
     <line x1="8" y1="8" x2="8" y2="14"/>
   </svg>
 
+{:else if type === 'workspace'}
+  <!-- Stacked layers — VSCode multi-root workspace -->
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <polygon points="8,2 14,5 8,8 2,5" />
+    <polyline points="2,9 8,12 14,9" />
+    <polyline points="2,12 8,15 14,12" />
+  </svg>
+
 {:else if type === 'file' || type === 'recent-file'}
   <!-- Document with text lines -->
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

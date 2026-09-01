@@ -153,8 +153,11 @@
 
   async function handleOpen(item: NavItem) {
     if (!item.path) return;
-    if (item.type === 'project') {
-      const recent = { path: item.path, name: item.label, type: 'project' as const, timestamp: Date.now() / 1000 };
+    if (item.type === 'project' || item.type === 'workspace') {
+      const recentType: 'project' | 'workspace' = item.type === 'workspace' ? 'workspace' : 'project';
+      const recent = { path: item.path, name: item.label, type: recentType, timestamp: Date.now() / 1000 };
+      // ponytail: VSCode opens `.code-workspace` files the same way it opens folders,
+      // so we don't need a separate command — openProjectInEditor just passes the path.
       await openProjectInEditor(item.path, configStore.preferences.default_editor);
       addRecent(recent);
       navigationStore.addRecentToView(recent);

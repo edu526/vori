@@ -1,4 +1,4 @@
-import { ask } from '@tauri-apps/plugin-dialog';
+import { ask, open } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import { navigationStore } from '$lib/stores/navigation.svelte';
 import { configStore } from '$lib/stores/config.svelte';
@@ -10,6 +10,9 @@ import {
   openProjectInEditor,
   openInTerminal,
   openFileInEditor,
+  addProject,
+  bulkImportProjects,
+  updateCategory,
   deleteCategory,
   deleteProject,
   deleteFile,
@@ -47,6 +50,9 @@ export function buildMenuItems(
 
   switch (item.type) {
     case 'category': {
+      const cat = configStore.categories[item.key];
+      const existingSourcePath = cat?.source_path;
+      const detected = navigationStore.workspaceDetections[item.key] ?? [];
       return [
         {
           label: 'Add Subcategory',
@@ -60,11 +66,49 @@ export function buildMenuItems(
           label: 'Import folder…',
           action: () => opts.onImportFolder?.(),
         },
-        ...(configStore.categories[item.key]?.source_path
+        ...(existingSourcePath
           ? [
               {
                 label: 'Refresh Import Tree…',
-                action: () => opts.onImportFolder?.(configStore.categories[item.key].source_path as string),
+                action: () => opts.onImportFolder?.(existingSourcePath),
+              },
+            ]
+          : []),
+        { label: '', action: () => {}, divider: true },
+        {
+          label: existingSourcePath ? 'Detect Workspaces' : 'Detect Workspaces in folder…',
+          action: async () => {
+            let sourcePath = existingSourcePath;
+            if (!sourcePath) {
+              const picked = await open({ directory: true });
+              if (typeof picked !== 'string') return;
+              sourcePath = picked;
+              await updateCategory(item.key, cat?.parent ?? null, sourcePath);
+              await configStore.load();
+              opts.onRefresh();
+            }
+            navigationStore.detectWorkspaces(item.key, sourcePath);
+          },
+        },
+        ...(detected.length > 0
+          ? [
+              {
+                label: `Import ${detected.length} workspace${detected.length !== 1 ? 's' : ''} as project${detected.length !== 1 ? 's' : ''}`,
+                action: async () => {
+                  const used = new Set(Object.keys(configStore.projects));
+                  const entries: [string, { path: string; parent: string }][] = detected.map((ws) => {
+                    let key = `ws-${ws.name}`;
+                    if (used.has(key)) {
+                      const rel = ws.relative_path.replace(/\//g, '-');
+                      key = used.has(`ws-${rel}`) ? `ws-${ws.workspace_file}` : `ws-${rel}`;
+                    }
+                    used.add(key);
+                    return [key, { path: ws.workspace_file, parent: item.key }];
+                  });
+                  await bulkImportProjects(entries);
+                  await configStore.load();
+                  opts.onRefresh();
+                },
               },
             ]
           : []),
@@ -137,6 +181,54 @@ export function buildMenuItems(
           action: async () => {
             const ok = await ask(`Delete project "${item.label}"? This cannot be undone.`, { kind: 'warning' });
             if (ok) await deleteProject(item.key).then(() => opts.onRefresh());
+          },
+        },
+      ];
+    }
+
+    case 'workspace': {
+      // ponytail: detected workspaces are ephemeral — no favorites, no edit, no delete.
+      // User can "Import as project" to make one persistent.
+      const inWorkspace = navigationStore.workspaceSelection.has(item.key);
+      const workspaceSize = navigationStore.workspaceSelection.size;
+      return [
+        {
+          label: `Open in ${primaryLabel}`,
+          action: () => openProjectInEditor(item.path!, opts.defaultEditor),
+        },
+        ...otherEditors.map((key) => ({
+          label: `Open in ${editorLabel(key)}`,
+          action: () => openProjectInEditor(item.path!, key),
+        })),
+        { label: '', action: () => {}, divider: true },
+        {
+          label: inWorkspace ? 'Remove from workspace selection' : 'Add to workspace selection',
+          action: () => navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label),
+        },
+        ...(workspaceSize >= 2 && inWorkspace || workspaceSize >= 1 && !inWorkspace
+          ? [{
+              label: `Open ${workspaceSize + (inWorkspace ? 0 : 1)} as workspace`,
+              action: async () => {
+                if (!inWorkspace) {
+                  navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label);
+                }
+                const paths = [...navigationStore.workspaceSelection.values()].map((v) => v.path);
+                await openWorkspaceInEditor(paths, opts.defaultEditor);
+                navigationStore.clearWorkspaceSelection();
+              },
+            }]
+          : []),
+        { label: '', action: () => {}, divider: true },
+        {
+          label: 'Import as project',
+          action: async () => {
+            let key = `ws-${item.label}`;
+            if (configStore.projects[key]) {
+              key = `ws-${item.path!.split(/[\\/]/).pop()?.replace(/\.code-workspace$/, '') ?? item.label}`;
+            }
+            await addProject(key, { path: item.path!, parent: item.parentKey ?? '' });
+            await configStore.load();
+            opts.onRefresh();
           },
         },
       ];

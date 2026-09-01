@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 import type {
   AppData,
+  DetectedWorkspace,
   Favorites,
   FileEntry,
   Preferences,
@@ -134,6 +135,9 @@ export const getInstalledApps = () =>
 
 export const scanFolder = (path: string, maxDepth?: number) =>
   invoke<ScannedProject[]>('scan_folder', { path, maxDepth });
+
+export const detectWorkspacesInFolder = (path: string, maxDepth?: number) =>
+  invoke<DetectedWorkspace[]>('detect_workspaces_in_folder', { path, maxDepth });
 
 // ── Search ────────────────────────────────────────────────────────────────────
 

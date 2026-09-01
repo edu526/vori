@@ -129,6 +129,11 @@ const handlers: Record<string, (args: Args) => any> = {
     ];
   },
 
+  detect_workspaces_in_folder: ({ path }: Args) => [
+    { name: 'frontend', path: `${path}/frontend`, workspace_file: `${path}/frontend/frontend.code-workspace`, relative_path: 'frontend' },
+    { name: 'backend',  path: `${path}/backend`,  workspace_file: `${path}/backend/backend.code-workspace`,   relative_path: 'backend' },
+  ],
+
   // ── Search ────────────────────────────────────────────────────────────────
   search: ({ query }: Args): SearchResult[] => {
     const q = query.toLowerCase();

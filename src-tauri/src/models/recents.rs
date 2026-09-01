@@ -6,6 +6,7 @@ pub enum RecentType {
     Project,
     File,
     Category,
+    Workspace,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
