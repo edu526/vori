@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
@@ -51,8 +52,8 @@
   const keyPattern = /^[a-zA-Z0-9_/-]+$/;
 
   function validateKey() {
-    if (!key) { keyError = 'Name is required.'; return false; }
-    if (!keyPattern.test(key)) { keyError = 'Only letters, numbers, underscores, hyphens and slashes.'; return false; }
+    if (!key) { keyError = t('dialog.nameRequired'); return false; }
+    if (!keyPattern.test(key)) { keyError = t('dialog.keyPattern'); return false; }
     keyError = '';
     return true;
   }
@@ -92,12 +93,12 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
   <DialogContent class="w-[420px] max-w-[90vw]" showCloseButton={false}>
     <DialogHeader>
-      <DialogTitle>{isEdit ? 'Edit Category' : 'Add Category'}</DialogTitle>
+      <DialogTitle>{isEdit ? t('menu.editCategory') : t('category.add')}</DialogTitle>
     </DialogHeader>
 
     <div class="fields">
       <div class="field">
-        <Label for="cat-key">Name (key)</Label>
+        <Label for="cat-key">{t('category.nameKey')}</Label>
         <Input
           id="cat-key"
           bind:value={key}
@@ -109,9 +110,9 @@
       </div>
 
       <div class="field">
-        <Label for="cat-parent">Parent category</Label>
+        <Label for="cat-parent">{t('category.parent')}</Label>
         <select id="cat-parent" bind:value={selectedParent} class="native-select">
-          <option value="">(none — root)</option>
+          <option value="">{t('category.rootOption')}</option>
           {#each categoryOptions as catKey}
             {#if !(isEdit && payload?.mode === 'edit' && catKey === payload.key)}
               <option value={catKey}>{catKey}</option>
@@ -121,7 +122,7 @@
       </div>
 
       <div class="field">
-        <Label for="cat-source">Folder (optional)</Label>
+        <Label for="cat-source">{t('category.folder')}</Label>
         <div class="path-row">
           <Input
             id="cat-source"
@@ -129,30 +130,30 @@
             bind:value={sourcePath}
             placeholder="/path/to/folder"
           />
-          <Button type="button" variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
+          <Button type="button" variant="outline" size="sm" onclick={handleBrowse}>{t('common.browse')}</Button>
         </div>
-        <span class="hint">Bind a folder to auto-detect workspaces and enable Refresh Import Tree</span>
+        <span class="hint">{t('category.folderHint')}</span>
       </div>
 
       <div class="field">
-        <Label for="cat-claude">Claude profile</Label>
+        <Label for="cat-claude">{t('claude.profile')}</Label>
         {#if profileNames.length > 0}
           <select id="cat-claude" bind:value={claudeProfile} class="native-select">
-            <option value="">Inherit from parent</option>
+            <option value="">{t('claude.inheritParent')}</option>
             {#each profileNames as name}
               <option value={name}>{name}</option>
             {/each}
           </select>
-          <span class="hint">Applies to everything inside when opened in an editor or terminal</span>
+          <span class="hint">{t('claude.appliesInside')}</span>
         {:else}
-          <span class="hint">No profiles yet — create one in Preferences → Claude</span>
+          <span class="hint">{t('claude.noProfiles')}</span>
         {/if}
       </div>
     </div>
 
     <DialogFooter>
-      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
-      <Button onclick={handleSave}>Save</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>{t('common.cancel')}</Button>
+      <Button onclick={handleSave}>{t('common.save')}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
@@ -57,8 +58,8 @@
   }
 
   async function handleSave() {
-    if (!key) { keyError = 'Name is required.'; return; }
-    if (!selectedParent) { keyError = 'Parent category is required.'; return; }
+    if (!key) { keyError = t('dialog.nameRequired'); return; }
+    if (!selectedParent) { keyError = t('dialog.parentRequired'); return; }
     if (!payload) return;
     keyError = '';
     try {
@@ -88,28 +89,28 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
   <DialogContent class="w-[420px] max-w-[90vw]" showCloseButton={false}>
     <DialogHeader>
-      <DialogTitle>{isEdit ? 'Edit Project' : 'Add Project'}</DialogTitle>
+      <DialogTitle>{isEdit ? t('menu.editProject') : t('project.add')}</DialogTitle>
     </DialogHeader>
 
     <div class="fields">
       <div class="field">
-        <Label for="proj-key">Name</Label>
+        <Label for="proj-key">{t('field.name')}</Label>
         <Input id="proj-key" bind:value={key} disabled={isEdit} placeholder="my-project" />
         {#if keyError}<p class="error-msg">{keyError}</p>{/if}
       </div>
 
       <div class="field">
-        <Label for="proj-path">Path</Label>
+        <Label for="proj-path">{t('field.path')}</Label>
         <div class="path-row">
           <Input id="proj-path" bind:value={path} placeholder="/home/user/projects/my-project" />
-          <Button variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
+          <Button variant="outline" size="sm" onclick={handleBrowse}>{t('common.browse')}</Button>
         </div>
       </div>
 
       <div class="field">
-        <Label for="proj-parent">Category</Label>
+        <Label for="proj-parent">{t('field.category')}</Label>
         <select id="proj-parent" bind:value={selectedParent} class="native-select">
-          <option value="">(select category)</option>
+          <option value="">{t('dialog.selectCategory')}</option>
           {#each categoryOptions as catKey}
             <option value={catKey}>{catKey}</option>
           {/each}
@@ -117,23 +118,23 @@
       </div>
 
       <div class="field">
-        <Label for="proj-claude">Claude profile</Label>
+        <Label for="proj-claude">{t('claude.profile')}</Label>
         {#if profileNames.length > 0}
           <select id="proj-claude" bind:value={claudeProfile} class="native-select">
-            <option value="">Inherit from category</option>
+            <option value="">{t('claude.inheritCategory')}</option>
             {#each profileNames as name}
               <option value={name}>{name}</option>
             {/each}
           </select>
         {:else}
-          <span class="hint">No profiles yet — create one in Preferences → Claude</span>
+          <span class="hint">{t('claude.noProfiles')}</span>
         {/if}
       </div>
     </div>
 
     <DialogFooter>
-      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
-      <Button onclick={handleSave}>Save</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>{t('common.cancel')}</Button>
+      <Button onclick={handleSave}>{t('common.save')}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>

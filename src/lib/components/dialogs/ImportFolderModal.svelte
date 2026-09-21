@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, tn } from '$lib/i18n/index.svelte';
   import { untrack } from 'svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
@@ -239,8 +240,8 @@
   }
 
   async function handleImport() {
-    if (mode === 'flat' && !selectedParent) { error = 'Select a target category first.'; return; }
-    if (selected.size === 0) { error = 'Select at least one project.'; return; }
+    if (mode === 'flat' && !selectedParent) { error = t('import.needCategory'); return; }
+    if (selected.size === 0) { error = t('import.needProject'); return; }
 
     importing = true;
     error = '';
@@ -302,7 +303,7 @@
     {#if node.kind === 'folder'}
       {@const isCollapsed = collapsed.has(node.folderPath)}
       <li class="tree-row folder-row" style="--depth: {depth}">
-        <button class="collapse-btn" onclick={() => toggleCollapse(node.folderPath)} aria-label="toggle">
+        <button class="collapse-btn" onclick={() => toggleCollapse(node.folderPath)} aria-label={t('import.toggle')}>
           <svg class="chevron" class:open={!isCollapsed} width="10" height="10" viewBox="0 0 10 10">
             <path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -347,7 +348,7 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
   <DialogContent class="w-[560px] max-w-[95vw]" showCloseButton={false} style="max-height: min(90vh, 680px); display: flex; flex-direction: column; overflow: hidden;">
     <DialogHeader style="flex-shrink: 0;">
-      <DialogTitle>Import projects from folder</DialogTitle>
+      <DialogTitle>{t('import.title')}</DialogTitle>
     </DialogHeader>
 
     <div class="body">
@@ -356,27 +357,27 @@
         <!-- Folder picker -->
         <div class="row">
           <div class="path-display" class:empty={!folderPath}>
-            {folderPath || 'No folder selected'}
+            {folderPath || t('import.noFolder')}
           </div>
-          <Button variant="outline" size="sm" onclick={handleBrowse} disabled={scanning}>Browse</Button>
+          <Button variant="outline" size="sm" onclick={handleBrowse} disabled={scanning}>{t('common.browse')}</Button>
         </div>
 
         <!-- Mode toggle -->
         <div class="mode-toggle">
-          <button class="mode-btn" class:active={mode === 'flat'} onclick={() => { mode = 'flat'; }}>Flat</button>
-          <button class="mode-btn" class:active={mode === 'nested'} onclick={() => { mode = 'nested'; }}>Nested</button>
+          <button class="mode-btn" class:active={mode === 'flat'} onclick={() => { mode = 'flat'; }}>{t('import.flat')}</button>
+          <button class="mode-btn" class:active={mode === 'nested'} onclick={() => { mode = 'nested'; }}>{t('import.nested')}</button>
         </div>
 
         <!-- Category selector -->
         <div class="field">
           <label class="field-label" for="import-parent">
-            {mode === 'flat' ? 'Import into category' : 'Root category (folder structure goes inside)'}
+            {mode === 'flat' ? t('import.intoCategory') : t('import.rootCategory')}
           </label>
           <input
             id="import-parent"
             list="import-parent-list"
             bind:value={selectedParent}
-            placeholder="category name (existing or new)"
+            placeholder={t('import.categoryPlaceholder')}
             class="native-input"
           />
           <datalist id="import-parent-list">
@@ -385,7 +386,7 @@
             {/each}
           </datalist>
           {#if mode === 'nested'}
-            <span class="nested-hint">Intermediate folders will be created as sub-categories inside this category</span>
+            <span class="nested-hint">{t('import.nestedHint')}</span>
           {/if}
         </div>
       </div>
@@ -393,14 +394,14 @@
       <!-- Scrollable results -->
       <div class="results-scroll">
         {#if scanning}
-          <div class="state-row"><span class="spinner"></span> Scanning…</div>
+          <div class="state-row"><span class="spinner"></span> {t('import.scanning')}</div>
         {:else if hasScanned && scanned.length === 0}
-          <div class="state-row">No projects detected in that folder.</div>
+          <div class="state-row">{t('import.none')}</div>
         {:else if scanned.length > 0}
           <div class="results-header">
             <label class="check-all">
               <input type="checkbox" checked={allSelected} indeterminate={someSelected} onchange={toggleAll} />
-              <span>{selected.size} of {scanned.length} selected</span>
+              <span>{t('import.selectedOf', { selected: selected.size, total: scanned.length })}</span>
             </label>
           </div>
 
@@ -431,12 +432,16 @@
     </div>
 
     <DialogFooter style="flex-shrink: 0;">
-      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>{t('common.cancel')}</Button>
       <Button
         onclick={handleImport}
         disabled={selected.size === 0 || (mode === 'flat' && !selectedParent) || importing}
       >
-        {importing ? 'Importing…' : `Import ${selected.size > 0 ? selected.size : ''} project${selected.size !== 1 ? 's' : ''}`}
+        {importing
+          ? t('import.importing')
+          : selected.size === 0
+            ? t('import.action.zero')
+            : tn('import.action.one', 'import.action.other', selected.size)}
       </Button>
     </DialogFooter>
   </DialogContent>

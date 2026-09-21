@@ -41,7 +41,7 @@
 
 <div class="column" class:active role="region" oncontextmenu={handleContextMenu} style="width: {width}px">
   {#if column.title}
-    <div class="column-header">{column.title}</div>
+    <div class="column-header">{columnIndex === 0 ? t('column.projects') : column.title}</div>
   {/if}
   <div class="column-scroll">
     {#each column.items as item (item.key)}

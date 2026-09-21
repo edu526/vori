@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
@@ -61,9 +62,9 @@
 
   async function handleClone() {
     if (cloning) return;
-    if (!url.trim()) { error = 'Repository URL is required.'; return; }
-    if (!destination.trim()) { error = 'Choose a destination folder.'; return; }
-    if (!selectedParent) { error = 'Parent category is required.'; return; }
+    if (!url.trim()) { error = t('clone.urlRequired'); return; }
+    if (!destination.trim()) { error = t('clone.destRequired'); return; }
+    if (!selectedParent) { error = t('dialog.parentRequired'); return; }
     error = '';
     cloning = true;
     try {
@@ -91,12 +92,12 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o && !cloning) dialogStore.close(); }}>
   <DialogContent class="w-[460px] max-w-[90vw]" showCloseButton={false}>
     <DialogHeader>
-      <DialogTitle>Clone repository</DialogTitle>
+      <DialogTitle>{t('clone.title')}</DialogTitle>
     </DialogHeader>
 
     <div class="fields">
       <div class="field">
-        <Label for="clone-url">Repository URL</Label>
+        <Label for="clone-url">{t('clone.url')}</Label>
         <Input
           id="clone-url"
           bind:value={url}
@@ -107,18 +108,18 @@
       </div>
 
       <div class="field">
-        <Label for="clone-dest">Clone into</Label>
+        <Label for="clone-dest">{t('clone.into')}</Label>
         <div class="path-row">
           <Input id="clone-dest" bind:value={destination} disabled={cloning} placeholder="/home/user/projects" />
-          <Button variant="outline" size="sm" onclick={handleBrowse} disabled={cloning}>Browse</Button>
+          <Button variant="outline" size="sm" onclick={handleBrowse} disabled={cloning}>{t('common.browse')}</Button>
         </div>
-        <span class="hint">A folder named after the repository is created inside it.</span>
+        <span class="hint">{t('clone.intoHint')}</span>
       </div>
 
       <div class="field">
-        <Label for="clone-parent">Category</Label>
+        <Label for="clone-parent">{t('field.category')}</Label>
         <select id="clone-parent" bind:value={selectedParent} disabled={cloning} class="native-select">
-          <option value="">(select category)</option>
+          <option value="">{t('dialog.selectCategory')}</option>
           {#each categoryOptions as catKey}
             <option value={catKey}>{catKey}</option>
           {/each}
@@ -129,8 +130,8 @@
     </div>
 
     <DialogFooter>
-      <Button variant="ghost" onclick={() => dialogStore.close()} disabled={cloning}>Cancel</Button>
-      <Button onclick={handleClone} disabled={cloning}>{cloning ? 'Cloning…' : 'Clone'}</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()} disabled={cloning}>{t('common.cancel')}</Button>
+      <Button onclick={handleClone} disabled={cloning}>{cloning ? t('clone.cloning') : t('clone.action')}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>

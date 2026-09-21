@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { t } from '$lib/i18n/index.svelte';
+  import { t, i18n } from '$lib/i18n/index.svelte';
+  import { codemirrorPhrases } from '$lib/i18n/codemirror';
   import { onDestroy, untrack } from 'svelte';
   import { EditorView, basicSetup } from 'codemirror';
   import { EditorState, Prec } from '@codemirror/state';
@@ -129,6 +130,7 @@
         extensions: [
           basicSetup,
           oneDark,
+          EditorState.phrases.of(codemirrorPhrases(i18n.locale)),
           Prec.highest(
             keymap.of([
               {

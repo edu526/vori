@@ -5,6 +5,7 @@
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { updatePreferences, detectTerminals, detectEditors, exportConfig, importConfig } from '$lib/api/commands';
   import { updaterStore } from '$lib/stores/updater.svelte';
+  import { t, i18n } from '$lib/i18n/index.svelte';
   import { open, save, ask, message } from '@tauri-apps/plugin-dialog';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
@@ -112,17 +113,17 @@
     if (backupBusy) return;
     const stamp = new Date().toISOString().slice(0, 10);
     const target = await save({
-      title: 'Export Vori data',
+      title: t('backup.exportTitle'),
       defaultPath: `vori-backup-${stamp}.json`,
-      filters: [{ name: 'Vori backup', extensions: ['json'] }],
+      filters: [{ name: t('backup.filter'), extensions: ['json'] }],
     });
     if (!target) return;
     backupBusy = true;
     try {
       await exportConfig(target);
-      await message(`Saved to ${target}`, { title: 'Export complete', kind: 'info' });
+      await message(t('backup.saved', { path: target }), { title: t('backup.exportDone'), kind: 'info' });
     } catch (e) {
-      await message(String(e), { title: 'Export failed', kind: 'error' });
+      await message(String(e), { title: t('backup.exportFailed'), kind: 'error' });
     } finally {
       backupBusy = false;
     }
@@ -131,15 +132,14 @@
   async function handleImport() {
     if (backupBusy) return;
     const picked = await open({
-      title: 'Import Vori data',
+      title: t('backup.importTitle'),
       multiple: false,
-      filters: [{ name: 'Vori backup', extensions: ['json'] }],
+      filters: [{ name: t('backup.filter'), extensions: ['json'] }],
     });
     if (typeof picked !== 'string') return;
     const ok = await ask(
-      'This replaces your categories, projects, files, favorites and recents with the contents of the backup. ' +
-        'A copy of your current data is saved first.\n\nContinue?',
-      { title: 'Import Vori data', kind: 'warning', okLabel: 'Import', cancelLabel: 'Cancel' },
+      t('backup.importConfirm'),
+      { title: t('backup.importTitle'), kind: 'warning', okLabel: t('backup.importAction'), cancelLabel: t('common.cancel') },
     );
     if (!ok) return;
     backupBusy = true;
@@ -147,6 +147,7 @@
       const summary = await importConfig(picked);
       await configStore.load();
       themeStore.apply(configStore.preferences.theme ?? 'system');
+      i18n.setPreference(configStore.preferences.language ?? 'system');
       themeStore.applyScale(configStore.preferences.ui_scale ?? 1.0);
       navigationStore.refresh(
         configStore.categories, configStore.projects,
@@ -154,12 +155,16 @@
       );
       dialogStore.close();
       await message(
-        `Imported ${summary.categories} categories, ${summary.projects} projects and ${summary.files} files.\n\n` +
-          `Your previous data was saved to:\n${summary.safety_copy}`,
-        { title: 'Import complete', kind: 'info' },
+        t('backup.importSummary', {
+          categories: summary.categories,
+          projects: summary.projects,
+          files: summary.files,
+          copy: summary.safety_copy,
+        }),
+        { title: t('backup.importDone'), kind: 'info' },
       );
     } catch (e) {
-      await message(String(e), { title: 'Import failed', kind: 'error' });
+      await message(String(e), { title: t('backup.importFailed'), kind: 'error' });
     } finally {
       backupBusy = false;
     }
@@ -171,13 +176,13 @@
     if (updaterStore.state === 'available') {
       await updaterStore.promptInstall();
     } else if (updaterStore.state === 'up-to-date') {
-      await message(`You're on the latest version (v${__APP_VERSION__}).`, {
-        title: 'Vori is up to date',
+      await message(t('update.upToDate', { version: __APP_VERSION__ }), {
+        title: t('update.upToDateTitle'),
         kind: 'info',
       });
     } else if (updaterStore.state === 'error') {
-      await message(`Could not check for updates.\n\n${updaterStore.lastError}`, {
-        title: 'Update check failed',
+      await message(t('update.checkFailed', { error: updaterStore.lastError }), {
+        title: t('update.checkFailedTitle'),
         kind: 'error',
       });
     }
@@ -221,9 +226,9 @@
   function addProfile() {
     const name = newProfileName.trim();
     const dir = newProfileDir.trim();
-    if (!name) { profileError = 'Name is required.'; return; }
-    if (!dir) { profileError = 'Config folder is required.'; return; }
-    if (name in prefs.claude_profiles) { profileError = `A profile named "${name}" already exists.`; return; }
+    if (!name) { profileError = t('dialog.nameRequired'); return; }
+    if (!dir) { profileError = t('prefs.profileDirRequired'); return; }
+    if (name in prefs.claude_profiles) { profileError = t('prefs.profileExists', { name }); return; }
     prefs.claude_profiles = { ...prefs.claude_profiles, [name]: dir };
     newProfileName = '';
     newProfileDir = '';
@@ -315,6 +320,7 @@
         );
       }
       themeStore.apply(prefs.theme);
+      i18n.setPreference(prefs.language);
       originalScale = prefs.ui_scale ?? 1.0; // mark as saved so close doesn't revert
       dialogStore.close();
     } catch (e) {
@@ -354,22 +360,22 @@
     }}
   >
     <DialogHeader class="px-6 pt-5 pb-3">
-      <DialogTitle>Preferences</DialogTitle>
+      <DialogTitle>{t('toolbar.preferences')}</DialogTitle>
     </DialogHeader>
 
     <Tabs value={activeTab} onValueChange={(v) => (activeTab = v as typeof activeTab)} class="flex flex-col flex-1 min-h-0">
       <TabsList class="mx-6 shrink-0">
-        <TabsTrigger value="appearance">Appearance</TabsTrigger>
-        <TabsTrigger value="editors">Editors</TabsTrigger>
-        <TabsTrigger value="terminal">Terminal</TabsTrigger>
-        <TabsTrigger value="claude">Claude</TabsTrigger>
-        <TabsTrigger value="system">System</TabsTrigger>
+        <TabsTrigger value="appearance">{t('prefs.tab.appearance')}</TabsTrigger>
+        <TabsTrigger value="editors">{t('prefs.tab.editors')}</TabsTrigger>
+        <TabsTrigger value="terminal">{t('common.terminal')}</TabsTrigger>
+        <TabsTrigger value="claude">{t('prefs.tab.claude')}</TabsTrigger>
+        <TabsTrigger value="system">{t('prefs.tab.system')}</TabsTrigger>
       </TabsList>
 
       <!-- Appearance -->
       <TabsContent value="appearance" class="tab-body">
         <div class="field">
-          <Label>Theme</Label>
+          <Label>{t('prefs.theme')}</Label>
           <div class="theme-options">
             <label class="theme-option" class:active={prefs.theme === 'light'}>
               <input type="radio" name="theme" value="light" bind:group={prefs.theme} />
@@ -380,7 +386,7 @@
                   <div class="tp-bar tp-bar--short"></div>
                 </div>
               </div>
-              <span>Light</span>
+              <span>{t('prefs.theme.light')}</span>
             </label>
             <label class="theme-option" class:active={prefs.theme === 'dark'}>
               <input type="radio" name="theme" value="dark" bind:group={prefs.theme} />
@@ -391,7 +397,7 @@
                   <div class="tp-bar tp-bar--short"></div>
                 </div>
               </div>
-              <span>Dark</span>
+              <span>{t('prefs.theme.dark')}</span>
             </label>
             <label class="theme-option" class:active={prefs.theme === 'system'}>
               <input type="radio" name="theme" value="system" bind:group={prefs.theme} />
@@ -399,9 +405,18 @@
                 <div class="tp-half tp-half--light"><div class="tp-sidebar"></div></div>
                 <div class="tp-half tp-half--dark"><div class="tp-sidebar"></div></div>
               </div>
-              <span>System</span>
+              <span>{t('prefs.theme.system')}</span>
             </label>
           </div>
+        </div>
+
+        <div class="field">
+          <Label for="pref-language">{t('lang.label')}</Label>
+          <select id="pref-language" class="native-select" bind:value={prefs.language}>
+            <option value="system">{t('lang.system')}</option>
+            <option value="en">{t('lang.en')}</option>
+            <option value="es">{t('lang.es')}</option>
+          </select>
         </div>
 
         <div class="field">
@@ -412,21 +427,21 @@
               size="icon"
               onclick={() => adjustScale(-0.1)}
               disabled={(prefs.ui_scale ?? 1.0) <= 0.8}
-              aria-label="Decrease scale"
+              aria-label={t('prefs.zoomOut')}
             >−</Button>
             <Button
               variant="outline"
               size="sm"
               class="min-w-[58px] font-mono"
               onclick={() => (prefs.ui_scale = 1.0)}
-              title="Reset to 100%"
+              title={t('prefs.zoomReset')}
             >{Math.round((prefs.ui_scale ?? 1.0) * 100)}%</Button>
             <Button
               variant="outline"
               size="icon"
               onclick={() => adjustScale(0.1)}
               disabled={(prefs.ui_scale ?? 1.0) >= 1.5}
-              aria-label="Increase scale"
+              aria-label={t('prefs.zoomIn')}
             >+</Button>
           </div>
         </div>
@@ -435,7 +450,7 @@
       <!-- Editors -->
       <TabsContent value="editors" class="tab-body">
         <div class="field">
-          <Label>Default editor for projects</Label>
+          <Label>{t('prefs.defaultEditor')}</Label>
           {#if editorEntries.length > 0}
             <div class="radio-group">
               {#each editorEntries as [key, execPath]}
@@ -444,45 +459,45 @@
                     <input type="radio" name="default_editor" value={key} bind:group={prefs.default_editor} />
                     {EDITOR_LABELS[key] ?? key}
                   </label>
-                  <button class="remove-btn" onclick={() => removeEditor(key)} title="Remove">✕</button>
+                  <button class="remove-btn" onclick={() => removeEditor(key)} title={t('common.remove')}>✕</button>
                 </div>
               {/each}
             </div>
           {:else}
-            <p class="hint">No editors detected yet.</p>
+            <p class="hint">{t('prefs.noEditors')}</p>
           {/if}
           <div class="detect-row">
             <Button variant="outline" size="sm" onclick={handleDetectEditors} disabled={detectingEditors}>
               {#if detectingEditors}<span class="spinner"></span>{/if}
-              {detectingEditors ? 'Detecting...' : 'Detect Editors'}
+              {detectingEditors ? t('prefs.detecting') : t('prefs.detectEditors')}
             </Button>
             <Button variant="outline" size="sm" onclick={() => (showAddEditor = true)}>
-              + Add Editor
+              {t('prefs.addEditor')}
             </Button>
           </div>
         </div>
 
         <div class="field">
-          <Label for="pref-text-editor">Text file editor command</Label>
+          <Label for="pref-text-editor">{t('prefs.textEditorCmd')}</Label>
           <div class="input-row">
             <Input id="pref-text-editor" bind:value={prefs.default_text_editor} placeholder="xdg-open" />
             <Button variant="outline" size="sm" onclick={async () => {
-              const sel = await open({ multiple: false, title: 'Select text editor binary' });
+              const sel = await open({ multiple: false, title: t('prefs.selectTextEditor') });
               if (sel) prefs.default_text_editor = typeof sel === 'string' ? sel : sel[0];
-            }}>Browse</Button>
+            }}>{t('common.browse')}</Button>
           </div>
         </div>
 
         <div class="divider"></div>
 
         <div class="field">
-          <Label>In-app editor</Label>
+          <Label>{t('prefs.inAppEditor')}</Label>
           <label class="check-row">
             <Checkbox bind:checked={prefs.editor_text_wrap} />
-            <span>Wrap long lines</span>
+            <span>{t('prefs.wrapLines')}</span>
           </label>
           <div class="pref-row">
-            <Label for="pref-tab-size">Tab size</Label>
+            <Label for="pref-tab-size">{t('prefs.tabSize')}</Label>
             <select
               id="pref-tab-size"
               class="native-select"
@@ -491,19 +506,19 @@
                 prefs.editor_tab_size = Number((e.currentTarget as HTMLSelectElement).value);
               }}
             >
-              <option value={2}>2 spaces</option>
-              <option value={4}>4 spaces</option>
+              <option value={2}>{t('prefs.spaces', { count: 2 })}</option>
+              <option value={4}>{t('prefs.spaces', { count: 4 })}</option>
             </select>
           </div>
           <div class="pref-row">
-            <Label for="pref-font-size">Font size</Label>
+            <Label for="pref-font-size">{t('prefs.fontSize')}</Label>
             <div class="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 onclick={() => prefs.editor_font_size = Math.max(11, prefs.editor_font_size - 1)}
                 disabled={prefs.editor_font_size <= 11}
-                aria-label="Decrease font size"
+                aria-label={t('prefs.fontSmaller')}
               >−</Button>
               <span class="font-mono text-sm min-w-[36px] text-center">{prefs.editor_font_size}px</span>
               <Button
@@ -511,7 +526,7 @@
                 size="icon"
                 onclick={() => prefs.editor_font_size = Math.min(20, prefs.editor_font_size + 1)}
                 disabled={prefs.editor_font_size >= 20}
-                aria-label="Increase font size"
+                aria-label={t('prefs.fontLarger')}
               >+</Button>
             </div>
           </div>
@@ -520,14 +535,14 @@
         <div class="divider"></div>
 
         <div class="field">
-          <Label>After opening</Label>
+          <Label>{t('prefs.afterOpening')}</Label>
           <label class="check-row">
             <Checkbox bind:checked={prefs.close_on_open_editor} />
-            <span>Close Vori after opening a project in editor</span>
+            <span>{t('prefs.closeAfterEditor')}</span>
           </label>
           <label class="check-row">
             <Checkbox bind:checked={prefs.close_on_open_file} />
-            <span>Close Vori after opening a text file</span>
+            <span>{t('prefs.closeAfterFile')}</span>
           </label>
         </div>
       </TabsContent>
@@ -535,7 +550,7 @@
       <!-- Terminal -->
       <TabsContent value="terminal" class="tab-body">
         <div class="field">
-          <Label>Preferred terminal</Label>
+          <Label>{t('prefs.preferredTerminal')}</Label>
           {#if terminalEntries.length > 0}
             <div class="radio-group">
               {#each terminalEntries as [name, execPath]}
@@ -544,23 +559,23 @@
                     <input type="radio" name="preferred_terminal" value={name} bind:group={prefs.terminal.preferred} />
                     {name}
                   </label>
-                  <button class="remove-btn" onclick={() => removeTerminal(name)} title="Remove">✕</button>
+                  <button class="remove-btn" onclick={() => removeTerminal(name)} title={t('common.remove')}>✕</button>
                 </div>
               {/each}
             </div>
           {:else}
-            <p class="hint">No terminals detected yet.</p>
+            <p class="hint">{t('prefs.noTerminals')}</p>
           {/if}
           {#if prefs.terminal.last_detected}
-            <p class="hint">Last detected: {new Date(prefs.terminal.last_detected).toLocaleString()}</p>
+            <p class="hint">{t('prefs.lastDetected', { date: new Date(prefs.terminal.last_detected).toLocaleString() })}</p>
           {/if}
           <div class="detect-row">
             <Button variant="outline" size="sm" onclick={handleDetectTerminals} disabled={detecting}>
               {#if detecting}<span class="spinner"></span>{/if}
-              {detecting ? 'Detecting...' : 'Detect Terminals'}
+              {detecting ? t('prefs.detecting') : t('prefs.detectTerminals')}
             </Button>
             <Button variant="outline" size="sm" onclick={() => (showAddTerminal = true)}>
-              + Add Terminal
+              {t('prefs.addTerminal')}
             </Button>
           </div>
         </div>
@@ -568,10 +583,10 @@
         <div class="divider"></div>
 
         <div class="field">
-          <Label>After opening</Label>
+          <Label>{t('prefs.afterOpening')}</Label>
           <label class="check-row">
             <Checkbox bind:checked={prefs.close_on_open_terminal} />
-            <span>Close Vori after opening a terminal</span>
+            <span>{t('prefs.closeAfterTerminal')}</span>
           </label>
         </div>
 
@@ -583,11 +598,8 @@
       <!-- Claude -->
       <TabsContent value="claude" class="tab-body">
         <div class="field">
-          <Label>Claude profiles</Label>
-          <p class="hint">
-            A profile is a separate Claude Code config folder (<code>CLAUDE_CONFIG_DIR</code>) with its own
-            login and history. Assign one to a category or project to use it when opening in an editor or terminal.
-          </p>
+          <Label>{t('prefs.claudeProfiles')}</Label>
+          <p class="hint">{t('prefs.claudeHint.before')}<code>CLAUDE_CONFIG_DIR</code>{t('prefs.claudeHint.after')}</p>
           {#if profileEntries.length > 0}
             <div class="radio-group">
               {#each profileEntries as [name, dir]}
@@ -596,26 +608,26 @@
                     <span class="profile-name">{name}</span>
                     <span class="profile-dir">{dir}</span>
                   </span>
-                  <button class="remove-btn" onclick={() => removeProfile(name)} title="Remove">✕</button>
+                  <button class="remove-btn" onclick={() => removeProfile(name)} title={t('common.remove')}>✕</button>
                 </div>
               {/each}
             </div>
           {:else}
-            <p class="hint">No profiles yet.</p>
+            <p class="hint">{t('prefs.noProfiles')}</p>
           {/if}
         </div>
 
         <div class="divider"></div>
 
         <div class="field">
-          <Label for="claude-profile-name">Add profile</Label>
-          <Input id="claude-profile-name" bind:value={newProfileName} placeholder="Name, e.g. work" />
+          <Label for="claude-profile-name">{t('prefs.addProfile')}</Label>
+          <Input id="claude-profile-name" bind:value={newProfileName} placeholder={t('prefs.profileNamePlaceholder')} />
           <div class="input-row">
             <Input bind:value={newProfileDir} placeholder="~/.claude-work" />
-            <Button variant="outline" size="sm" onclick={browseProfileDir}>Browse</Button>
+            <Button variant="outline" size="sm" onclick={browseProfileDir}>{t('common.browse')}</Button>
           </div>
           <div class="detect-row">
-            <Button variant="outline" size="sm" onclick={addProfile}>+ Add Profile</Button>
+            <Button variant="outline" size="sm" onclick={addProfile}>{t('prefs.addProfileButton')}</Button>
           </div>
           {#if profileError}<p class="error-msg">{profileError}</p>{/if}
         </div>
@@ -628,16 +640,16 @@
       <!-- System -->
       <TabsContent value="system" class="tab-body">
         <div class="field">
-          <Label>Startup & Background Behavior</Label>
+          <Label>{t('prefs.startup')}</Label>
           <label class="check-row flex items-start gap-2">
             <Checkbox bind:checked={prefs.autostart} class="mt-1" />
             <div class="flex flex-col">
-              <span>Launch automatically at login</span>
-              <span class="text-[0.78rem] text-muted-foreground">Start Vori silently in the background when your computer boots.</span>
+              <span>{t('prefs.autostart')}</span>
+              <span class="text-[0.78rem] text-muted-foreground">{t('prefs.autostartHint')}</span>
             </div>
           </label>
           <div class="sub-field">
-            <Label for="close-behavior">When closing the window</Label>
+            <Label for="close-behavior">{t('prefs.whenClosing')}</Label>
             <select
               id="close-behavior"
               class="native-select"
@@ -648,13 +660,11 @@
                 prefs.keep_background = v === 'tray';
               }}
             >
-              <option value="tray">Hide in system tray</option>
-              <option value="quit">Close the app</option>
+              <option value="tray">{t('prefs.closeTray')}</option>
+              <option value="quit">{t('prefs.closeQuit')}</option>
             </select>
             <p class="text-[0.78rem] text-muted-foreground">
-              {prefs.show_tray
-                ? 'Vori keeps running in the system tray. Click the tray icon or use the global shortcut to reopen the window.'
-                : 'Vori quits completely when you close the window. Relaunch it from the Start menu or app launcher.'}
+              {prefs.show_tray ? t('prefs.trayHint') : t('prefs.quitHint')}
             </p>
           </div>
         </div>
@@ -662,8 +672,8 @@
         <div class="divider"></div>
 
         <div class="field">
-          <Label>Global shortcut</Label>
-          <p class="hint">Press this combination anywhere to show or hide Vori.</p>
+          <Label>{t('prefs.hotkey')}</Label>
+          <p class="hint">{t('prefs.hotkeyHint')}</p>
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div style="display: flex; gap: 8px; align-items: stretch;">
             <div
@@ -672,30 +682,29 @@
               class:recording={recordingHotkey}
               tabindex="0"
               role="button"
-              aria-label="Click to record shortcut"
+              aria-label={t('prefs.hotkeyRecordAria')}
               onclick={startRecording}
               onblur={stopRecording}
               onkeydown={handleHotkeyKeydown}
             >
               {#if recordingHotkey}
-                <span class="hotkey-recording-label">Press your shortcut (Esc to cancel, Backspace to clear)…</span>
+                <span class="hotkey-recording-label">{t('prefs.hotkeyRecording')}</span>
               {:else}
-                <kbd class="hotkey-display">{prefs.hotkey || 'Not set'}</kbd>
-                <span class="hotkey-hint">Click to change</span>
+                <kbd class="hotkey-display">{prefs.hotkey || t('prefs.hotkeyNotSet')}</kbd>
+                <span class="hotkey-hint">{t('prefs.hotkeyChange')}</span>
               {/if}
             </div>
             {#if prefs.hotkey && !recordingHotkey}
-              <Button variant="outline" onclick={(e) => { e.stopPropagation(); prefs.hotkey = ''; hotkeyError = ''; }}>Disable</Button>
+              <Button variant="outline" onclick={(e) => { e.stopPropagation(); prefs.hotkey = ''; hotkeyError = ''; }}>{t('prefs.disable')}</Button>
             {/if}
           </div>
           {#if hotkeyError}
             <p class="error-msg">{hotkeyError}</p>
           {/if}
-          <p class="hint">Format: <code>Super+Shift+KeyV</code> — modifiers: Super, Ctrl, Alt, Shift</p>
+          <p class="hint">{t('prefs.hotkeyFormat.before')} <code>Super+Shift+KeyV</code> {t('prefs.hotkeyFormat.after')}</p>
           {#if osType === 'linux'}
             <p class="hint" style="margin-top: 4px; color: #a1a1aa;">
-              <strong>Note for Linux/Wayland users:</strong> Due to OS security, this may only work when Vori has focus.
-              For a true global hotkey, disable this and add a custom shortcut in your system settings to run the <code>vori</code> command.
+              <strong>{t('prefs.waylandNote.title')}</strong> {t('prefs.waylandNote.before')} <code>vori</code> {t('prefs.waylandNote.after')}
             </p>
           {/if}
         </div>
@@ -703,18 +712,18 @@
         <div class="divider"></div>
 
         <div class="field">
-          <Label>Updates</Label>
-          <p class="hint">Current version: <strong>v{__APP_VERSION__}</strong>{updaterStore.available ? ` → v${updaterStore.available.version} available` : ''}.</p>
+          <Label>{t('prefs.updates')}</Label>
+          <p class="hint">{t('prefs.currentVersion')} <strong>v{__APP_VERSION__}</strong>{updaterStore.available ? t('prefs.versionAvailable', { version: updaterStore.available.version }) : ''}.</p>
           <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
             <Button variant="outline" onclick={handleCheckForUpdate} disabled={updaterStore.state === 'checking'}>
-              {updaterStore.state === 'checking' ? 'Checking…' : 'Check for updates'}
+              {updaterStore.state === 'checking' ? t('prefs.checking') : t('prefs.checkUpdates')}
             </Button>
             {#if updaterStore.state === 'up-to-date'}
-              <span class="text-[0.82rem] text-muted-foreground">Up to date</span>
+              <span class="text-[0.82rem] text-muted-foreground">{t('prefs.upToDate')}</span>
             {:else if updaterStore.state === 'available'}
-              <span class="text-[0.82rem]" style="color: var(--color-accent);">v{updaterStore.available?.version} available</span>
+              <span class="text-[0.82rem]" style="color: var(--color-accent);">{t('prefs.updateAvailable', { version: updaterStore.available?.version ?? '' })}</span>
             {:else if updaterStore.state === 'error'}
-              <span class="text-[0.82rem]" style="color: #c0392b;">Check failed</span>
+              <span class="text-[0.82rem]" style="color: #c0392b;">{t('prefs.checkFailed')}</span>
             {/if}
           </div>
         </div>
@@ -722,36 +731,30 @@
         <div class="divider"></div>
 
         <div class="field">
-          <Label>Backup</Label>
-          <p class="hint">
-            Export your categories, projects, files, favorites and recents to a single file, or restore them from one
-            (for example to move to another computer). Editor and terminal paths and the shortcut stay as they are on this machine.
-          </p>
+          <Label>{t('prefs.backup')}</Label>
+          <p class="hint">{t('prefs.backupHint')}</p>
           <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-            <Button variant="outline" onclick={handleExport} disabled={backupBusy}>Export…</Button>
-            <Button variant="outline" onclick={handleImport} disabled={backupBusy}>Import…</Button>
+            <Button variant="outline" onclick={handleExport} disabled={backupBusy}>{t('prefs.export')}</Button>
+            <Button variant="outline" onclick={handleImport} disabled={backupBusy}>{t('prefs.import')}</Button>
           </div>
-          <p class="hint">
-            To share one setup between computers automatically, set the <code>VORI_CONFIG_DIR</code> environment variable
-            to a synced folder (Dropbox, OneDrive…) and restart Vori.
-          </p>
+          <p class="hint">{t('prefs.configDirHint.before')} <code>VORI_CONFIG_DIR</code> {t('prefs.configDirHint.after')}</p>
         </div>
       </TabsContent>
     </Tabs>
 
     <DialogFooter class="px-6 pb-5 pt-3 border-t border-border mt-2">
-      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
-      <Button onclick={handleSave}>Save</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>{t('common.cancel')}</Button>
+      <Button onclick={handleSave}>{t('common.save')}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
 
 {#if showAddEditor}
-  <AddEditorModal title="Add Editor" onAdd={handleAddEditor} onClose={() => (showAddEditor = false)} />
+  <AddEditorModal title={t('editorModal.addEditor')} onAdd={handleAddEditor} onClose={() => (showAddEditor = false)} />
 {/if}
 
 {#if showAddTerminal}
-  <AddEditorModal title="Add Terminal" onAdd={handleAddTerminal} onClose={() => (showAddTerminal = false)} />
+  <AddEditorModal title={t('editorModal.addTerminal')} onAdd={handleAddTerminal} onClose={() => (showAddTerminal = false)} />
 {/if}
 
 <style>

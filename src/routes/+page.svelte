@@ -26,7 +26,7 @@
   import { message } from '@tauri-apps/plugin-dialog';
   import { syncStore } from '$lib/stores/sync.svelte';
   import { listen } from '@tauri-apps/api/event';
-  import { t } from '$lib/i18n/index.svelte';
+  import { t, i18n } from '$lib/i18n/index.svelte';
 
   const isEditorOpen = $derived(dialogStore.current?.type === 'editor');
 
@@ -35,6 +35,7 @@
   onMount(async () => {
     await configStore.load();
     themeStore.apply(configStore.preferences.theme ?? 'system');
+    i18n.setPreference(configStore.preferences.language ?? 'system');
     themeStore.applyScale(configStore.preferences.ui_scale ?? 1.0);
     if (!configStore.error) {
       navigationStore.init(

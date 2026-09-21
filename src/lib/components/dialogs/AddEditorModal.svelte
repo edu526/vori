@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { getInstalledApps } from '$lib/api/commands';
   import { open } from '@tauri-apps/plugin-dialog';
 
@@ -7,7 +8,7 @@
   let {
     onAdd,
     onClose,
-    title = 'Add Editor',
+    title,
   }: {
     onAdd: (name: string, exec: string) => void;
     onClose: () => void;
@@ -49,7 +50,7 @@
   async function handleBrowse() {
     const selected = await open({
       multiple: false,
-      title: 'Select editor binary',
+      title: t('editorModal.selectBinary'),
     });
     if (!selected) return;
     const path = typeof selected === 'string' ? selected : selected[0];
@@ -76,16 +77,16 @@
 <div class="overlay" onclick={onClose} onkeydown={handleKeydown}>
   <div class="modal" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
     <div class="modal-header">
-      <span>{title}</span>
+      <span>{title ?? t('editorModal.addEditor')}</span>
       <button class="close-btn" onclick={onClose}>✕</button>
     </div>
 
     <div class="tabs">
       <button class="tab" class:active={mode === 'search'} onclick={() => (mode = 'search')}>
-        Installed Apps
+        {t('editorModal.installedApps')}
       </button>
       <button class="tab" class:active={mode === 'browse'} onclick={() => (mode = 'browse')}>
-        Browse Binary
+        {t('editorModal.browseBinary')}
       </button>
     </div>
 
@@ -94,15 +95,15 @@
       <input
         class="search-input"
         type="text"
-        placeholder="Search apps..."
+        placeholder={t('editorModal.searchApps')}
         bind:value={query}
         autofocus
       />
       <div class="app-list">
         {#if loading}
-          <div class="state-msg">Loading installed apps...</div>
+          <div class="state-msg">{t('editorModal.loadingApps')}</div>
         {:else if filtered.length === 0}
-          <div class="state-msg">No apps found</div>
+          <div class="state-msg">{t('editorModal.noApps')}</div>
         {:else}
           {#each filtered as app}
             <button class="app-item" onclick={() => selectApp(app)} title={app.exec}>
@@ -115,16 +116,16 @@
     {:else}
       <div class="browse-area">
         <button class="btn btn-secondary" onclick={handleBrowse}>
-          Choose file...
+          {t('editorModal.chooseFile')}
         </button>
         {#if browsePath}
           <p class="browse-path">{browsePath}</p>
           <div class="field">
-            <label for="browse-name">Display name</label>
+            <label for="browse-name">{t('editorModal.displayName')}</label>
             <input id="browse-name" type="text" bind:value={browseName} placeholder="My Editor" />
           </div>
           <button class="btn btn-primary" onclick={handleBrowseAdd} disabled={!browseName}>
-            Add Editor
+            {t('editorModal.addEditor')}
           </button>
         {/if}
       </div>

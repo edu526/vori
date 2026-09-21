@@ -45,7 +45,7 @@
     const segs: { label: string; depth: number }[] = [];
     for (let i = 0; i < fileColumnIndex; i++) {
       const col = navigationStore.columns[i];
-      segs.push({ label: col?.title ?? '', depth: i });
+      segs.push({ label: i === 0 ? t('column.projects') : (col?.title ?? ''), depth: i });
     }
     // Last segment is the filename (no navigation on click)
     segs.push({ label: editorPayload.fileName, depth: fileColumnIndex });

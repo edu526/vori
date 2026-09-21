@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
@@ -49,7 +50,7 @@
   }
 
   async function handleSave() {
-    if (!key) { keyError = 'Name is required.'; return; }
+    if (!key) { keyError = t('dialog.nameRequired'); return; }
     if (!payload) return;
     keyError = '';
     try {
@@ -73,28 +74,28 @@
 <Dialog open={isOpen} onOpenChange={(o) => { if (!o) dialogStore.close(); }}>
   <DialogContent class="w-[420px] max-w-[90vw]" showCloseButton={false}>
     <DialogHeader>
-      <DialogTitle>{isEdit ? 'Edit File' : (parentKey ? 'Add File to ' + parentKey.split('/').pop() : 'Add File')}</DialogTitle>
+      <DialogTitle>{isEdit ? t('menu.editFile') : (parentKey ? t('file.addTo', { name: parentKey.split('/').pop() ?? '' }) : t('file.add'))}</DialogTitle>
     </DialogHeader>
 
     <div class="fields">
       <div class="field">
-        <Label for="file-key">Name</Label>
+        <Label for="file-key">{t('field.name')}</Label>
         <Input id="file-key" bind:value={key} disabled={isEdit} placeholder="my-config" />
         {#if keyError}<p class="error-msg">{keyError}</p>{/if}
       </div>
 
       <div class="field">
-        <Label for="file-path">Path</Label>
+        <Label for="file-path">{t('field.path')}</Label>
         <div class="path-row">
           <Input id="file-path" bind:value={path} placeholder="/home/user/.config/file.toml" />
-          <Button variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
+          <Button variant="outline" size="sm" onclick={handleBrowse}>{t('common.browse')}</Button>
         </div>
       </div>
     </div>
 
     <DialogFooter>
-      <Button variant="ghost" onclick={() => dialogStore.close()}>Cancel</Button>
-      <Button onclick={handleSave}>Save</Button>
+      <Button variant="ghost" onclick={() => dialogStore.close()}>{t('common.cancel')}</Button>
+      <Button onclick={handleSave}>{t('common.save')}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
