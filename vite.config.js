@@ -43,7 +43,8 @@ const browserAlias = {
 function tailwindExcludeSvelte() {
   const plugins = tailwindcss();
   const arr = Array.isArray(plugins) ? plugins : [plugins];
-  return arr.map((p) => {
+  // Tailwind's transform hook uses a `filter` option that the installed Vite typings don't declare.
+  return arr.map((/** @type {any} */ p) => {
     if (!p?.transform?.filter?.id) return p;
     return {
       ...p,
