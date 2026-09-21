@@ -28,6 +28,11 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["vori"]
+      }
+    },
     "updater": {
       "endpoints": [
         "https://github.com/edu526/vori/releases/latest/download/latest.json"

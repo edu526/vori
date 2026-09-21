@@ -104,6 +104,14 @@ export interface GitInfo {
   behind: number;
 }
 
+// ── CLI / deep links ──────────────────────────────────────────────────────────
+
+/** Something asked for from outside the UI (`vori .`, `vori open x`, a vori:// link). */
+export type CliRequest =
+  | { kind: 'add-or-reveal'; path: string; existing: string | null }
+  | { kind: 'opened'; path: string; name: string }
+  | { kind: 'notice'; message: string };
+
 // ── Scanner ───────────────────────────────────────────────────────────────────
 
 export interface ScannedProject {

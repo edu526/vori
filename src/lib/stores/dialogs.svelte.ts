@@ -1,7 +1,7 @@
 type DialogPayload =
   | { type: 'category'; mode: 'add'; parentKey?: string }
   | { type: 'category'; mode: 'edit'; key: string; parentKey?: string }
-  | { type: 'project'; mode: 'add'; parentKey?: string }
+  | { type: 'project'; mode: 'add'; parentKey?: string; prefill?: { name: string; path: string } }
   | { type: 'project'; mode: 'edit'; key: string }
   | { type: 'file'; mode: 'add'; parentKey?: string }
   | { type: 'file'; mode: 'edit'; key: string }

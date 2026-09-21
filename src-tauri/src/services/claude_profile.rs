@@ -17,7 +17,7 @@ pub fn expand_home(path: &str) -> String {
     }
 }
 
-fn normalize(path: &str) -> String {
+pub fn normalize(path: &str) -> String {
     let unified = path.replace('\\', "/");
     let trimmed = unified.trim_end_matches('/');
     let base = if trimmed.is_empty() { "/" } else { trimmed };

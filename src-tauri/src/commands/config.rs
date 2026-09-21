@@ -338,11 +338,15 @@ pub fn get_recents(state: State<AppState>) -> RecentsList {
     state.recents.lock().unwrap().clone()
 }
 
-#[tauri::command]
-pub fn add_recent(item: RecentItem, state: State<AppState>) -> Result<(), String> {
+pub fn push_recent(state: &AppState, item: RecentItem) -> Result<(), String> {
     let mut recents = state.recents.lock().unwrap();
     recents.retain(|r| r.path != item.path);
     recents.insert(0, item);
     recents.truncate(MAX_RECENTS);
     config_manager::save("recents.json", &*recents)
+}
+
+#[tauri::command]
+pub fn add_recent(item: RecentItem, state: State<AppState>) -> Result<(), String> {
+    push_recent(&state, item)
 }

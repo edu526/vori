@@ -18,6 +18,15 @@ pub fn toggle(app: &AppHandle) {
     }
 }
 
+/// Bring the window up (unlike `toggle`, never hides it).
+pub fn show(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
 pub fn setup_tray(app: &AppHandle) -> Result<(), String> {
     let mut current_id = CURRENT_TRAY_ID.lock().unwrap();
     if current_id.is_some() {

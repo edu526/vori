@@ -5,6 +5,7 @@ import type {
   DetectedWorkspace,
   Favorites,
   FileEntry,
+  CliRequest,
   GitInfo,
   Preferences,
   Project,
@@ -175,3 +176,8 @@ export const getGitInfo = (paths: string[]) =>
 /** Clone `url` into `<destParent>/<repo name>`; resolves to the new folder. */
 export const gitClone = (url: string, destParent: string) =>
   invoke<string>('git_clone', { url, destParent });
+
+// ── CLI / deep links ──────────────────────────────────────────────────────────
+
+/** Requests queued by the command line or a vori:// link since the last call. */
+export const takePendingRequests = () => invoke<CliRequest[]>('take_pending_requests');

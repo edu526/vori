@@ -24,6 +24,7 @@ const browserAlias = {
   "@tauri-apps/api/window": mock("tauri-window.ts"),
   "@tauri-apps/api/webviewWindow": mock("tauri-webviewwindow.ts"),
   "@tauri-apps/api/dpi": mock("tauri-dpi.ts"),
+  "@tauri-apps/api/event": mock("tauri-event.ts"),
   "@tauri-apps/plugin-dialog": mock("tauri-dialog.ts"),
   "@tauri-apps/plugin-updater": mock("tauri-updater.ts"),
   "@tauri-apps/plugin-process": mock("tauri-process.ts"),

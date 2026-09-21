@@ -39,8 +39,8 @@
       selectedParent = existing?.parent ?? '';
       claudeProfile = existing?.claude_profile ?? '';
     } else {
-      key = '';
-      path = '';
+      key = payload.prefill?.name ?? '';
+      path = payload.prefill?.path ?? '';
       selectedParent = payload.parentKey ?? '';
       claudeProfile = '';
     }

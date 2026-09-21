@@ -1,5 +1,6 @@
 pub mod app_search;
 pub mod claude_profile;
+pub mod cli;
 pub mod config_manager;
 pub mod editor;
 pub mod git;

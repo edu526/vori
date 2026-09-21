@@ -1,6 +1,7 @@
 use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 
+use crate::services::cli::FrontendRequest;
 use crate::models::{
     category::CategoriesMap,
     favorites::Favorites,
@@ -18,6 +19,8 @@ pub struct AppState {
     pub favorites: Mutex<Favorites>,
     pub recents: Mutex<RecentsList>,
     pub is_autostart: AtomicBool,
+    /// Requests from the CLI / deep links waiting for the frontend to pick them up.
+    pub pending: Mutex<Vec<FrontendRequest>>,
 }
 
 impl AppState {
@@ -38,6 +41,7 @@ impl AppState {
             favorites: Mutex::new(favorites),
             recents: Mutex::new(recents),
             is_autostart: AtomicBool::new(is_autostart),
+            pending: Mutex::new(Vec::new()),
         }
     }
 }

@@ -12,20 +12,17 @@ fn claude_config_dir_for(path: &str, state: &AppState) -> Option<String> {
     claude_profile::config_dir_for_path(path, &categories, &projects, &prefs.claude_profiles)
 }
 
-#[tauri::command]
-pub fn open_project_in_editor(
-    path: String,
-    editor_name: String,
-    state: State<AppState>,
-) -> Result<(), String> {
+/// Open a project folder in the editor named `editor_name` (a key of the detected editors,
+/// or a raw command), exporting the Claude profile that applies to `path`.
+pub fn open_project(path: &str, editor_name: &str, state: &AppState) -> Result<(), String> {
     // Resolve editor key → binary path from detected editors, fall back to raw name
     let binary = {
         let prefs = state.preferences.lock().unwrap();
         let b = prefs
             .editors_available
-            .get(&editor_name)
+            .get(editor_name)
             .cloned()
-            .unwrap_or_else(|| editor_name.clone());
+            .unwrap_or_else(|| editor_name.to_string());
         eprintln!(
             "[vori][launcher] open_project_in_editor path={path:?} editor_name={editor_name:?} resolved_binary={b:?}"
         );
@@ -35,8 +32,17 @@ pub fn open_project_in_editor(
         );
         b
     };
-    let claude_dir = claude_config_dir_for(&path, &state);
-    editor::open_in_editor(&path, &binary, claude_dir.as_deref())
+    let claude_dir = claude_config_dir_for(path, state);
+    editor::open_in_editor(path, &binary, claude_dir.as_deref())
+}
+
+#[tauri::command]
+pub fn open_project_in_editor(
+    path: String,
+    editor_name: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    open_project(&path, &editor_name, &state)
 }
 
 #[tauri::command]

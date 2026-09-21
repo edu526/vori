@@ -146,6 +146,9 @@ const handlers: Record<string, (args: Args) => any> = {
     { name: 'Kitty', exec: '/usr/bin/kitty' },
   ],
 
+  // ── CLI / deep links ──────────────────────────────────────────────────────
+  take_pending_requests: () => [],
+
   // ── Git ───────────────────────────────────────────────────────────────────
   get_git_info: ({ paths }: Args) => {
     const out: Record<string, unknown> = {};

@@ -5,7 +5,7 @@
   import { themeStore } from '$lib/stores/theme.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
-  import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences } from '$lib/api/commands';
+  import { openProjectInEditor, openFileInEditor, addRecent, updatePreferences, takePendingRequests } from '$lib/api/commands';
   import { isTextFile } from '$lib/utils/textExtensions';
   import { openEditor } from '$lib/utils/openEditor';
 
@@ -25,6 +25,7 @@
   import type { SearchResult } from '$lib/api/types';
   import { message } from '@tauri-apps/plugin-dialog';
   import { syncStore } from '$lib/stores/sync.svelte';
+  import { listen } from '@tauri-apps/api/event';
 
   const isEditorOpen = $derived(dialogStore.current?.type === 'editor');
 
@@ -44,6 +45,7 @@
       );
       await navigationStore.loadWorkspaceSelection();
       syncStore.start();
+      await drainCliRequests();
       if (configStore.recoveryNotes.length > 0) {
         await message(configStore.recoveryNotes.join('\n\n'), {
           title: 'Some settings were reset',
@@ -51,6 +53,47 @@
         });
       }
     }
+  });
+
+  // ── Requests from the command line / vori:// links ──────────────────────────
+  async function drainCliRequests() {
+    if (configStore.loading || configStore.error) return; // the post-load drain picks them up
+    for (const request of await takePendingRequests()) {
+      if (request.kind === 'add-or-reveal') {
+        const existing = request.existing ? configStore.projects[request.existing] : undefined;
+        if (request.existing && existing) {
+          handleSearchResult({
+            key: request.existing,
+            name: request.existing,
+            result_type: 'project',
+            path: existing.path,
+            parent: existing.parent,
+          });
+        } else {
+          const name = request.path.split(/[\\/]/).filter(Boolean).pop() ?? '';
+          dialogStore.open({ type: 'project', mode: 'add', prefill: { name, path: request.path } });
+        }
+      } else if (request.kind === 'opened') {
+        const recent = { path: request.path, name: request.name, type: 'project' as const, timestamp: Date.now() / 1000 };
+        navigationStore.addRecentToView(recent);
+        configStore.recents = [recent, ...configStore.recents.filter((r) => r.path !== recent.path)].slice(0, 20);
+      } else {
+        await message(request.message, { title: 'Vori', kind: 'warning' });
+      }
+    }
+  }
+
+  $effect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    listen('cli-request', () => void drainCliRequests()).then((fn) => {
+      if (disposed) fn();
+      else unlisten = fn;
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   });
 
   // ── Block native context menu globally ──────────────────────────────────────

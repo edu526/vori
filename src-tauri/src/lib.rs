@@ -7,6 +7,7 @@ mod models;
 mod services;
 mod state;
 
+use commands::cli::*;
 use commands::config::*;
 use commands::files_io::*;
 use commands::git::*;
@@ -20,10 +21,13 @@ use state::AppState;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            // Second launch attempt — toggle the existing window
-            services::window::toggle(app);
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            // Second launch: hand its arguments (`vori .`, `vori open x`, a vori:// link) to this
+            // instance. With no arguments it just toggles the window.
+            let action = services::cli::parse(args.get(1..).unwrap_or(&[]), &cwd);
+            dispatch(app, action, true);
         }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
@@ -75,6 +79,40 @@ pub fn run() {
             app.manage(AppState::new(
                 categories, projects, files, preferences.clone(), favorites, recents, is_autostart,
             ));
+
+            // Arguments this instance was launched with (`vori .`, `vori open x`, a vori:// link).
+            {
+                let args: Vec<String> = std::env::args().skip(1).collect();
+                let cwd = std::env::current_dir().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+                dispatch(app.handle(), services::cli::parse(&args, &cwd), false);
+            }
+
+            // Make `vori://` links reach the app even when it wasn't installed through a package
+            // that registers the scheme (AppImage, dev builds). macOS registers via the bundle.
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                if let Err(e) = app.deep_link().register_all() {
+                    eprintln!("[vori] Could not register the vori:// scheme: {e}");
+                }
+            }
+            // On macOS a link arrives as an event, not as an argument.
+            #[cfg(target_os = "macos")]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let handle = app.handle().clone();
+                let run = move |urls: Vec<String>| {
+                    for url in urls {
+                        dispatch(&handle, services::cli::parse(&[url], ""), true);
+                    }
+                };
+                if let Ok(Some(urls)) = app.deep_link().get_current() {
+                    run(urls.iter().map(|u| u.to_string()).collect());
+                }
+                app.deep_link().on_open_url(move |event| {
+                    run(event.urls().iter().map(|u| u.to_string()).collect());
+                });
+            }
 
             // Apply autostart from preferences
             {
@@ -204,6 +242,8 @@ pub fn run() {
             // Git
             get_git_info,
             git_clone,
+            // CLI / deep links
+            take_pending_requests,
             // Search
             search,
         ])

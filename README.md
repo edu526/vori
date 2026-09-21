@@ -72,6 +72,28 @@ Run the `.msi` installer or the `.exe` NSIS installer and follow the wizard.
 
 ---
 
+## Command line and links
+
+```sh
+vori .                  # reveal this folder in Vori, or offer to add it as a project
+vori add ~/code/app     # same, for another folder
+vori open my-project    # open a project in your default editor (no window needed)
+```
+
+`open` matches the project name exactly, then ignoring case, then by a unique prefix or substring. If several projects match, Vori tells you which.
+
+The same actions work as links, e.g. from a bookmark or a README: `vori://open/my-project` (spaces as `%20`). Links can only open a project you already added.
+
+| OS | How to run it |
+|----|---------------|
+| Linux | `vori` is on your `PATH` after installing the `.deb` / `.rpm` |
+| macOS | `/Applications/Vori.app/Contents/MacOS/Vori .` (alias it as `vori`) |
+| Windows | add the install folder to your `PATH`. The app has no console, so results show up in the Vori window |
+
+If Vori is already running, the command is handed to that instance.
+
+---
+
 ## Build from source
 
 ### Prerequisites
