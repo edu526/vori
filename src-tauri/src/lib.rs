@@ -166,7 +166,7 @@ pub fn run() {
 
             // Build tray icon + menu (conditionally)
             if preferences.show_tray {
-                let _ = services::window::setup_tray(app.handle());
+                let _ = services::window::setup_tray(app.handle(), &preferences.language);
             }
 
             Ok(())

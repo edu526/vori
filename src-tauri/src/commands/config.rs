@@ -246,13 +246,18 @@ pub fn update_preferences(
 ) -> Result<(), String> {
     let old_hotkey = state.preferences.lock().unwrap().hotkey.clone();
     let old_show_tray = state.preferences.lock().unwrap().show_tray;
+    let old_language = state.preferences.lock().unwrap().language.clone();
 
     if prefs.show_tray != old_show_tray {
         if prefs.show_tray {
-            let _ = crate::services::window::setup_tray(&app);
+            let _ = crate::services::window::setup_tray(&app, &prefs.language);
         } else {
             crate::services::window::remove_tray(&app);
         }
+    } else if prefs.show_tray && prefs.language != old_language {
+        // The tray menu is built once, so rebuild it to switch its labels.
+        crate::services::window::remove_tray(&app);
+        let _ = crate::services::window::setup_tray(&app, &prefs.language);
     }
 
     // Apply autostart change

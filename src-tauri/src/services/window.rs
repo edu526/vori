@@ -5,6 +5,8 @@ use tauri::{
 };
 use std::sync::Mutex;
 
+use crate::models::preferences::Language;
+
 static CURRENT_TRAY_ID: Mutex<Option<String>> = Mutex::new(None);
 
 pub fn toggle(app: &AppHandle) {
@@ -27,15 +29,24 @@ pub fn show(app: &AppHandle) {
     }
 }
 
-pub fn setup_tray(app: &AppHandle) -> Result<(), String> {
+/// Tray menu labels: (show, quit).
+fn tray_labels(language: &Language) -> (&'static str, &'static str) {
+    match language.resolve() {
+        "es" => ("Mostrar Vori", "Salir"),
+        _ => ("Show Vori", "Quit"),
+    }
+}
+
+pub fn setup_tray(app: &AppHandle, language: &Language) -> Result<(), String> {
     let mut current_id = CURRENT_TRAY_ID.lock().unwrap();
     if current_id.is_some() {
         return Ok(());
     }
 
-    let show_item = MenuItem::new(app, "Show Vori", true, None::<&str>)
+    let (show_label, quit_label) = tray_labels(language);
+    let show_item = MenuItem::new(app, show_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
-    let quit_item = MenuItem::new(app, "Quit", true, None::<&str>)
+    let quit_item = MenuItem::new(app, quit_label, true, None::<&str>)
         .map_err(|e| e.to_string())?;
 
     let show_id = show_item.id().clone();

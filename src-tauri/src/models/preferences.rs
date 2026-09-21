@@ -28,6 +28,31 @@ pub enum Theme {
     Dark,
 }
 
+/// UI language. `System` follows the operating system.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    #[default]
+    System,
+    En,
+    Es,
+}
+
+impl Language {
+    /// The concrete language to show: `"en"` or `"es"`.
+    pub fn resolve(&self) -> &'static str {
+        match self {
+            Language::En => "en",
+            Language::Es => "es",
+            Language::System => {
+                let spanish = sys_locale::get_locale()
+                    .is_some_and(|l| l.to_lowercase().starts_with("es"));
+                if spanish { "es" } else { "en" }
+            }
+        }
+    }
+}
+
 fn default_autostart() -> bool {
     true
 }
@@ -71,6 +96,8 @@ pub struct Preferences {
     pub editors_available: HashMap<String, String>,
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default)]
+    pub language: Language,
     #[serde(default = "default_autostart")]
     pub autostart: bool,
     #[serde(default = "default_show_tray")]
@@ -107,6 +134,7 @@ impl Default for Preferences {
             terminal: TerminalPreferences::default(),
             editors_available: HashMap::new(),
             theme: Theme::default(),
+            language: Language::default(),
             autostart: true,
             show_tray: true,
             keep_background: true,
@@ -117,5 +145,29 @@ impl Default for Preferences {
             editor_font_size: 13,
             claude_profiles: HashMap::new(),
         }
+    }
+}
+
+#[cfg(test)]
+mod language_tests {
+    use super::*;
+
+    #[test]
+    fn explicit_languages_resolve_to_themselves() {
+        assert_eq!(Language::En.resolve(), "en");
+        assert_eq!(Language::Es.resolve(), "es");
+        assert!(matches!(Language::System.resolve(), "en" | "es"));
+    }
+
+    #[test]
+    fn preferences_without_a_language_default_to_system() {
+        // preferences.json written by an older version has no `language` key
+        let prefs: Preferences = serde_json::from_str(
+            r#"{"default_editor":"vscode","default_text_editor":null,"terminal":{"preferred":null,"available":{},"last_detected":null}}"#,
+        )
+        .unwrap();
+        assert_eq!(prefs.language, Language::System);
+        let round: Language = serde_json::from_str("\"es\"").unwrap();
+        assert_eq!(round, Language::Es);
     }
 }

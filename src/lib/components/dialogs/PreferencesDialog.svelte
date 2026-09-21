@@ -27,6 +27,7 @@
     terminal: { available: {} },
     editors_available: {},
     theme: 'system',
+    language: 'system',
     autostart: true,
     show_tray: true,
     keep_background: true,

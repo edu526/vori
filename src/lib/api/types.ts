@@ -40,6 +40,9 @@ export interface TerminalPreferences {
 
 export type Theme = 'system' | 'light' | 'dark';
 
+/** UI language; `system` follows the operating system. */
+export type Language = 'system' | 'en' | 'es';
+
 export interface Preferences {
   default_editor: string;
   default_text_editor?: string;
@@ -49,6 +52,7 @@ export interface Preferences {
   terminal: TerminalPreferences;
   editors_available: Record<string, string>;
   theme: Theme;
+  language: Language;
   autostart: boolean;
   show_tray: boolean;
   keep_background: boolean;

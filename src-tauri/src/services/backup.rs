@@ -84,6 +84,7 @@ pub fn parse(text: &str) -> Result<Backup, String> {
 /// Apply the machine-independent parts of `imported` onto `current`.
 pub fn merge_portable_preferences(current: &mut Preferences, imported: &Preferences) {
     current.theme = imported.theme.clone();
+    current.language = imported.language.clone();
     current.ui_scale = imported.ui_scale;
     current.editor_text_wrap = imported.editor_text_wrap;
     current.editor_tab_size = imported.editor_tab_size;
