@@ -6,7 +6,11 @@ on:
       - main
 
 jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
   release:
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -123,10 +127,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cleanup on failure
-        if: failure() || cancelled()
+  # Separate job: `publish` is skipped when `build` fails, so a cleanup step inside it never ran.
+  cleanup:
+    needs: [release, build, publish]
+    if: always() && needs.release.outputs.published == 'true' && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete draft + tag
         run: |
-          echo "Publish failed, cleaning up draft + tag ${{ needs.release.outputs.tag }}"
-          gh release delete "${{ needs.release.outputs.tag }}" --cleanup-tag --yes --repo ${{ github.repository }}
+          echo "Release failed, cleaning up draft + tag ${{ needs.release.outputs.tag }}"
+          gh release delete "${{ needs.release.outputs.tag }}" --cleanup-tag --yes --repo ${{ github.repository }} || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
