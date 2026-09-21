@@ -93,6 +93,17 @@ export interface AppData {
   recovery_notes: string[];
 }
 
+// ── Git ───────────────────────────────────────────────────────────────────────
+
+export interface GitInfo {
+  /** Branch name, or `detached@<sha>` on a detached HEAD. */
+  branch: string;
+  /** Tracked files with uncommitted changes. */
+  dirty: boolean;
+  ahead: number;
+  behind: number;
+}
+
 // ── Scanner ───────────────────────────────────────────────────────────────────
 
 export interface ScannedProject {

@@ -18,6 +18,7 @@
   import FileDialog from '$lib/components/dialogs/FileDialog.svelte';
   import PreferencesDialog from '$lib/components/dialogs/PreferencesDialog.svelte';
   import ImportFolderModal from '$lib/components/dialogs/ImportFolderModal.svelte';
+  import CloneDialog from '$lib/components/dialogs/CloneDialog.svelte';
   import HomeView from '$lib/components/HomeView.svelte';
   import WorkspaceBar from '$lib/components/WorkspaceBar.svelte';
   import SearchModal from '$lib/components/SearchModal.svelte';
@@ -244,6 +245,8 @@
   <PreferencesDialog />
 {:else if dialogStore.current?.type === 'import-folder'}
   <ImportFolderModal />
+{:else if dialogStore.current?.type === 'clone'}
+  <CloneDialog />
 {/if}
 
 <style>

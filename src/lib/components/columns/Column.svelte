@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Column, NavItem } from '$lib/stores/navigation.svelte';
   import ColumnItem from './ColumnItem.svelte';
+  import { gitStore } from '$lib/stores/git.svelte';
 
   let {
     column,
@@ -21,6 +22,14 @@
     onemptyrightclick: (columnIndex: number, x: number, y: number) => void;
     onopen: (item: NavItem) => void;
   } = $props();
+
+  $effect(() => {
+    const paths = column.items
+      .filter((i) => i.type === 'project' && i.path)
+      .map((i) => i.path as string);
+    gitStore.ensure(columnIndex, paths);
+    return () => gitStore.release(columnIndex);
+  });
 
   function handleContextMenu(e: MouseEvent) {
     if ((e.target as Element).closest('.column-item')) return; // ColumnItem handles it

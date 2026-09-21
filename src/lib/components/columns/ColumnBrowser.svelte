@@ -131,6 +131,9 @@
       onAddProject: () => {
         dialogStore.open({ type: 'project', mode: 'add', parentKey: item.key });
       },
+      onCloneRepo: () => {
+        dialogStore.open({ type: 'clone', parentKey: item.key });
+      },
       onImportFolder: (autoScanPath?: string) => {
         dialogStore.open({ type: 'import-folder', defaultParent: item.key, autoScanPath } as any);
       },
@@ -186,6 +189,7 @@
         { label: 'New Project',     action: () => dialogStore.open({ type: 'project',        mode: 'add' }) },
         { label: 'New File',        action: () => dialogStore.open({ type: 'file',           mode: 'add' }) },
         { label: '', action: () => {}, divider: true },
+        { label: 'Clone repository…', action: () => dialogStore.open({ type: 'clone' }) },
         { label: 'Import folder…',  action: () => dialogStore.open({ type: 'import-folder' }) },
       ]);
       return;
@@ -202,6 +206,7 @@
           { label: 'Add Project here', action: () => dialogStore.open({ type: 'project',       mode: 'add', parentKey: selectedInPrev }) },
           { label: 'Add File here',    action: () => dialogStore.open({ type: 'file',          mode: 'add', parentKey: selectedInPrev }) },
           { label: '', action: () => {}, divider: true },
+          { label: 'Clone repository…', action: () => dialogStore.open({ type: 'clone', parentKey: selectedInPrev }) },
           { label: 'Import folder…',   action: () => dialogStore.open({ type: 'import-folder', defaultParent: selectedInPrev }) },
         ]);
       }

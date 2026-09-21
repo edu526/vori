@@ -5,6 +5,7 @@ import type {
   DetectedWorkspace,
   Favorites,
   FileEntry,
+  GitInfo,
   Preferences,
   Project,
   RecentItem,
@@ -164,3 +165,13 @@ export const detectWorkspacesInFolder = (path: string, maxDepth?: number) =>
 // ── Search ────────────────────────────────────────────────────────────────────
 
 export const search = (query: string) => invoke<SearchResult[]>('search', { query });
+
+// ── Git ───────────────────────────────────────────────────────────────────────
+
+/** Git state of every given path that is a repository (others are absent). */
+export const getGitInfo = (paths: string[]) =>
+  invoke<Record<string, GitInfo>>('get_git_info', { paths });
+
+/** Clone `url` into `<destParent>/<repo name>`; resolves to the new folder. */
+export const gitClone = (url: string, destParent: string) =>
+  invoke<string>('git_clone', { url, destParent });

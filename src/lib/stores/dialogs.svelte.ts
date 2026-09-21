@@ -7,7 +7,8 @@ type DialogPayload =
   | { type: 'file'; mode: 'edit'; key: string }
   | { type: 'editor'; filePath: string; fileName: string }
   | { type: 'preferences' }
-  | { type: 'import-folder'; defaultParent?: string };
+  | { type: 'import-folder'; defaultParent?: string }
+  | { type: 'clone'; parentKey?: string };
 
 function createDialogStore() {
   let current = $state<DialogPayload | null>(null);

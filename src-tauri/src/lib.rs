@@ -9,6 +9,7 @@ mod state;
 
 use commands::config::*;
 use commands::files_io::*;
+use commands::git::*;
 use commands::launcher::*;
 use commands::scanner::*;
 use commands::search::*;
@@ -200,6 +201,9 @@ pub fn run() {
             // Scanner
             scan_folder,
             detect_workspaces_in_folder,
+            // Git
+            get_git_info,
+            git_clone,
             // Search
             search,
         ])

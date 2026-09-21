@@ -3,6 +3,7 @@
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
   import StackIcon from '$lib/components/StackIcon.svelte';
+  import { gitStore } from '$lib/stores/git.svelte';
 
   let {
     item,
@@ -26,6 +27,21 @@
     (item.type === 'project' || item.type === 'workspace') &&
     !!item.path &&
     navigationStore.workspaceSelection.has(item.path),
+  );
+
+  const git = $derived(item.type === 'project' && item.path ? gitStore.info[item.path] : undefined);
+  const tooltip = $derived(
+    git
+      ? [
+          item.path,
+          `Branch: ${git.branch}`,
+          git.dirty ? 'Uncommitted changes' : 'Working tree clean',
+          git.ahead ? `${git.ahead} ahead` : '',
+          git.behind ? `${git.behind} behind` : '',
+        ]
+          .filter(Boolean)
+          .join('\n')
+      : item.path,
   );
 
   $effect(() => {
@@ -60,12 +76,20 @@
   ondblclick={() => { if (item.type === 'project' || item.type === 'workspace') onopen(item); }}
   oncontextmenu={(e) => { e.preventDefault(); onrightclick(item, e.clientX, e.clientY); }}
   onkeydown={(e) => { if (e.key === 'Enter' && (item.type === 'project' || item.type === 'file' || item.type === 'workspace')) { e.preventDefault(); onopen(item); } }}
-  title={item.path}
+  title={tooltip}
 >
   <span class="icon">
     <ItemIcon type={item.type} size={14} />
   </span>
   <span class="label">{item.label}</span>
+  {#if git}
+    <span class="git">
+      <span class="branch">{git.branch}</span>
+      {#if git.dirty}<span class="dirty" aria-label="Uncommitted changes">●</span>{/if}
+      {#if git.ahead}<span class="sync">↑{git.ahead}</span>{/if}
+      {#if git.behind}<span class="sync">↓{git.behind}</span>{/if}
+    </span>
+  {/if}
   {#if item.stack}
     <StackIcon stack={item.stack} size={13} />
   {/if}
@@ -138,6 +162,39 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .git {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    max-width: 96px;
+    font-size: var(--text-2xs);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .git .branch {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.75;
+  }
+
+  .git .dirty {
+    color: #e0a030;
+    font-size: 0.55rem;
+    line-height: 1;
+  }
+
+  .git .sync {
+    opacity: 0.75;
+  }
+
+  .column-item.selected:not(.inactive) .git,
+  .column-item.selected:not(.inactive) .git .dirty {
+    color: white;
   }
 
   .chevron {

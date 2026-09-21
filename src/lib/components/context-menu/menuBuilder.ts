@@ -41,6 +41,7 @@ export function buildMenuItems(
     onAddChildCategory?: () => void;
     onAddProject?: () => void;
     onImportFolder?: (autoScanPath?: string) => void;
+    onCloneRepo?: () => void;
   },
 ): MenuItem[] {
   const primaryLabel = editorLabel(opts.defaultEditor);
@@ -61,6 +62,10 @@ export function buildMenuItems(
         {
           label: 'Add Project here',
           action: () => opts.onAddProject?.(),
+        },
+        {
+          label: 'Clone repository…',
+          action: () => opts.onCloneRepo?.(),
         },
         {
           label: 'Import folder…',

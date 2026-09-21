@@ -146,6 +146,21 @@ const handlers: Record<string, (args: Args) => any> = {
     { name: 'Kitty', exec: '/usr/bin/kitty' },
   ],
 
+  // ── Git ───────────────────────────────────────────────────────────────────
+  get_git_info: ({ paths }: Args) => {
+    const out: Record<string, unknown> = {};
+    (paths as string[]).forEach((p, i) => {
+      if (i % 3 === 2) return; // not every folder is a repo
+      out[p] = { branch: i % 2 ? 'feature/login' : 'main', dirty: i % 2 === 0, ahead: i % 4 === 1 ? 2 : 0, behind: 0 };
+    });
+    return out;
+  },
+  git_clone: ({ url, destParent }: Args) => {
+    const name = String(url).replace(/\/+$/, '').split(/[/:]/).pop()?.replace(/\.git$/, '');
+    if (!name) throw 'Could not work out a folder name from that URL';
+    return `${destParent}/${name}`;
+  },
+
   // ── Scanner ───────────────────────────────────────────────────────────────
   scan_folder: ({ path }: Args) => {
     return [
