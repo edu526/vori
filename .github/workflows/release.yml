@@ -139,7 +139,12 @@ jobs:
     steps:
       - name: Delete draft + tag
         run: |
-          echo "Release failed, cleaning up draft + tag ${{ needs.release.outputs.tag }}"
-          gh release delete "${{ needs.release.outputs.tag }}" --cleanup-tag --yes --repo ${{ github.repository }} || true
+          echo "Release failed, cleaning up draft + tag $TAG"
+          # The draft only exists if a build got far enough to create it, so a missing
+          # release must not stop the tag from being deleted.
+          gh release delete "$TAG" --yes --repo "$REPO" || echo "No release to delete"
+          gh api -X DELETE "repos/$REPO/git/refs/tags/$TAG" || echo "No tag to delete"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release.outputs.tag }}
+          REPO: ${{ github.repository }}
