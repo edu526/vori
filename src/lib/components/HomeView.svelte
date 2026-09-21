@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
@@ -83,15 +84,15 @@
   {#if isEmpty}
     <div class="empty-state">
       <span class="empty-icon">⌘</span>
-      <p class="empty-title">No recent projects</p>
-      <p class="empty-hint">Open a category to browse your projects</p>
+      <p class="empty-title">{t('home.emptyTitle')}</p>
+      <p class="empty-hint">{t('home.emptyHint')}</p>
     </div>
 
   {:else}
 
     {#if hasFavorites}
       <section>
-        <h2 class="section-title">Favorites</h2>
+        <h2 class="section-title">{t('home.favorites')}</h2>
         <ul class="list">
           {#each favItems() as item (item.key)}
             <li class="item">
@@ -105,13 +106,13 @@
               <div class="item-actions">
                 {#if item.type === 'project'}
                   <button onclick={() => openProject(item.path, item.name)}>
-                    Open in {editorLabel(defaultEditor)}
+                    {t('common.openIn', { editor: editorLabel(defaultEditor) })}
                   </button>
-                  <button onclick={() => openTerminal(item.path)}>Terminal</button>
+                  <button onclick={() => openTerminal(item.path)}>{t('common.terminal')}</button>
                 {:else if isTextFile(item.path)}
-                  <button onclick={() => editFile(item.path, item.name)}>Edit</button>
+                  <button onclick={() => editFile(item.path, item.name)}>{t('common.edit')}</button>
                 {:else}
-                  <button onclick={() => openFile(item.path, item.name)}>Open</button>
+                  <button onclick={() => openFile(item.path, item.name)}>{t('common.open')}</button>
                 {/if}
               </div>
             </li>
@@ -126,7 +127,7 @@
 
     {#if hasRecents}
       <section>
-        <h2 class="section-title">Recent</h2>
+        <h2 class="section-title">{t('home.recent')}</h2>
         <ul class="list">
           {#each recents as item (item.path)}
             <li class="item">
@@ -140,13 +141,13 @@
               <div class="item-actions">
                 {#if item.type === 'project'}
                   <button onclick={() => openProject(item.path, item.name)}>
-                    Open in {editorLabel(defaultEditor)}
+                    {t('common.openIn', { editor: editorLabel(defaultEditor) })}
                   </button>
-                  <button onclick={() => openTerminal(item.path)}>Terminal</button>
+                  <button onclick={() => openTerminal(item.path)}>{t('common.terminal')}</button>
                 {:else if isTextFile(item.path)}
-                  <button onclick={() => editFile(item.path, item.name)}>Edit</button>
+                  <button onclick={() => editFile(item.path, item.name)}>{t('common.edit')}</button>
                 {:else}
-                  <button onclick={() => openFile(item.path, item.name)}>Open</button>
+                  <button onclick={() => openFile(item.path, item.name)}>{t('common.open')}</button>
                 {/if}
               </div>
             </li>

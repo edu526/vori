@@ -7,6 +7,7 @@ import type {
   Preferences,
   ProjectsMap,
   RecentItem,
+  RecoveryNote,
 } from '$lib/api/types';
 
 function createConfigStore() {
@@ -34,7 +35,7 @@ function createConfigStore() {
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);
-  let recoveryNotes = $state<string[]>([]);
+  let recoveryNotes = $state<RecoveryNote[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
 

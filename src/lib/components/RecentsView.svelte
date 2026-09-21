@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
@@ -67,7 +68,7 @@
 </script>
 
 <div class="recents-view" role="region" oncontextmenu={(e) => e.preventDefault()}>
-  <h2 class="title">Recent</h2>
+  <h2 class="title">{t('home.recent')}</h2>
   <ul class="list">
     {#each recents as item (item.path)}
       <li class="item">
@@ -81,15 +82,15 @@
         <div class="item-actions">
           {#if item.type === 'project' || item.type === 'workspace' || item.path.endsWith('.code-workspace')}
             <button onclick={() => handleOpenProject(item.path, item.name, defaultEditor)}>
-              Open in {editorLabel(defaultEditor)}
+              {t('common.openIn', { editor: editorLabel(defaultEditor) })}
             </button>
             {#if item.type === 'project'}
-              <button onclick={() => handleOpenTerminal(item.path)}>Terminal</button>
+              <button onclick={() => handleOpenTerminal(item.path)}>{t('common.terminal')}</button>
             {/if}
           {:else if isTextFile(item.path)}
-            <button onclick={() => handleEditFile(item.path, item.name)}>Edit</button>
+            <button onclick={() => handleEditFile(item.path, item.name)}>{t('common.edit')}</button>
           {:else}
-            <button onclick={() => handleOpenFile(item.path, item.name)}>Open</button>
+            <button onclick={() => handleOpenFile(item.path, item.name)}>{t('common.open')}</button>
           {/if}
         </div>
       </li>

@@ -86,6 +86,13 @@ export interface RecentItem {
 
 // ── Combined app data ─────────────────────────────────────────────────────────
 
+/** A config file that could not be read at startup and was reset. */
+export interface RecoveryNote {
+  file: string;
+  /** Name the unreadable original was moved to, when that worked. */
+  backup: string | null;
+}
+
 export interface AppData {
   categories: CategoriesMap;
   projects: ProjectsMap;
@@ -94,7 +101,7 @@ export interface AppData {
   favorites: Favorites;
   recents: RecentItem[];
   /** Config files that were unreadable at startup and got reset (originals kept as .bak). */
-  recovery_notes: string[];
+  recovery_notes: RecoveryNote[];
 }
 
 // ── Git ───────────────────────────────────────────────────────────────────────
@@ -138,7 +145,9 @@ export interface ImportSummary {
 export type CliRequest =
   | { kind: 'add-or-reveal'; path: string; existing: string | null }
   | { kind: 'opened'; path: string; name: string }
-  | { kind: 'notice'; message: string };
+  | { kind: 'no-project'; query: string }
+  | { kind: 'ambiguous-project'; query: string; matches: string[] }
+  | { kind: 'failed'; message: string };
 
 // ── Scanner ───────────────────────────────────────────────────────────────────
 

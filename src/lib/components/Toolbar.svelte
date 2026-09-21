@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import AppVersion from './AppVersion.svelte';
 
@@ -66,29 +67,29 @@
         <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
         <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <span class="search-placeholder">Search projects, files, categories...</span>
+      <span class="search-placeholder">{t('search.placeholder')}</span>
       <kbd>⌘F</kbd>
     </button>
   </div>
 
   <!-- Right: preferences + window controls -->
   <div class="toolbar-right">
-    <button class="toolbar-btn" onclick={onopenpreferences} title="Preferences">
+    <button class="toolbar-btn" onclick={onopenpreferences} title={t('toolbar.preferences')}>
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.25"/>
         <path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.404 3.404l.707.707M11.889 11.889l.707.707M3.404 12.596l.707-.707M11.889 4.111l.707-.707" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
       </svg>
-      <span>Preferences</span>
+      <span>{t('toolbar.preferences')}</span>
     </button>
 
     <div class="divider"></div>
 
-    <button class="wc-btn" onclick={() => win.minimize()} title="Minimize" aria-label="Minimize">
+    <button class="wc-btn" onclick={() => win.minimize()} title={t('window.minimize')} aria-label={t('window.minimize')}>
       <svg width="11" height="2" viewBox="0 0 11 2" fill="currentColor" aria-hidden="true">
         <rect width="11" height="2" rx="1"/>
       </svg>
     </button>
-    <button class="wc-btn" onclick={toggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'} aria-label={isMaximized ? 'Restore' : 'Maximize'}>
+    <button class="wc-btn" onclick={toggleMaximize} title={isMaximized ? t('window.restore') : t('window.maximize')} aria-label={isMaximized ? t('window.restore') : t('window.maximize')}>
       {#if isMaximized}
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="0" width="8" height="8" rx="1.2"/>
@@ -100,7 +101,7 @@
         </svg>
       {/if}
     </button>
-    <button class="wc-btn close" onclick={() => win.close()} title="Close" aria-label="Close">
+    <button class="wc-btn close" onclick={() => win.close()} title={t('common.close')} aria-label={t('common.close')}>
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
         <line x1="1.5" y1="1.5" x2="9.5" y2="9.5"/>
         <line x1="9.5" y1="1.5" x2="1.5" y2="9.5"/>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { onMount } from 'svelte';
   import { updaterStore } from '$lib/stores/updater.svelte';
   import { message } from '@tauri-apps/plugin-dialog';
@@ -22,13 +23,13 @@
       if (updaterStore.state === 'available') {
         await updaterStore.promptInstall();
       } else if (updaterStore.state === 'up-to-date') {
-        await message(`You're on the latest version (v${currentVersion}).`, {
-          title: 'Vori is up to date',
+        await message(t('update.upToDate', { version: currentVersion }), {
+          title: t('update.upToDateTitle'),
           kind: 'info',
         });
       } else if (updaterStore.state === 'error') {
-        await message(`Could not check for updates.\n\n${updaterStore.lastError}`, {
-          title: 'Update check failed',
+        await message(t('update.checkFailed', { error: updaterStore.lastError }), {
+          title: t('update.checkFailedTitle'),
           kind: 'error',
         });
       }
@@ -53,7 +54,9 @@
   {/if}
   {#if updaterStore.state === 'downloading'}
     <span class="latest">
-      {updaterStore.progress === null ? 'Downloading…' : `Downloading ${updaterStore.progress}%`}
+      {updaterStore.progress === null
+        ? t('update.downloading')
+        : t('update.downloadingPercent', { percent: updaterStore.progress })}
     </span>
   {:else if updaterStore.state === 'checking'}
     <span class="pulse" aria-hidden="true"></span>

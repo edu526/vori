@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
@@ -191,12 +192,12 @@
 
     if (columnIndex === 0) {
       contextMenuStore.show(x, y, [
-        { label: 'New Category',    action: () => dialogStore.open({ type: 'category',      mode: 'add' }) },
-        { label: 'New Project',     action: () => dialogStore.open({ type: 'project',        mode: 'add' }) },
-        { label: 'New File',        action: () => dialogStore.open({ type: 'file',           mode: 'add' }) },
+        { label: t('menu.newCategory'),    action: () => dialogStore.open({ type: 'category',      mode: 'add' }) },
+        { label: t('menu.newProject'),     action: () => dialogStore.open({ type: 'project',        mode: 'add' }) },
+        { label: t('menu.newFile'),        action: () => dialogStore.open({ type: 'file',           mode: 'add' }) },
         { label: '', action: () => {}, divider: true },
-        { label: 'Clone repository…', action: () => dialogStore.open({ type: 'clone' }) },
-        { label: 'Import folder…',  action: () => dialogStore.open({ type: 'import-folder' }) },
+        { label: t('menu.cloneRepo'), action: () => dialogStore.open({ type: 'clone' }) },
+        { label: t('menu.importFolder'),  action: () => dialogStore.open({ type: 'import-folder' }) },
       ]);
       return;
     }
@@ -208,12 +209,12 @@
       );
       if (prevItem?.type === 'category') {
         contextMenuStore.show(x, y, [
-          { label: 'Add Subcategory',  action: () => dialogStore.open({ type: 'category',     mode: 'add', parentKey: selectedInPrev }) },
-          { label: 'Add Project here', action: () => dialogStore.open({ type: 'project',       mode: 'add', parentKey: selectedInPrev }) },
-          { label: 'Add File here',    action: () => dialogStore.open({ type: 'file',          mode: 'add', parentKey: selectedInPrev }) },
+          { label: t('menu.addSubcategory'),  action: () => dialogStore.open({ type: 'category',     mode: 'add', parentKey: selectedInPrev }) },
+          { label: t('menu.addProjectHere'), action: () => dialogStore.open({ type: 'project',       mode: 'add', parentKey: selectedInPrev }) },
+          { label: t('menu.addFileHere'),    action: () => dialogStore.open({ type: 'file',          mode: 'add', parentKey: selectedInPrev }) },
           { label: '', action: () => {}, divider: true },
-          { label: 'Clone repository…', action: () => dialogStore.open({ type: 'clone', parentKey: selectedInPrev }) },
-          { label: 'Import folder…',   action: () => dialogStore.open({ type: 'import-folder', defaultParent: selectedInPrev }) },
+          { label: t('menu.cloneRepo'), action: () => dialogStore.open({ type: 'clone', parentKey: selectedInPrev }) },
+          { label: t('menu.importFolder'),   action: () => dialogStore.open({ type: 'import-folder', defaultParent: selectedInPrev }) },
         ]);
       }
     }
@@ -234,10 +235,10 @@
         <line x1="24" y1="20" x2="24" y2="32"/>
         <line x1="18" y1="26" x2="30" y2="26"/>
       </svg>
-      <p class="onboarding-title">Welcome to Vori</p>
-      <p class="onboarding-sub">Organize your projects in categories to get started</p>
+      <p class="onboarding-title">{t('onboarding.title')}</p>
+      <p class="onboarding-sub">{t('onboarding.sub')}</p>
       <button class="onboarding-btn" onclick={() => dialogStore.open({ type: 'category', mode: 'add' })}>
-        Add your first category
+        {t('onboarding.add')}
       </button>
     </div>
   {:else}

@@ -1,3 +1,5 @@
+import { t } from '$lib/i18n/index.svelte';
+
 /**
  * Turns release notes (the markdown of a GitHub release) into short plain text for a
  * native dialog: no links, no commit hashes, no markdown syntax.
@@ -24,5 +26,5 @@ export function notesToPlainText(body: string | undefined | null, maxLines = 12)
   }
 
   if (lines.length <= maxLines) return lines.join('\n');
-  return [...lines.slice(0, maxLines), `…and ${lines.length - maxLines} more`].join('\n');
+  return [...lines.slice(0, maxLines), t('update.more', { count: lines.length - maxLines })].join('\n');
 }

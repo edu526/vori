@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import type { Column, NavItem } from '$lib/stores/navigation.svelte';
   import ColumnItem from './ColumnItem.svelte';
   import { gitStore } from '$lib/stores/git.svelte';
@@ -54,7 +55,7 @@
       />
     {/each}
     {#if column.items.length === 0}
-      <div class="empty-state">No items</div>
+      <div class="empty-state">{t('column.empty')}</div>
     {/if}
   </div>
 </div>

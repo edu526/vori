@@ -37,7 +37,19 @@ pub enum FrontendRequest {
     AddOrReveal { path: String, existing: Option<String> },
     /// A project was opened from outside the UI; refresh the recents list.
     Opened { path: String, name: String },
-    Notice { message: String },
+    /// Nothing matches the project name that was asked for.
+    NoProject { query: String },
+    /// Several projects match the name that was asked for.
+    AmbiguousProject { query: String, matches: Vec<String> },
+    /// Anything else that went wrong: `message` comes straight from the failing step.
+    Failed { message: String },
+}
+
+/// Why a project name could not be resolved to a single project.
+#[derive(Debug, Clone, PartialEq)]
+pub enum FindError {
+    NoMatch,
+    Several(Vec<String>),
 }
 
 fn percent_decode(input: &str) -> String {
@@ -116,7 +128,7 @@ pub fn parse(args: &[String], cwd: &str) -> CliAction {
 
 /// Project whose key matches `query`: exact, then case-insensitive, then a unique
 /// case-insensitive prefix, then a unique substring.
-pub fn find_project(projects: &ProjectsMap, query: &str) -> Result<(String, String), String> {
+pub fn find_project(projects: &ProjectsMap, query: &str) -> Result<(String, String), FindError> {
     let q = query.trim();
     if let Some(p) = projects.get(q) {
         return Ok((q.to_string(), p.path.clone()));
@@ -135,12 +147,11 @@ pub fn find_project(projects: &ProjectsMap, query: &str) -> Result<(String, Stri
             [] => continue,
             [one] => return Ok(((*one).clone(), projects[one.as_str()].path.clone())),
             many => {
-                let names: Vec<&str> = many.iter().take(5).map(|k| k.as_str()).collect();
-                return Err(format!("“{q}” matches several projects: {}", names.join(", ")));
+                return Err(FindError::Several(many.iter().take(5).map(|k| k.to_string()).collect()));
             }
         }
     }
-    Err(format!("No project matches “{q}”"))
+    Err(FindError::NoMatch)
 }
 
 /// Key of the project that lives at `path`, comparing paths loosely (slashes, case on Windows).
@@ -227,8 +238,9 @@ mod tests {
         assert_eq!(find_project(&p, "VORI-DOCS").unwrap().0, "Vori-docs");
         assert_eq!(find_project(&p, "gate").unwrap().0, "api-gateway"); // unique substring
         assert!(find_project(&p, "api").unwrap().0 == "api"); // exact
-        assert!(find_project(&p, "vo").unwrap_err().contains("several")); // ambiguous prefix
-        assert!(find_project(&p, "zzz").unwrap_err().contains("No project"));
+        // ambiguous prefix: both "vori" and "Vori-docs" start with "vo"
+        assert_eq!(find_project(&p, "vo").unwrap_err(), FindError::Several(vec!["Vori-docs".into(), "vori".into()]));
+        assert_eq!(find_project(&p, "zzz").unwrap_err(), FindError::NoMatch);
     }
 
     #[test]

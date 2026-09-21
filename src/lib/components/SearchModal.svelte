@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { search } from '$lib/api/commands';
   import type { SearchResult } from '$lib/api/types';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
@@ -62,9 +63,15 @@
     onclose();
   }
 
-  const TYPE_LABELS: Record<string, string> = {
-    category: 'Category', project: 'Project', file: 'File',
-  };
+  const TYPE_KEYS = {
+    category: 'type.category',
+    project: 'type.project',
+    file: 'type.file',
+  } as const;
+
+  function typeLabel(type: string): string {
+    return type in TYPE_KEYS ? t(TYPE_KEYS[type as keyof typeof TYPE_KEYS]) : type;
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -85,7 +92,7 @@
         bind:this={inputEl}
         type="text"
         class="search-input"
-        placeholder="Search projects, files, categories..."
+        placeholder={t('search.placeholder')}
         value={query}
         oninput={handleInput}
         onkeydown={handleKeydown}
@@ -96,7 +103,7 @@
     {#if results.length > 0}
       <div class="divider"></div>
       {#if !query.trim()}
-        <p class="section-label">Frequently used</p>
+        <p class="section-label">{t('search.frequent')}</p>
       {/if}
       <ul class="results">
         {#each results as result, i (result.key)}
@@ -115,14 +122,14 @@
               {#if result.path}
                 <span class="result-path">{result.path.replace(/^\/home\/[^/]+/, '~')}</span>
               {/if}
-              <span class="result-type">{TYPE_LABELS[result.result_type] ?? result.result_type}</span>
+              <span class="result-type">{typeLabel(result.result_type)}</span>
             </button>
           </li>
         {/each}
       </ul>
     {:else if query.trim()}
       <div class="divider"></div>
-      <p class="empty">No results for <strong>{query}</strong></p>
+      <p class="empty">{t('search.noResultsFor')} <strong>{query}</strong></p>
     {/if}
   </div>
 </div>

@@ -21,7 +21,7 @@ pub struct AppData {
     pub favorites: Favorites,
     pub recents: RecentsList,
     /// Config files reset at startup because they could not be parsed.
-    pub recovery_notes: Vec<String>,
+    pub recovery_notes: Vec<config_manager::RecoveryNote>,
 }
 
 #[tauri::command]

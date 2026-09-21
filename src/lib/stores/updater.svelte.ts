@@ -2,6 +2,7 @@ import { check, type Update } from '@tauri-apps/plugin-updater';
 import { ask, message } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { notesToPlainText } from '$lib/utils/releaseNotes';
+import { t } from '$lib/i18n/index.svelte';
 
 export type UpdaterState =
   | 'idle'
@@ -68,9 +69,9 @@ function createUpdaterStore() {
     if (!available) return false;
     const notes = notesToPlainText(available.body);
     const yes = await ask(
-      `Update to v${available.version}?\n\nCurrent: v${available.currentVersion}` +
-        (notes ? `\n\nWhat's new:\n${notes}` : ''),
-      { title: 'Update available', kind: 'info', okLabel: 'Install', cancelLabel: 'Later' },
+      t('update.prompt', { version: available.version, current: available.currentVersion }) +
+        (notes ? `\n\n${t('update.whatsNew')}\n${notes}` : ''),
+      { title: t('update.promptTitle'), kind: 'info', okLabel: t('update.install'), cancelLabel: t('update.later') },
     );
     if (!yes) return false;
     state = 'downloading';
@@ -83,8 +84,8 @@ function createUpdaterStore() {
       lastError = e instanceof Error ? e.message : String(e);
       state = 'error';
       progress = null;
-      await message(`Could not install the update.\n\n${lastError}`, {
-        title: 'Update failed',
+      await message(t('update.installFailed', { error: lastError }), {
+        title: t('update.installFailedTitle'),
         kind: 'error',
       });
       return false;

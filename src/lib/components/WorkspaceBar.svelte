@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { openWorkspaceInEditor } from '$lib/api/commands';
@@ -32,7 +33,7 @@
 </script>
 
 {#if navigationStore.workspaceSelection.size > 0}
-  <div class="workspace-bar" role="toolbar" aria-label="Workspace selection">
+  <div class="workspace-bar" role="toolbar" aria-label={t('workspace.aria')}>
     <div class="chips">
       {#each entries as [key, entry] (key)}
         <span class="chip">
@@ -40,7 +41,7 @@
           <button
             class="chip-remove"
             onclick={() => navigationStore.toggleWorkspaceItem(key, entry.path, entry.label)}
-            aria-label="Remove {entry.label}"
+            aria-label={t('workspace.remove', { label: entry.label })}
           >×</button>
         </span>
       {/each}
@@ -56,11 +57,11 @@
       {/if}
 
       <button class="btn-open" onclick={openWorkspace}>
-        Open workspace
+        {t('workspace.open')}
         <span class="count">{navigationStore.workspaceSelection.size}</span>
       </button>
 
-      <button class="btn-clear" onclick={() => navigationStore.clearWorkspaceSelection()} title="Clear selection">
+      <button class="btn-clear" onclick={() => navigationStore.clearWorkspaceSelection()} title={t('workspace.clear')}>
         ×
       </button>
     </div>

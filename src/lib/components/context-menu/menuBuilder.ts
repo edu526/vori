@@ -1,4 +1,5 @@
 import { ask, message, open } from '@tauri-apps/plugin-dialog';
+import { t, tn } from '$lib/i18n/index.svelte';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import { navigationStore } from '$lib/stores/navigation.svelte';
 import { syncStore } from '$lib/stores/sync.svelte';
@@ -43,13 +44,13 @@ async function runScript(path: string, script: string) {
       const copied = await copyText(result.command);
       await message(
         copied
-          ? `Your terminal can't run commands from Vori, so it was opened in the project folder.\n\n"${result.command}" is on your clipboard: paste it there.`
-          : `Your terminal can't run commands from Vori. Run this in the project folder:\n\n${result.command}`,
-        { title: 'Run script', kind: 'info' },
+          ? t('script.terminalCantRun', { command: result.command })
+          : t('script.terminalCantRunManual', { command: result.command }),
+        { title: t('script.runTitle'), kind: 'info' },
       );
     }
   } catch (e) {
-    await message(String(e), { title: 'Could not run script', kind: 'error' });
+    await message(String(e), { title: t('script.runFailedTitle'), kind: 'error' });
   }
 }
 
@@ -82,29 +83,29 @@ export function buildMenuItems(
       const newFolders = existingSourcePath ? syncStore.newCount(item.key) : 0;
       return [
         {
-          label: 'Add Subcategory',
+          label: t('menu.addSubcategory'),
           action: () => opts.onAddChildCategory?.(),
         },
         {
-          label: 'Add Project here',
+          label: t('menu.addProjectHere'),
           action: () => opts.onAddProject?.(),
         },
         {
-          label: 'Clone repository…',
+          label: t('menu.cloneRepo'),
           action: () => opts.onCloneRepo?.(),
         },
         {
-          label: 'Import folder…',
+          label: t('menu.importFolder'),
           action: () => opts.onImportFolder?.(),
         },
         ...(newFolders > 0
           ? [
               {
-                label: `Import ${newFolders} new project${newFolders !== 1 ? 's' : ''}…`,
+                label: tn('menu.importNew.one', 'menu.importNew.other', newFolders),
                 action: () => opts.onImportFolder?.(existingSourcePath ?? undefined),
               },
               {
-                label: 'Ignore new folders',
+                label: t('menu.ignoreNew'),
                 action: () => syncStore.dismiss(item.key),
               },
             ]
@@ -112,14 +113,14 @@ export function buildMenuItems(
         ...(existingSourcePath
           ? [
               {
-                label: 'Refresh Import Tree…',
+                label: t('menu.refreshImport'),
                 action: () => opts.onImportFolder?.(existingSourcePath),
               },
             ]
           : []),
         { label: '', action: () => {}, divider: true },
         {
-          label: existingSourcePath ? 'Detect Workspaces' : 'Detect Workspaces in folder…',
+          label: existingSourcePath ? t('menu.detectWorkspaces') : t('menu.detectWorkspacesIn'),
           action: async () => {
             let sourcePath = existingSourcePath;
             if (!sourcePath) {
@@ -136,7 +137,7 @@ export function buildMenuItems(
         ...(detected.length > 0
           ? [
               {
-                label: `Import ${detected.length} workspace${detected.length !== 1 ? 's' : ''} as project${detected.length !== 1 ? 's' : ''}`,
+                label: tn('menu.importWorkspaces.one', 'menu.importWorkspaces.other', detected.length),
                 action: async () => {
                   const used = new Set(Object.keys(configStore.projects));
                   const entries: [string, { path: string; parent: string }][] = detected.map((ws) => {
@@ -157,14 +158,14 @@ export function buildMenuItems(
           : []),
         { label: '', action: () => {}, divider: true },
         {
-          label: 'Edit Category',
+          label: t('menu.editCategory'),
           action: () => opts.onEdit(),
         },
         {
-          label: 'Delete Category',
+          label: t('menu.deleteCategory'),
           danger: true,
           action: async () => {
-            const ok = await ask(`Delete category "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            const ok = await ask(t('menu.confirmDeleteCategory', { name: item.label }), { kind: 'warning' });
             if (ok) await deleteCategory(item.key).then(() => opts.onRefresh());
           },
         },
@@ -177,43 +178,43 @@ export function buildMenuItems(
       const workspaceSize = navigationStore.workspaceSelection.size;
       return [
         {
-          label: `Open in ${primaryLabel}`,
+          label: t('common.openIn', { editor: primaryLabel }),
           action: () => openProjectInEditor(item.path!, opts.defaultEditor),
         },
         ...otherEditors.map((key) => ({
-          label: `Open in ${editorLabel(key)}`,
+          label: t('common.openIn', { editor: editorLabel(key) }),
           action: () => openProjectInEditor(item.path!, key),
         })),
         {
-          label: 'Open in Terminal',
+          label: t('menu.openInTerminal'),
           action: () => openInTerminal(item.path!),
         },
         ...(opts.scripts && opts.scripts.scripts.length > 0
           ? [
               { label: '', action: () => {}, divider: true },
               ...opts.scripts.scripts.slice(0, MAX_MENU_SCRIPTS).map((script) => ({
-                label: `Run: ${script}`,
+                label: t('menu.runScript', { script }),
                 action: () => runScript(item.path!, script),
               })),
             ]
           : []),
         { label: '', action: () => {}, divider: true },
         {
-          label: 'Show in File Manager',
+          label: t('menu.showInFileManager'),
           action: () => revealItemInDir(item.path!),
         },
         {
-          label: 'Copy Path',
+          label: t('menu.copyPath'),
           action: () => { void copyText(item.path!); },
         },
         { label: '', action: () => {}, divider: true },
         {
-          label: inWorkspace ? 'Remove from workspace selection' : 'Add to workspace selection',
+          label: inWorkspace ? t('menu.removeFromWorkspace') : t('menu.addToWorkspace'),
           action: () => navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label),
         },
         ...(workspaceSize >= 2 && inWorkspace || workspaceSize >= 1 && !inWorkspace
           ? [{
-              label: `Open ${workspaceSize + (inWorkspace ? 0 : 1)} projects as workspace`,
+              label: t('menu.openProjectsAsWorkspace', { count: workspaceSize + (inWorkspace ? 0 : 1) }),
               action: async () => {
                 if (!inWorkspace) {
                   navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label);
@@ -226,21 +227,21 @@ export function buildMenuItems(
           : []),
         { label: '', action: () => {}, divider: true },
         {
-          label: isFav ? 'Remove from Favorites' : 'Add to Favorites',
+          label: isFav ? t('menu.removeFavorite') : t('menu.addFavorite'),
           action: () => {
             toggleFavorite(item.key, 'project').then((favs) => { navigationStore.updateFavorites(favs); configStore.favorites = favs; });
           },
         },
         { label: '', action: () => {}, divider: true },
         {
-          label: 'Edit Project',
+          label: t('menu.editProject'),
           action: () => opts.onEdit(),
         },
         {
-          label: 'Delete Project',
+          label: t('menu.deleteProject'),
           danger: true,
           action: async () => {
-            const ok = await ask(`Delete project "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            const ok = await ask(t('menu.confirmDeleteProject', { name: item.label }), { kind: 'warning' });
             if (ok) await deleteProject(item.key).then(() => opts.onRefresh());
           },
         },
@@ -254,21 +255,21 @@ export function buildMenuItems(
       const workspaceSize = navigationStore.workspaceSelection.size;
       return [
         {
-          label: `Open in ${primaryLabel}`,
+          label: t('common.openIn', { editor: primaryLabel }),
           action: () => openProjectInEditor(item.path!, opts.defaultEditor),
         },
         ...otherEditors.map((key) => ({
-          label: `Open in ${editorLabel(key)}`,
+          label: t('common.openIn', { editor: editorLabel(key) }),
           action: () => openProjectInEditor(item.path!, key),
         })),
         { label: '', action: () => {}, divider: true },
         {
-          label: inWorkspace ? 'Remove from workspace selection' : 'Add to workspace selection',
+          label: inWorkspace ? t('menu.removeFromWorkspace') : t('menu.addToWorkspace'),
           action: () => navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label),
         },
         ...(workspaceSize >= 2 && inWorkspace || workspaceSize >= 1 && !inWorkspace
           ? [{
-              label: `Open ${workspaceSize + (inWorkspace ? 0 : 1)} as workspace`,
+              label: t('menu.openAsWorkspace', { count: workspaceSize + (inWorkspace ? 0 : 1) }),
               action: async () => {
                 if (!inWorkspace) {
                   navigationStore.toggleWorkspaceItem(item.key, item.path!, item.label);
@@ -281,7 +282,7 @@ export function buildMenuItems(
           : []),
         { label: '', action: () => {}, divider: true },
         {
-          label: 'Import as project',
+          label: t('menu.importAsProject'),
           action: async () => {
             let key = `ws-${item.label}`;
             if (configStore.projects[key]) {
@@ -300,21 +301,21 @@ export function buildMenuItems(
       return [
         { label: '', action: () => {}, divider: true },
         {
-          label: isFav ? 'Remove from Favorites' : 'Add to Favorites',
+          label: isFav ? t('menu.removeFavorite') : t('menu.addFavorite'),
           action: () => {
             toggleFavorite(item.key, 'file').then((favs) => { navigationStore.updateFavorites(favs); configStore.favorites = favs; });
           },
         },
         { label: '', action: () => {}, divider: true },
         {
-          label: 'Edit File',
+          label: t('menu.editFile'),
           action: () => opts.onEdit(),
         },
         {
-          label: 'Delete File',
+          label: t('menu.deleteFile'),
           danger: true,
           action: async () => {
-            const ok = await ask(`Delete file "${item.label}"? This cannot be undone.`, { kind: 'warning' });
+            const ok = await ask(t('menu.confirmDeleteFile', { name: item.label }), { kind: 'warning' });
             if (ok) await deleteFile(item.key).then(() => opts.onRefresh());
           },
         },

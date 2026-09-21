@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, tn } from '$lib/i18n/index.svelte';
   import type { NavItem } from '$lib/stores/navigation.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
   import ItemIcon from '$lib/components/ItemIcon.svelte';
@@ -36,10 +37,10 @@
     git
       ? [
           item.path,
-          `Branch: ${git.branch}`,
-          git.dirty ? 'Uncommitted changes' : 'Working tree clean',
-          git.ahead ? `${git.ahead} ahead` : '',
-          git.behind ? `${git.behind} behind` : '',
+          t('git.branch', { branch: git.branch }),
+          git.dirty ? t('git.dirty') : t('git.clean'),
+          git.ahead ? t('git.ahead', { count: git.ahead }) : '',
+          git.behind ? t('git.behind', { count: git.behind }) : '',
         ]
           .filter(Boolean)
           .join('\n')
@@ -87,7 +88,7 @@
   {#if git}
     <span class="git">
       <span class="branch">{git.branch}</span>
-      {#if git.dirty}<span class="dirty" aria-label="Uncommitted changes">●</span>{/if}
+      {#if git.dirty}<span class="dirty" aria-label={t('git.dirty')}>●</span>{/if}
       {#if git.ahead}<span class="sync">↑{git.ahead}</span>{/if}
       {#if git.behind}<span class="sync">↓{git.behind}</span>{/if}
     </span>
@@ -96,7 +97,7 @@
     <StackIcon stack={item.stack} size={13} />
   {/if}
   {#if newCount > 0}
-    <span class="new-badge" title="{newCount} new folder{newCount === 1 ? '' : 's'} not imported yet">+{newCount}</span>
+    <span class="new-badge" title={tn('sync.newFolders.one', 'sync.newFolders.other', newCount)}>+{newCount}</span>
   {/if}
   {#if item.isFavorite}
     <span class="favorite">★</span>

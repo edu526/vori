@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::commands::config::push_recent;
 use crate::commands::launcher::open_project;
 use crate::models::recents::{RecentItem, RecentType};
-use crate::services::cli::{self, CliAction, FrontendRequest};
+use crate::services::cli::{self, CliAction, FindError, FrontendRequest};
 use crate::services::window;
 use crate::state::AppState;
 
@@ -13,8 +13,8 @@ fn queue(app: &AppHandle, state: &AppState, request: FrontendRequest) {
     let _ = app.emit("cli-request", ());
 }
 
-fn notice(app: &AppHandle, state: &AppState, message: String) {
-    queue(app, state, FrontendRequest::Notice { message });
+fn fail(app: &AppHandle, state: &AppState, request: FrontendRequest) {
+    queue(app, state, request);
     window::show(app);
 }
 
@@ -38,11 +38,14 @@ pub fn dispatch(app: &AppHandle, action: CliAction, second_launch: bool) {
         CliAction::Open { name } => {
             let found = cli::find_project(&state.projects.lock().unwrap(), &name);
             match found {
-                Err(message) => notice(app, state, message),
+                Err(FindError::NoMatch) => fail(app, state, FrontendRequest::NoProject { query: name }),
+                Err(FindError::Several(matches)) => {
+                    fail(app, state, FrontendRequest::AmbiguousProject { query: name, matches })
+                }
                 Ok((key, path)) => {
                     let editor = state.preferences.lock().unwrap().default_editor.clone();
                     match open_project(&path, &editor, state) {
-                        Err(e) => notice(app, state, e),
+                        Err(message) => fail(app, state, FrontendRequest::Failed { message }),
                         Ok(()) => {
                             let timestamp = std::time::SystemTime::now()
                                 .duration_since(std::time::UNIX_EPOCH)

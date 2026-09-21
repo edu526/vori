@@ -26,6 +26,7 @@
   import { message } from '@tauri-apps/plugin-dialog';
   import { syncStore } from '$lib/stores/sync.svelte';
   import { listen } from '@tauri-apps/api/event';
+  import { t } from '$lib/i18n/index.svelte';
 
   const isEditorOpen = $derived(dialogStore.current?.type === 'editor');
 
@@ -47,8 +48,15 @@
       syncStore.start();
       await drainCliRequests();
       if (configStore.recoveryNotes.length > 0) {
-        await message(configStore.recoveryNotes.join('\n\n'), {
-          title: 'Some settings were reset',
+        const text = configStore.recoveryNotes
+          .map((n) =>
+            n.backup
+              ? t('recovery.resetKept', { file: n.file, backup: n.backup })
+              : t('recovery.reset', { file: n.file }),
+          )
+          .join('\n\n');
+        await message(text, {
+          title: t('recovery.title'),
           kind: 'warning',
         });
       }
@@ -78,7 +86,13 @@
         navigationStore.addRecentToView(recent);
         configStore.recents = [recent, ...configStore.recents.filter((r) => r.path !== recent.path)].slice(0, 20);
       } else {
-        await message(request.message, { title: 'Vori', kind: 'warning' });
+        const text =
+          request.kind === 'no-project'
+            ? t('cli.noProject', { query: request.query })
+            : request.kind === 'ambiguous-project'
+              ? t('cli.ambiguous', { query: request.query, names: request.matches.join(', ') })
+              : request.message;
+        await message(text, { title: 'Vori', kind: 'warning' });
       }
     }
   }
@@ -254,9 +268,9 @@
 
 <div class="app-shell">
   {#if configStore.loading}
-    <div class="state-overlay">Loading...</div>
+    <div class="state-overlay">{t('app.loading')}</div>
   {:else if configStore.error}
-    <div class="state-overlay error">Failed to load config: {configStore.error}</div>
+    <div class="state-overlay error">{t('app.loadFailed', { error: configStore.error ?? '' })}</div>
   {:else}
     <Toolbar
       onopenpreferences={() => dialogStore.open({ type: 'preferences' })}

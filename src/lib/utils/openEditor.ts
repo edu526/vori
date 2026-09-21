@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n/index.svelte';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { dialogStore } from '$lib/stores/dialogs.svelte';
 import { editorStore } from '$lib/stores/editor.svelte';
@@ -19,7 +20,7 @@ export async function openEditor(filePath: string, fileName: string) {
   ) {
     const currentName = editorStore.currentFilePath.split(/[\\/]/).pop() ?? editorStore.currentFilePath;
     const ok = await ask(
-      `You have unsaved changes in "${currentName}". Switch files anyway?`,
+      t('editor.switchConfirm', { name: currentName }),
       { kind: 'warning' },
     );
     if (!ok) return;

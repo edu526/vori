@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '$lib/i18n/index.svelte';
   import { onDestroy, untrack } from 'svelte';
   import { EditorView, basicSetup } from 'codemirror';
   import { EditorState, Prec } from '@codemirror/state';
@@ -67,7 +68,7 @@
       const msg = String(e);
       if (/permission|denied|access|io error/i.test(msg)) {
         const ok = await ask(
-          'Insufficient permissions to save. Retry as administrator?',
+          t('editor.needsAdmin'),
           { kind: 'warning' },
         );
         if (ok) {
@@ -93,7 +94,7 @@
 
   async function cancel() {
     if (dirty) {
-      const ok = await ask('You have unsaved changes. Close anyway?', {
+      const ok = await ask(t('editor.closeConfirm'), {
         kind: 'warning',
       });
       if (!ok) return;
@@ -197,7 +198,7 @@
 <div class="editor-pane">
   <header class="pane-header">
     {#if breadcrumb.length > 0}
-      <nav class="breadcrumb" aria-label="Path">
+      <nav class="breadcrumb" aria-label={t('editor.pathAria')}>
         {#each breadcrumb as seg, i (i)}
           {#if i > 0}<span class="crumb-sep">›</span>{/if}
           {#if i < breadcrumb.length - 1}
@@ -205,7 +206,7 @@
               class="crumb-link"
               type="button"
               onclick={() => onnavigate?.(seg.depth)}
-              title="Navigate to {seg.label}"
+              title={t('editor.navigateTo', { label: seg.label })}
             >{seg.label}</button>
           {:else}
             <span class="crumb-current">{seg.label}</span>
@@ -215,12 +216,12 @@
     {/if}
     <div class="title-row">
       {#if onback}
-        <button class="back-btn" onclick={onback} title="Back (close editor)" disabled={saving}>‹</button>
+        <button class="back-btn" onclick={onback} title={t('editor.back')} disabled={saving}>‹</button>
       {/if}
       <span class="filepath">{filePath}</span>
-      {#if dirty}<span class="dirty" title="Cambios sin guardar">●</span>{/if}
+      {#if dirty}<span class="dirty" title={t('editor.unsaved')}>●</span>{/if}
     </div>
-    <button class="close-btn" onclick={cancel} title="Close (Esc)" disabled={saving}>×</button>
+    <button class="close-btn" onclick={cancel} title={t('editor.closeTitle')} disabled={saving}>×</button>
   </header>
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -230,7 +231,7 @@
   role="presentation"
 >
     {#if loading}
-      <div class="state">Cargando…</div>
+      <div class="state">{t('editor.loading')}</div>
     {:else if error && !content}
       <div class="state error">{error}</div>
     {:else}
@@ -245,15 +246,15 @@
   <footer class="pane-footer">
     <span class="hint">
       {#if saved}
-        <span class="saved-indicator">✓ Saved</span>
+        <span class="saved-indicator">{t('editor.saved')}</span>
       {:else}
-        Ctrl+S save · Esc close · Ctrl+F find · Ctrl+D select next
+        {t('editor.shortcuts')}
       {/if}
     </span>
     <div class="actions">
-      <Button variant="ghost" onclick={cancel} disabled={saving}>Close</Button>
+      <Button variant="ghost" onclick={cancel} disabled={saving}>{t('common.close')}</Button>
       <Button onclick={save} disabled={saving || loading || !dirty}>
-        {saving ? 'Saving…' : 'Save'}
+        {saving ? t('editor.saving') : t('common.save')}
       </Button>
     </div>
   </footer>

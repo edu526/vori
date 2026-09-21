@@ -4,11 +4,19 @@ use std::sync::Mutex;
 
 use serde::{de::DeserializeOwned, Serialize};
 
-/// Files that were unreadable at startup, reported to the UI once so the user knows why
+/// Files that were unreadable at startup, reported to the UI so the user knows why
 /// something looks empty (the originals are kept next to them as `*.corrupt-*.bak`).
-static RECOVERY_NOTES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+static RECOVERY_NOTES: Mutex<Vec<RecoveryNote>> = Mutex::new(Vec::new());
 
-pub fn recovery_notes() -> Vec<String> {
+/// A config file that could not be parsed at startup and was reset.
+#[derive(Debug, Clone, Serialize)]
+pub struct RecoveryNote {
+    pub file: String,
+    /// Name the unreadable original was moved to, if that worked.
+    pub backup: Option<String>,
+}
+
+pub fn recovery_notes() -> Vec<RecoveryNote> {
     RECOVERY_NOTES.lock().unwrap().clone()
 }
 
@@ -201,14 +209,12 @@ fn load_or_recover_from<T: DeserializeOwned + Default>(dir: &Path, filename: &st
                 .map(|d| d.as_secs())
                 .unwrap_or(0);
             let backup = format!("{filename}.corrupt-{ts}.bak");
-            let note = match std::fs::rename(dir.join(filename), dir.join(&backup)) {
-                Ok(()) => format!(
-                    "{filename} could not be read and was reset. The original was kept as {backup}."
-                ),
-                Err(_) => format!("{filename} could not be read and was reset."),
-            };
-            eprintln!("[vori] {e}. {note}");
-            RECOVERY_NOTES.lock().unwrap().push(note);
+            let kept = std::fs::rename(dir.join(filename), dir.join(&backup)).is_ok();
+            eprintln!("[vori] {e}. Reset {filename}{}", if kept { format!(", original kept as {backup}") } else { String::new() });
+            RECOVERY_NOTES.lock().unwrap().push(RecoveryNote {
+                file: filename.to_string(),
+                backup: kept.then_some(backup),
+            });
             T::default()
         }
     }
