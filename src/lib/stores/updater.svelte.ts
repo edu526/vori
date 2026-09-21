@@ -1,6 +1,7 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { ask, message } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { notesToPlainText } from '$lib/utils/releaseNotes';
 
 export type UpdaterState =
   | 'idle'
@@ -65,8 +66,10 @@ function createUpdaterStore() {
 
   async function promptInstall(): Promise<boolean> {
     if (!available) return false;
+    const notes = notesToPlainText(available.body);
     const yes = await ask(
-      `Update to v${available.version}?\n\nCurrent: v${available.currentVersion}`,
+      `Update to v${available.version}?\n\nCurrent: v${available.currentVersion}` +
+        (notes ? `\n\nWhat's new:\n${notes}` : ''),
       { title: 'Update available', kind: 'info', okLabel: 'Install', cancelLabel: 'Later' },
     );
     if (!yes) return false;
