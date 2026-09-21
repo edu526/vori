@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::services::{app_search, claude_profile, config_manager, editor, editor_detector, terminal};
+use crate::services::{app_search, claude_profile, config_manager, editor, editor_detector, scripts, terminal};
 use crate::state::AppState;
 
 /// `CLAUDE_CONFIG_DIR` to export when opening `path`, from the profile of the
@@ -193,4 +193,41 @@ mod tests {
         let state = state_with(&[]);
         assert_eq!(claude_config_dir_for("/code/work/api", &state), None);
     }
+}
+
+/// `package.json` scripts of the project at `path` (with the package manager to run them),
+/// or `None` when it isn't a Node project.
+#[tauri::command]
+pub fn list_project_scripts(path: String) -> Option<scripts::ProjectScripts> {
+    scripts::list(std::path::Path::new(&path))
+}
+
+#[derive(serde::Serialize)]
+pub struct RunScriptResult {
+    /// False when the configured terminal can't be told to run a command: it was opened in the
+    /// project folder instead and the user has to paste `command`.
+    pub ran: bool,
+    pub command: String,
+}
+
+/// Run one of the project's scripts in the preferred terminal.
+#[tauri::command]
+pub fn run_project_script(
+    path: String,
+    script: String,
+    state: State<AppState>,
+) -> Result<RunScriptResult, String> {
+    let command = scripts::command_for(std::path::Path::new(&path), &script)?;
+    let terminal_cmd = {
+        let prefs = state.preferences.lock().unwrap();
+        let preferred = prefs
+            .terminal
+            .preferred
+            .clone()
+            .unwrap_or_else(|| if cfg!(windows) { "powershell".to_string() } else { "xterm".to_string() });
+        prefs.terminal.available.get(&preferred).cloned().unwrap_or(preferred)
+    };
+    let claude_dir = claude_config_dir_for(&path, &state);
+    let ran = terminal::run_in_terminal(&path, &terminal_cmd, &command, claude_dir.as_deref())?;
+    Ok(RunScriptResult { ran, command })
 }

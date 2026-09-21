@@ -4,7 +4,7 @@
   import { contextMenuStore } from '$lib/stores/contextMenu.svelte';
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { buildMenuItems } from '../context-menu/menuBuilder';
-  import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent } from '$lib/api/commands';
+  import { openProjectInEditor, openFileInEditor, openInTerminal, addRecent, listProjectScripts } from '$lib/api/commands';
   import { openEditor } from '$lib/utils/openEditor';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { isTextFile } from '$lib/utils/textExtensions';
@@ -110,8 +110,14 @@
     );
   }
 
-  function handleRightClick(item: NavItem, x: number, y: number) {
+  async function handleRightClick(item: NavItem, x: number, y: number) {
+    // Reading package.json is a local file read; a failure just means no script entries.
+    const scripts =
+      item.type === 'project' && item.path
+        ? await listProjectScripts(item.path).catch(() => null)
+        : null;
     const menuItems = buildMenuItems(item, {
+      scripts,
       defaultEditor: configStore.preferences.default_editor,
       editorsAvailable: configStore.preferences.editors_available ?? {},
       favorites: configStore.favorites,

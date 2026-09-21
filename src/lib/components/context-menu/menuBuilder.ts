@@ -1,11 +1,13 @@
-import { ask, open } from '@tauri-apps/plugin-dialog';
+import { ask, message, open } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import { navigationStore } from '$lib/stores/navigation.svelte';
 import { syncStore } from '$lib/stores/sync.svelte';
 import { configStore } from '$lib/stores/config.svelte';
 import { dialogStore } from '$lib/stores/dialogs.svelte';
-import { openWorkspaceInEditor } from '$lib/api/commands';
-import type { Favorites } from '$lib/api/types';
+import { openWorkspaceInEditor, runProjectScript } from '$lib/api/commands';
+import type { Favorites, ProjectScripts } from '$lib/api/types';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { copyText } from '$lib/utils/clipboard';
 import type { MenuItem } from '$lib/stores/contextMenu.svelte';
 import {
   openProjectInEditor,
@@ -31,6 +33,26 @@ function editorLabel(key: string): string {
   return EDITOR_LABELS[key] ?? key;
 }
 
+const MAX_MENU_SCRIPTS = 6;
+
+async function runScript(path: string, script: string) {
+  try {
+    const result = await runProjectScript(path, script);
+    if (!result.ran) {
+      // The terminal can't be told to run a command: it was opened in the folder instead.
+      const copied = await copyText(result.command);
+      await message(
+        copied
+          ? `Your terminal can't run commands from Vori, so it was opened in the project folder.\n\n"${result.command}" is on your clipboard: paste it there.`
+          : `Your terminal can't run commands from Vori. Run this in the project folder:\n\n${result.command}`,
+        { title: 'Run script', kind: 'info' },
+      );
+    }
+  } catch (e) {
+    await message(String(e), { title: 'Could not run script', kind: 'error' });
+  }
+}
+
 export function buildMenuItems(
   item: NavItem,
   opts: {
@@ -43,6 +65,8 @@ export function buildMenuItems(
     onAddProject?: () => void;
     onImportFolder?: (autoScanPath?: string) => void;
     onCloneRepo?: () => void;
+    /** `package.json` scripts of the project, when the item is a Node project. */
+    scripts?: ProjectScripts | null;
   },
 ): MenuItem[] {
   const primaryLabel = editorLabel(opts.defaultEditor);
@@ -163,6 +187,24 @@ export function buildMenuItems(
         {
           label: 'Open in Terminal',
           action: () => openInTerminal(item.path!),
+        },
+        ...(opts.scripts && opts.scripts.scripts.length > 0
+          ? [
+              { label: '', action: () => {}, divider: true },
+              ...opts.scripts.scripts.slice(0, MAX_MENU_SCRIPTS).map((script) => ({
+                label: `Run: ${script}`,
+                action: () => runScript(item.path!, script),
+              })),
+            ]
+          : []),
+        { label: '', action: () => {}, divider: true },
+        {
+          label: 'Show in File Manager',
+          action: () => revealItemInDir(item.path!),
+        },
+        {
+          label: 'Copy Path',
+          action: () => { void copyText(item.path!); },
         },
         { label: '', action: () => {}, divider: true },
         {

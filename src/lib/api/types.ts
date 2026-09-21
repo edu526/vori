@@ -104,6 +104,20 @@ export interface GitInfo {
   behind: number;
 }
 
+// ── Project scripts ───────────────────────────────────────────────────────────
+
+export interface ProjectScripts {
+  /** Package manager that runs them: npm, pnpm, yarn or bun. */
+  manager: string;
+  scripts: string[];
+}
+
+export interface RunScriptResult {
+  /** False when the terminal can't be told to run a command; `command` must be pasted by hand. */
+  ran: boolean;
+  command: string;
+}
+
 // ── Backup ────────────────────────────────────────────────────────────────────
 
 export interface ImportSummary {

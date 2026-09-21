@@ -234,6 +234,8 @@ pub fn run() {
             open_workspace_in_editor,
             open_file_in_editor,
             open_in_terminal,
+            list_project_scripts,
+            run_project_script,
             detect_terminals,
             detect_editors,
             get_installed_apps,

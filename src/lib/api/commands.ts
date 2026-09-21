@@ -8,6 +8,8 @@ import type {
   CliRequest,
   GitInfo,
   ImportSummary,
+  ProjectScripts,
+  RunScriptResult,
   Preferences,
   Project,
   RecentItem,
@@ -190,3 +192,13 @@ export const exportConfig = (path: string) => invoke<void>('export_config', { pa
 
 /** Replace the current data with a backup; the old data is copied aside first. */
 export const importConfig = (path: string) => invoke<ImportSummary>('import_config', { path });
+
+// ── Project scripts ───────────────────────────────────────────────────────────
+
+/** `package.json` scripts of a project, or null when it isn't a Node project. */
+export const listProjectScripts = (path: string) =>
+  invoke<ProjectScripts | null>('list_project_scripts', { path });
+
+/** Run one of the project's scripts in the preferred terminal. */
+export const runProjectScript = (path: string, script: string) =>
+  invoke<RunScriptResult>('run_project_script', { path, script });

@@ -235,6 +235,111 @@ pub fn open_terminal(
     }
 }
 
+/// Arguments that make terminal `stem` open in `path` and run `command`, leaving the terminal
+/// open afterwards. `command` must already be safe to embed in a shell line (see `scripts`).
+/// `None` for terminals whose "run this" syntax isn't known (Warp, tilix, anything on macOS).
+fn command_args(stem: &str, path: &str, command: &str) -> Option<Vec<String>> {
+    let sh_script = format!("{command}; exec \"${{SHELL:-sh}}\"");
+    let owned = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+
+    if cfg!(windows) {
+        return match stem {
+            "powershell" | "pwsh" => Some(owned(&["-NoExit", "-Command", command])),
+            "cmd" => Some(owned(&["/k", command])),
+            // `wt` is launched through `cmd /c` (see `run_in_terminal`)
+            "wt" => Some(owned(&["-d", path, "cmd", "/k", command])),
+            _ => None,
+        };
+    }
+    if cfg!(unix) {
+        return match stem {
+            "gnome-terminal" => Some(owned(&["--working-directory", path, "--", "sh", "-c", &sh_script])),
+            "konsole" => Some(owned(&["--workdir", path, "-e", "sh", "-c", &sh_script])),
+            "alacritty" | "xterm" => Some(owned(&["-e", "sh", "-c", &sh_script])),
+            "kitty" => Some(owned(&["sh", "-c", &sh_script])),
+            _ => None,
+        };
+    }
+    None
+}
+
+/// Open the terminal in `path` and run `command` there. Returns `Ok(true)` when the command
+/// was started, `Ok(false)` when this terminal can't be told to run one: it is then just opened
+/// in `path` and the caller should hand the command to the user.
+pub fn run_in_terminal(
+    path: &str,
+    terminal_cmd: &str,
+    command: &str,
+    claude_config_dir: Option<&str>,
+) -> Result<bool, String> {
+    eprintln!("[vori][terminal] run_in_terminal path={path:?} cmd={terminal_cmd:?} command={command:?}");
+    let stem = Path::new(terminal_cmd)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(terminal_cmd);
+
+    let Some(args) = command_args(stem, path, command) else {
+        open_terminal(Some(path), terminal_cmd, claude_config_dir)?;
+        return Ok(false);
+    };
+
+    let mut cmd = if cfg!(windows) && stem == "wt" {
+        let mut c = Command::new("cmd");
+        c.arg("/c").arg("wt");
+        c
+    } else {
+        Command::new(terminal_cmd)
+    };
+    cmd.args(args).current_dir(path);
+    if let Some(dir) = claude_config_dir {
+        cmd.env(CONFIG_DIR_ENV, dir);
+    }
+    #[cfg(windows)]
+    if stem == "wt" {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW: only the `cmd /c` helper, not wt itself
+    }
+
+    eprintln!("[vori][terminal] spawning: {:?}", cmd);
+    cmd.spawn()
+        .map(|_| true)
+        .map_err(|e| format!("Failed to launch terminal: {e}"))
+}
+
+#[cfg(windows)]
+#[cfg(test)]
+mod run_tests_windows {
+    use super::*;
+
+    #[test]
+    fn windows_terminals_get_their_own_run_syntax() {
+        let a = |stem| command_args(stem, r"C:\my proj", "pnpm run dev");
+        assert_eq!(a("powershell").unwrap(), ["-NoExit", "-Command", "pnpm run dev"]);
+        assert_eq!(a("pwsh").unwrap(), ["-NoExit", "-Command", "pnpm run dev"]);
+        assert_eq!(a("cmd").unwrap(), ["/k", "pnpm run dev"]);
+        assert_eq!(a("wt").unwrap(), ["-d", r"C:\my proj", "cmd", "/k", "pnpm run dev"]);
+        assert!(a("warp").is_none());
+    }
+}
+
+#[cfg(all(test, unix))]
+mod run_tests_unix {
+    use super::*;
+
+    #[test]
+    fn unix_terminals_run_the_command_then_keep_a_shell_open() {
+        let script = "pnpm run dev; exec \"${SHELL:-sh}\"";
+        let g = command_args("gnome-terminal", "/p", "pnpm run dev").unwrap();
+        assert_eq!(g, ["--working-directory", "/p", "--", "sh", "-c", script]);
+        let k = command_args("konsole", "/p", "pnpm run dev").unwrap();
+        assert_eq!(k, ["--workdir", "/p", "-e", "sh", "-c", script]);
+        assert_eq!(command_args("xterm", "/p", "pnpm run dev").unwrap(), ["-e", "sh", "-c", script]);
+        assert_eq!(command_args("kitty", "/p", "pnpm run dev").unwrap(), ["sh", "-c", script]);
+        assert!(command_args("warp-terminal", "/p", "x").is_none());
+        assert!(command_args("tilix", "/p", "x").is_none());
+    }
+}
+
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;

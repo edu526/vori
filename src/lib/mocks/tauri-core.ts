@@ -146,6 +146,16 @@ const handlers: Record<string, (args: Args) => any> = {
     { name: 'Kitty', exec: '/usr/bin/kitty' },
   ],
 
+  // ── Project scripts ───────────────────────────────────────────────────────
+  list_project_scripts: ({ path }: Args) =>
+    String(path).length % 2 === 0
+      ? { manager: 'pnpm', scripts: ['dev', 'build', 'test', 'lint'] }
+      : null,
+  run_project_script: ({ path, script }: Args) => {
+    console.info(`[mock] run script ${script} in ${path}`);
+    return { ran: true, command: `pnpm run ${script}` };
+  },
+
   // ── Backup ────────────────────────────────────────────────────────────────
   export_config: ({ path }: Args) => {
     console.info(`[mock] export config → ${path}`);
