@@ -7,6 +7,7 @@ mod models;
 mod services;
 mod state;
 
+use commands::backup::*;
 use commands::cli::*;
 use commands::config::*;
 use commands::files_io::*;
@@ -242,6 +243,9 @@ pub fn run() {
             // Git
             get_git_info,
             git_clone,
+            // Backup
+            export_config,
+            import_config,
             // CLI / deep links
             take_pending_requests,
             // Search

@@ -21,10 +21,19 @@ const CONFIG_FILES: &[&str] = &[
     "recents.json",
 ];
 
-/// Primary config directory: ~/.config/vori
+/// Environment variable that moves the config directory, e.g. into a synced folder.
+pub const CONFIG_DIR_ENV: &str = "VORI_CONFIG_DIR";
+
+fn resolve_config_dir(custom: Option<std::ffi::OsString>, base: Option<PathBuf>) -> Option<PathBuf> {
+    match custom.filter(|v| !v.is_empty()) {
+        Some(dir) => Some(PathBuf::from(dir)),
+        None => base.map(|d| d.join("vori")),
+    }
+}
+
+/// Primary config directory: `$VORI_CONFIG_DIR` if set, otherwise ~/.config/vori
 pub fn config_dir() -> Result<PathBuf, String> {
-    dirs::config_dir()
-        .map(|d| d.join("vori"))
+    resolve_config_dir(std::env::var_os(CONFIG_DIR_ENV), dirs::config_dir())
         .ok_or_else(|| "Cannot determine config directory".to_string())
 }
 
@@ -36,6 +45,10 @@ fn legacy_config_dir() -> Option<PathBuf> {
 /// On first launch, migrate JSON files from code-launcher → vori.
 /// Safe to call on every startup: no-ops if vori dir already exists.
 pub fn migrate_from_legacy() {
+    // A custom config dir is chosen on purpose: never fill it from an old install.
+    if std::env::var_os(CONFIG_DIR_ENV).is_some_and(|v| !v.is_empty()) {
+        return;
+    }
     let Ok(vori_dir) = config_dir() else { return };
 
     // If vori dir already exists, nothing to do.
@@ -227,6 +240,18 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn custom_config_dir_wins_and_blank_is_ignored() {
+        let base = Some(PathBuf::from("/home/u/.config"));
+        assert_eq!(
+            resolve_config_dir(Some("/sync/vori".into()), base.clone()),
+            Some(PathBuf::from("/sync/vori"))
+        );
+        assert_eq!(resolve_config_dir(None, base.clone()), Some(PathBuf::from("/home/u/.config/vori")));
+        assert_eq!(resolve_config_dir(Some("".into()), base), Some(PathBuf::from("/home/u/.config/vori")));
+        assert_eq!(resolve_config_dir(None, None), None);
     }
 
     #[test]

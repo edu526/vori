@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod cli;
 pub mod config;
 pub mod files_io;

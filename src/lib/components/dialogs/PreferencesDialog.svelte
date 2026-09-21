@@ -3,9 +3,9 @@
   import { configStore } from '$lib/stores/config.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
-  import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
+  import { updatePreferences, detectTerminals, detectEditors, exportConfig, importConfig } from '$lib/api/commands';
   import { updaterStore } from '$lib/stores/updater.svelte';
-  import { open, ask, message } from '@tauri-apps/plugin-dialog';
+  import { open, save, ask, message } from '@tauri-apps/plugin-dialog';
   import type { Preferences } from '$lib/api/types';
   import AddEditorModal from './AddEditorModal.svelte';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
@@ -103,6 +103,66 @@
   let detectingEditors = $state(false);
   let showAddEditor = $state(false);
   let showAddTerminal = $state(false);
+
+  // ── Backup ──────────────────────────────────────────────────────────────────
+  let backupBusy = $state(false);
+
+  async function handleExport() {
+    if (backupBusy) return;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const target = await save({
+      title: 'Export Vori data',
+      defaultPath: `vori-backup-${stamp}.json`,
+      filters: [{ name: 'Vori backup', extensions: ['json'] }],
+    });
+    if (!target) return;
+    backupBusy = true;
+    try {
+      await exportConfig(target);
+      await message(`Saved to ${target}`, { title: 'Export complete', kind: 'info' });
+    } catch (e) {
+      await message(String(e), { title: 'Export failed', kind: 'error' });
+    } finally {
+      backupBusy = false;
+    }
+  }
+
+  async function handleImport() {
+    if (backupBusy) return;
+    const picked = await open({
+      title: 'Import Vori data',
+      multiple: false,
+      filters: [{ name: 'Vori backup', extensions: ['json'] }],
+    });
+    if (typeof picked !== 'string') return;
+    const ok = await ask(
+      'This replaces your categories, projects, files, favorites and recents with the contents of the backup. ' +
+        'A copy of your current data is saved first.\n\nContinue?',
+      { title: 'Import Vori data', kind: 'warning', okLabel: 'Import', cancelLabel: 'Cancel' },
+    );
+    if (!ok) return;
+    backupBusy = true;
+    try {
+      const summary = await importConfig(picked);
+      await configStore.load();
+      themeStore.apply(configStore.preferences.theme ?? 'system');
+      themeStore.applyScale(configStore.preferences.ui_scale ?? 1.0);
+      navigationStore.refresh(
+        configStore.categories, configStore.projects,
+        configStore.files, configStore.favorites, configStore.recents,
+      );
+      dialogStore.close();
+      await message(
+        `Imported ${summary.categories} categories, ${summary.projects} projects and ${summary.files} files.\n\n` +
+          `Your previous data was saved to:\n${summary.safety_copy}`,
+        { title: 'Import complete', kind: 'info' },
+      );
+    } catch (e) {
+      await message(String(e), { title: 'Import failed', kind: 'error' });
+    } finally {
+      backupBusy = false;
+    }
+  }
 
   async function handleCheckForUpdate() {
     if (updaterStore.state === 'checking') return;
@@ -656,6 +716,24 @@
               <span class="text-[0.82rem]" style="color: #c0392b;">Check failed</span>
             {/if}
           </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label>Backup</Label>
+          <p class="hint">
+            Export your categories, projects, files, favorites and recents to a single file, or restore them from one
+            (for example to move to another computer). Editor and terminal paths and the shortcut stay as they are on this machine.
+          </p>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <Button variant="outline" onclick={handleExport} disabled={backupBusy}>Export…</Button>
+            <Button variant="outline" onclick={handleImport} disabled={backupBusy}>Import…</Button>
+          </div>
+          <p class="hint">
+            To share one setup between computers automatically, set the <code>VORI_CONFIG_DIR</code> environment variable
+            to a synced folder (Dropbox, OneDrive…) and restart Vori.
+          </p>
         </div>
       </TabsContent>
     </Tabs>

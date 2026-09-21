@@ -1,4 +1,5 @@
 pub mod app_search;
+pub mod backup;
 pub mod claude_profile;
 pub mod cli;
 pub mod config_manager;

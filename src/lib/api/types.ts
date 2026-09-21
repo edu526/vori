@@ -104,6 +104,16 @@ export interface GitInfo {
   behind: number;
 }
 
+// ── Backup ────────────────────────────────────────────────────────────────────
+
+export interface ImportSummary {
+  categories: number;
+  projects: number;
+  files: number;
+  /** Where the data that was replaced was copied to. */
+  safety_copy: string;
+}
+
 // ── CLI / deep links ──────────────────────────────────────────────────────────
 
 /** Something asked for from outside the UI (`vori .`, `vori open x`, a vori:// link). */

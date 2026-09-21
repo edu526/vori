@@ -7,6 +7,7 @@ import type {
   FileEntry,
   CliRequest,
   GitInfo,
+  ImportSummary,
   Preferences,
   Project,
   RecentItem,
@@ -181,3 +182,11 @@ export const gitClone = (url: string, destParent: string) =>
 
 /** Requests queued by the command line or a vori:// link since the last call. */
 export const takePendingRequests = () => invoke<CliRequest[]>('take_pending_requests');
+
+// ── Backup ────────────────────────────────────────────────────────────────────
+
+/** Write categories, projects, files, favorites, recents and preferences to a JSON file. */
+export const exportConfig = (path: string) => invoke<void>('export_config', { path });
+
+/** Replace the current data with a backup; the old data is copied aside first. */
+export const importConfig = (path: string) => invoke<ImportSummary>('import_config', { path });

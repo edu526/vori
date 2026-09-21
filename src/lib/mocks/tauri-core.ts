@@ -146,6 +146,20 @@ const handlers: Record<string, (args: Args) => any> = {
     { name: 'Kitty', exec: '/usr/bin/kitty' },
   ],
 
+  // ── Backup ────────────────────────────────────────────────────────────────
+  export_config: ({ path }: Args) => {
+    console.info(`[mock] export config → ${path}`);
+  },
+  import_config: ({ path }: Args) => {
+    console.info(`[mock] import config ← ${path}`);
+    return {
+      categories: Object.keys(state.categories).length,
+      projects: Object.keys(state.projects).length,
+      files: Object.keys(state.files).length,
+      safety_copy: '/home/user/.config/vori/backups/pre-import-0.json',
+    };
+  },
+
   // ── CLI / deep links ──────────────────────────────────────────────────────
   take_pending_requests: () => [],
 

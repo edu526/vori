@@ -24,3 +24,7 @@ export async function open(options?: {
   if (!result) return null;
   return options?.multiple ? [result] : result;
 }
+
+export async function save(options?: { defaultPath?: string }): Promise<string | null> {
+  return window.prompt('Save as (mock):', options?.defaultPath ?? '/home/user/vori-backup.json') || null;
+}
