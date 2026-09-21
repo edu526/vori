@@ -20,7 +20,7 @@ jobs:
       published: ${{ steps.semantic.outputs.new_release_published }}
       version: ${{ steps.semantic.outputs.new_release_version }}
       tag: ${{ steps.semantic.outputs.new_release_git_tag }}
-      notes: ${{ steps.semantic.outputs.new_release_notes }}
+      notes: ${{ steps.notes.outputs.notes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,6 +49,19 @@ jobs:
             @semantic-release/exec@6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GitHub already shows version and date; drop the changelog heading, keep its compare link.
+      - name: Format release notes
+        id: notes
+        if: steps.semantic.outputs.new_release_published == 'true'
+        run: |
+          {
+            echo 'notes<<RELEASE_NOTES_EOF'
+            printf '%s\n' "$NOTES" | node scripts/format-release-notes.mjs
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          NOTES: ${{ steps.semantic.outputs.new_release_notes }}
 
   build:
     needs: release
