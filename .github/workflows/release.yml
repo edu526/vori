@@ -16,6 +16,7 @@ jobs:
       published: ${{ steps.semantic.outputs.new_release_published }}
       version: ${{ steps.semantic.outputs.new_release_version }}
       tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+      notes: ${{ steps.semantic.outputs.new_release_notes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,7 +106,7 @@ jobs:
         with:
           tagName: ${{ needs.release.outputs.tag }}
           releaseName: "Vori v__VERSION__"
-          releaseBody: "See CHANGELOG.md for details."
+          releaseBody: ${{ needs.release.outputs.notes }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
