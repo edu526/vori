@@ -4,6 +4,18 @@ A Finder-style project launcher for VSCode, Kiro, and other editors. Browse your
 
 Cross-platform: Linux, macOS, Windows.
 
+## Features
+
+- **Column browser** for categories (any depth), projects and files, with favorites and recents
+- **Git at a glance**: branch, uncommitted-changes dot and ahead/behind on every repository, plus **Clone repository…** into a category
+- **Quick actions** per project: open in any detected editor or terminal, show in the file manager, copy the path, run `package.json` scripts
+- **Search** ranked by relevance and how often you open things (empty search shows your most used)
+- **Folder-bound categories** flag new folders (`+N`) so you can import them
+- **Multi-project workspaces**, per-category/project **Claude profiles**, in-app text editor
+- **Backup**: export/import your data as one file; move the config folder with `VORI_CONFIG_DIR`
+- **Command line and `vori://` links** (see below), auto-updates, and a **Spanish or English** UI (Preferences → Appearance)
+
+
 ---
 
 ## Installation
@@ -144,6 +156,10 @@ Config lives in the OS user config directory under `vori/`:
 Configs from older `code-launcher/` installs are copied over on first launch.
 
 Files: `categories.json`, `projects.json`, `files.json`, `preferences.json`, `favorites.json`, `recents.json`.
+
+Other files Vori keeps there: `usage.json` (how often things are opened, for search ranking) and `backups/` (a copy of your data made before each import, newest 5 kept).
+
+To keep the config in a synced folder (Dropbox, OneDrive…), set the `VORI_CONFIG_DIR` environment variable to it and restart Vori.
 
 Writes are atomic. If a file can't be parsed at startup it is moved aside as `<name>.corrupt-<timestamp>.bak` (never deleted) and Vori tells you which one.
 

@@ -80,7 +80,8 @@ Don't add similar visibility logic without considering both paths.
 
 ## UI conventions
 
-- **UI strings are in English** (e.g. tray menu "Show Vori" / "Quit" in `services/window.rs`). Match this when adding user-facing text.
+- **UI is bilingual (English / Spanish).** Never hard-code user-facing text: use `t('key')` / `tn(one, other, count)` from `$lib/i18n/index.svelte`. Add the key to `src/lib/i18n/en.ts` (source of truth) **and** `es.ts` (typed `Record<Key, string>`, so a missing translation fails `pnpm check`). Errors from Rust that reach the user as-is stay English; anything the UI should translate is sent as structured data (see `RecoveryNote`, `FrontendRequest`). The tray menu is localized in `services/window.rs` (`tray_labels`). The language is `Preferences.language` (`system`/`en`/`es`).
+- **Mocks**: `pnpm dev` aliases every `@tauri-apps/*` module the UI imports to `src/lib/mocks/`. If you import a new Tauri plugin in the frontend, add a mock and an alias in `vite.config.js`, or browser mode breaks.
 - **shadcn-svelte**, style `"maia"`, base color `neutral`, icon library `hugeicons` (`components.json`). CSS entry is `src/app.css`. UI primitives go in `src/lib/components/ui/`; feature components in `src/lib/components/`.
 - Themes live in `src/themes/` and are applied via an `os-{macos,windows,linux}` class on `<body>` (platform detected at runtime with `@tauri-apps/plugin-os`).
 

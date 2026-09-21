@@ -29,6 +29,7 @@ const browserAlias = {
   "@tauri-apps/plugin-updater": mock("tauri-updater.ts"),
   "@tauri-apps/plugin-process": mock("tauri-process.ts"),
   "@tauri-apps/plugin-opener": mock("tauri-opener.ts"),
+  "@tauri-apps/plugin-os": mock("tauri-os.ts"),
 };
 
 /**
