@@ -208,6 +208,13 @@ const handlers: Record<string, (args: Args) => any> = {
     const q = query.toLowerCase();
     const results: SearchResult[] = [];
 
+    // Empty query = "frequently used" in the real backend; the mock just offers a few projects.
+    if (!q.trim()) {
+      return Object.entries(state.projects)
+        .slice(0, 5)
+        .map(([key, proj]) => ({ key, name: key, result_type: 'project' as const, path: proj.path, parent: proj.parent }));
+    }
+
     for (const [key, cat] of Object.entries(state.categories)) {
       if (key.toLowerCase().includes(q)) {
         results.push({ key, name: key, result_type: 'category', parent: cat.parent ?? undefined });

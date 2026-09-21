@@ -339,6 +339,11 @@ pub fn get_recents(state: State<AppState>) -> RecentsList {
 }
 
 pub fn push_recent(state: &AppState, item: RecentItem) -> Result<(), String> {
+    {
+        let mut usage = state.usage.lock().unwrap();
+        crate::models::usage::record(&mut usage, &item.path, item.timestamp);
+        config_manager::save("usage.json", &*usage)?;
+    }
     let mut recents = state.recents.lock().unwrap();
     recents.retain(|r| r.path != item.path);
     recents.insert(0, item);

@@ -4,3 +4,4 @@ pub mod file_entry;
 pub mod preferences;
 pub mod project;
 pub mod recents;
+pub mod usage;

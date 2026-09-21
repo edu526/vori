@@ -175,7 +175,7 @@ mod tests {
         for (name, dir) in claude_profiles {
             prefs.claude_profiles.insert(name.to_string(), dir.to_string());
         }
-        AppState::new(categories, projects, FilesMap::new(), prefs, Favorites::default(), vec![], false)
+        AppState::new(categories, projects, FilesMap::new(), prefs, Favorites::default(), vec![], Default::default(), false)
     }
 
     #[test]

@@ -50,7 +50,14 @@ pub fn run() {
             let mut preferences: models::preferences::Preferences =
                 config_manager::load_or_recover("preferences.json");
             let favorites = config_manager::load_or_recover("favorites.json");
-            let recents = config_manager::load_or_recover("recents.json");
+            let recents: models::recents::RecentsList = config_manager::load_or_recover("recents.json");
+            let mut usage: models::usage::UsageMap = config_manager::load_or_recover("usage.json");
+            // First run with usage tracking: start from what the recents already say.
+            if usage.is_empty() {
+                for r in &recents {
+                    models::usage::record(&mut usage, &r.path, r.timestamp);
+                }
+            }
 
             // Auto-detect terminals on first launch (when none are configured yet)
             if preferences.terminal.available.is_empty() {
@@ -78,7 +85,7 @@ pub fn run() {
             let is_autostart = std::env::args().any(|arg| arg == "--autostart");
 
             app.manage(AppState::new(
-                categories, projects, files, preferences.clone(), favorites, recents, is_autostart,
+                categories, projects, files, preferences.clone(), favorites, recents, usage, is_autostart,
             ));
 
             // Arguments this instance was launched with (`vori .`, `vori open x`, a vori:// link).

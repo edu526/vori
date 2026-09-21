@@ -21,11 +21,19 @@
     inputEl?.focus();
   });
 
+  // Before anything is typed, offer what is opened most.
+  search('')
+    .then((found) => { if (!query.trim()) results = found; })
+    .catch(() => {});
+
   function handleInput(e: Event) {
     query = (e.target as HTMLInputElement).value;
     highlightedIndex = 0;
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (!query.trim()) { results = []; return; }
+    if (!query.trim()) {
+      search('').then((found) => { if (!query.trim()) results = found; }).catch(() => { results = []; });
+      return;
+    }
     debounceTimer = setTimeout(async () => {
       try {
         results = await search(query.trim());
@@ -87,6 +95,9 @@
 
     {#if results.length > 0}
       <div class="divider"></div>
+      {#if !query.trim()}
+        <p class="section-label">Frequently used</p>
+      {/if}
       <ul class="results">
         {#each results as result, i (result.key)}
           <li>
@@ -117,6 +128,15 @@
 </div>
 
 <style>
+  .section-label {
+    margin: 0;
+    padding: 8px 16px 2px;
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
   .overlay {
     position: fixed;
     inset: 0;
