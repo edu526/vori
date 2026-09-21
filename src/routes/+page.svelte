@@ -22,6 +22,7 @@
   import WorkspaceBar from '$lib/components/WorkspaceBar.svelte';
   import SearchModal from '$lib/components/SearchModal.svelte';
   import type { SearchResult } from '$lib/api/types';
+  import { message } from '@tauri-apps/plugin-dialog';
 
   const isEditorOpen = $derived(dialogStore.current?.type === 'editor');
 
@@ -40,6 +41,12 @@
         configStore.recents,
       );
       await navigationStore.loadWorkspaceSelection();
+      if (configStore.recoveryNotes.length > 0) {
+        await message(configStore.recoveryNotes.join('\n\n'), {
+          title: 'Some settings were reset',
+          kind: 'warning',
+        });
+      }
     }
   });
 

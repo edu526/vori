@@ -38,13 +38,13 @@ pub fn run() {
             config_manager::migrate_from_legacy();
             config_manager::migrate_to_flat_format();
 
-            let categories = config_manager::load("categories.json").unwrap_or_default();
-            let projects = config_manager::load("projects.json").unwrap_or_default();
-            let files = config_manager::load("files.json").unwrap_or_default();
+            let categories = config_manager::load_or_recover("categories.json");
+            let projects = config_manager::load_or_recover("projects.json");
+            let files = config_manager::load_or_recover("files.json");
             let mut preferences: models::preferences::Preferences =
-                config_manager::load("preferences.json").unwrap_or_default();
-            let favorites = config_manager::load("favorites.json").unwrap_or_default();
-            let recents = config_manager::load("recents.json").unwrap_or_default();
+                config_manager::load_or_recover("preferences.json");
+            let favorites = config_manager::load_or_recover("favorites.json");
+            let recents = config_manager::load_or_recover("recents.json");
 
             // Auto-detect terminals on first launch (when none are configured yet)
             if preferences.terminal.available.is_empty() {

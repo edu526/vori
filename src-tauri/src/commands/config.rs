@@ -20,6 +20,8 @@ pub struct AppData {
     pub preferences: Preferences,
     pub favorites: Favorites,
     pub recents: RecentsList,
+    /// Config files reset at startup because they could not be parsed.
+    pub recovery_notes: Vec<String>,
 }
 
 #[tauri::command]
@@ -36,6 +38,7 @@ pub fn get_app_data(state: State<AppState>) -> Result<AppData, String> {
         preferences: state.preferences.lock().unwrap().clone(),
         favorites: state.favorites.lock().unwrap().clone(),
         recents: state.recents.lock().unwrap().clone(),
+        recovery_notes: config_manager::recovery_notes(),
     })
 }
 

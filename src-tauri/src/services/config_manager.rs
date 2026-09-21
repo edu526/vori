@@ -1,6 +1,16 @@
-use std::path::PathBuf;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::{de::DeserializeOwned, Serialize};
+
+/// Files that were unreadable at startup, reported to the UI once so the user knows why
+/// something looks empty (the originals are kept next to them as `*.corrupt-*.bak`).
+static RECOVERY_NOTES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+pub fn recovery_notes() -> Vec<String> {
+    RECOVERY_NOTES.lock().unwrap().clone()
+}
 
 const CONFIG_FILES: &[&str] = &[
     "categories.json",
@@ -116,20 +126,38 @@ pub fn migrate_to_flat_format() {
                     }
                 }
                 if let Ok(s) = serde_json::to_string_pretty(&new_projs) {
-                    let _ = std::fs::write(&projs_path, s);
+                    let _ = write_atomic(&projs_path, s.as_bytes());
                 }
             }
         }
     }
 
     if let Ok(s) = serde_json::to_string_pretty(&serde_json::Value::Object(new_cats)) {
-        let _ = std::fs::write(&cats_path, s);
+        let _ = write_atomic(&cats_path, s.as_bytes());
         println!("[vori] Migration complete.");
     }
 }
 
-pub fn load<T: DeserializeOwned + Default>(filename: &str) -> Result<T, String> {
-    let path = config_dir()?.join(filename);
+/// Write `content` to `path` without ever leaving a half-written file behind:
+/// write and flush a sibling temp file, then rename it over the target.
+pub fn write_atomic(path: &Path, content: &[u8]) -> Result<(), String> {
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = PathBuf::from(tmp);
+    let result = (|| -> std::io::Result<()> {
+        let mut file = std::fs::File::create(&tmp)?;
+        file.write_all(content)?;
+        file.sync_all()?;
+        std::fs::rename(&tmp, path)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    result.map_err(|e| format!("Failed to write {}: {e}", path.display()))
+}
+
+fn load_from<T: DeserializeOwned + Default>(dir: &Path, filename: &str) -> Result<T, String> {
+    let path = dir.join(filename);
     if !path.exists() {
         return Ok(T::default());
     }
@@ -141,12 +169,114 @@ pub fn load<T: DeserializeOwned + Default>(filename: &str) -> Result<T, String> 
     serde_json::from_str(&content).map_err(|e| format!("Failed to parse {filename}: {e}"))
 }
 
-pub fn save<T: Serialize>(filename: &str, data: &T) -> Result<(), String> {
-    let dir = config_dir()?;
-    std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("Failed to create config dir: {e}"))?;
-    let path = dir.join(filename);
+fn save_to<T: Serialize>(dir: &Path, filename: &str, data: &T) -> Result<(), String> {
+    std::fs::create_dir_all(dir).map_err(|e| format!("Failed to create config dir: {e}"))?;
     let content =
         serde_json::to_string_pretty(data).map_err(|e| format!("Failed to serialize: {e}"))?;
-    std::fs::write(&path, content).map_err(|e| format!("Failed to write {filename}: {e}"))
+    write_atomic(&dir.join(filename), content.as_bytes())
+}
+
+/// Like `load_from`, but a file that cannot be parsed is moved aside (never deleted) and the
+/// default is returned. Falling back to the default without this would make the next
+/// save silently overwrite the user's data.
+fn load_or_recover_from<T: DeserializeOwned + Default>(dir: &Path, filename: &str) -> T {
+    match load_from(dir, filename) {
+        Ok(v) => v,
+        Err(e) => {
+            let ts = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let backup = format!("{filename}.corrupt-{ts}.bak");
+            let note = match std::fs::rename(dir.join(filename), dir.join(&backup)) {
+                Ok(()) => format!(
+                    "{filename} could not be read and was reset. The original was kept as {backup}."
+                ),
+                Err(_) => format!("{filename} could not be read and was reset."),
+            };
+            eprintln!("[vori] {e}. {note}");
+            RECOVERY_NOTES.lock().unwrap().push(note);
+            T::default()
+        }
+    }
+}
+
+pub fn load<T: DeserializeOwned + Default>(filename: &str) -> Result<T, String> {
+    load_from(&config_dir()?, filename)
+}
+
+pub fn save<T: Serialize>(filename: &str, data: &T) -> Result<(), String> {
+    save_to(&config_dir()?, filename, data)
+}
+
+/// Startup loader: never fails, never loses a corrupt file.
+pub fn load_or_recover<T: DeserializeOwned + Default>(filename: &str) -> T {
+    match config_dir() {
+        Ok(dir) => load_or_recover_from(&dir, filename),
+        Err(_) => T::default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("vori-test-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn save_replaces_existing_file_and_leaves_no_temp() {
+        let dir = temp_dir("atomic");
+        let mut a = HashMap::new();
+        a.insert("one".to_string(), 1);
+        save_to(&dir, "x.json", &a).unwrap();
+        a.insert("two".to_string(), 2);
+        save_to(&dir, "x.json", &a).unwrap();
+
+        let back: HashMap<String, i32> = load_from(&dir, "x.json").unwrap();
+        assert_eq!(back.len(), 2);
+        assert!(!dir.join("x.json.tmp").exists());
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn corrupt_file_is_moved_aside_not_overwritten() {
+        let dir = temp_dir("corrupt");
+        std::fs::write(dir.join("projects.json"), "{ \"a\": { truncated").unwrap();
+
+        let loaded: HashMap<String, i32> = load_or_recover_from(&dir, "projects.json");
+        assert!(loaded.is_empty());
+        assert!(!dir.join("projects.json").exists());
+        let backups: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().starts_with("projects.json.corrupt-"))
+            .collect();
+        assert_eq!(backups.len(), 1);
+        assert_eq!(
+            std::fs::read_to_string(backups[0].path()).unwrap(),
+            "{ \"a\": { truncated"
+        );
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn missing_or_empty_file_is_just_the_default() {
+        let dir = temp_dir("missing");
+        let a: HashMap<String, i32> = load_or_recover_from(&dir, "nope.json");
+        assert!(a.is_empty());
+        std::fs::write(dir.join("empty.json"), "  \n").unwrap();
+        let b: HashMap<String, i32> = load_or_recover_from(&dir, "empty.json");
+        assert!(b.is_empty());
+        assert!(dir
+            .read_dir()
+            .unwrap()
+            .all(|e| !e.unwrap().file_name().to_string_lossy().contains("corrupt")));
+        let _ = std::fs::remove_dir_all(dir);
+    }
 }

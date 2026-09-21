@@ -1,6 +1,7 @@
 import type { AppData } from '$lib/api/types';
 
 export const mockAppData: AppData = {
+  recovery_notes: [],
   categories: {
     personal: { parent: null },
     'personal/web': { parent: 'personal' },

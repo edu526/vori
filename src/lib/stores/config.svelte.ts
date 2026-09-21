@@ -33,6 +33,7 @@ function createConfigStore() {
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);
+  let recoveryNotes = $state<string[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -47,6 +48,7 @@ function createConfigStore() {
       preferences = data.preferences;
       favorites = data.favorites;
       recents = data.recents;
+      recoveryNotes = data.recovery_notes ?? [];
     } catch (e) {
       error = String(e);
     } finally {
@@ -90,6 +92,9 @@ function createConfigStore() {
     },
     set recents(v: RecentItem[]) {
       recents = v;
+    },
+    get recoveryNotes() {
+      return recoveryNotes;
     },
     get loading() {
       return loading;

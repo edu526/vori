@@ -89,6 +89,8 @@ export interface AppData {
   preferences: Preferences;
   favorites: Favorites;
   recents: RecentItem[];
+  /** Config files that were unreadable at startup and got reset (originals kept as .bak). */
+  recovery_notes: string[];
 }
 
 // ── Scanner ───────────────────────────────────────────────────────────────────
