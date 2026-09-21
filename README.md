@@ -76,7 +76,8 @@ Run the `.msi` installer or the `.exe` NSIS installer and follow the wizard.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 24 LTS (pinned in `.node-version`)
+- [pnpm](https://pnpm.io/) (`corepack enable pnpm`)
 - [Rust](https://rustup.rs/) stable
 
 **Linux only:**
@@ -110,15 +111,19 @@ pnpm check       # type check
 
 ## Configuration
 
-Config lives in the OS user config directory under `code-launcher/` (compatible with v1):
+Config lives in the OS user config directory under `vori/`:
 
 | OS | Path |
 |----|------|
-| Linux | `~/.config/code-launcher/` |
-| macOS | `~/Library/Application Support/code-launcher/` |
-| Windows | `%APPDATA%\code-launcher\` |
+| Linux | `~/.config/vori/` |
+| macOS | `~/Library/Application Support/vori/` |
+| Windows | `%APPDATA%\vori\` |
+
+Configs from older `code-launcher/` installs are copied over on first launch.
 
 Files: `categories.json`, `projects.json`, `files.json`, `preferences.json`, `favorites.json`, `recents.json`.
+
+Writes are atomic. If a file can't be parsed at startup it is moved aside as `<name>.corrupt-<timestamp>.bak` (never deleted) and Vori tells you which one.
 
 ---
 
