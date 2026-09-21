@@ -6,11 +6,9 @@
   const currentVersion = __APP_VERSION__;
   let busy = $state(false);
 
-  onMount(() => {
-    // ponytail: silent check on launch. No UI feedback unless an update is found
-    // or the user clicks the chip.
-    updaterStore.refresh();
-  });
+  // Silent check on launch and once a day after that. No UI feedback unless an
+  // update is found or the user clicks the chip.
+  onMount(() => updaterStore.startAutoCheck());
 
   async function handleClick() {
     if (busy) return;
@@ -53,7 +51,11 @@
     <span class="arrow" aria-hidden="true">→</span>
     <span class="latest">v{updaterStore.available.version}</span>
   {/if}
-  {#if updaterStore.state === 'checking'}
+  {#if updaterStore.state === 'downloading'}
+    <span class="latest">
+      {updaterStore.progress === null ? 'Downloading…' : `Downloading ${updaterStore.progress}%`}
+    </span>
+  {:else if updaterStore.state === 'checking'}
     <span class="pulse" aria-hidden="true"></span>
   {/if}
 </button>
