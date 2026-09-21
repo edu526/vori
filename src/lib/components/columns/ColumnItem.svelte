@@ -4,6 +4,7 @@
   import ItemIcon from '$lib/components/ItemIcon.svelte';
   import StackIcon from '$lib/components/StackIcon.svelte';
   import { gitStore } from '$lib/stores/git.svelte';
+  import { syncStore } from '$lib/stores/sync.svelte';
 
   let {
     item,
@@ -29,6 +30,7 @@
     navigationStore.workspaceSelection.has(item.path),
   );
 
+  const newCount = $derived(item.type === 'category' ? syncStore.newCount(item.key) : 0);
   const git = $derived(item.type === 'project' && item.path ? gitStore.info[item.path] : undefined);
   const tooltip = $derived(
     git
@@ -92,6 +94,9 @@
   {/if}
   {#if item.stack}
     <StackIcon stack={item.stack} size={13} />
+  {/if}
+  {#if newCount > 0}
+    <span class="new-badge" title="{newCount} new folder{newCount === 1 ? '' : 's'} not imported yet">+{newCount}</span>
   {/if}
   {#if item.isFavorite}
     <span class="favorite">★</span>
@@ -195,6 +200,22 @@
   .column-item.selected:not(.inactive) .git,
   .column-item.selected:not(.inactive) .git .dirty {
     color: white;
+  }
+
+  .new-badge {
+    flex-shrink: 0;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: var(--text-2xs);
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  }
+
+  .column-item.selected:not(.inactive) .new-badge {
+    color: white;
+    background: rgba(255, 255, 255, 0.22);
   }
 
   .chevron {

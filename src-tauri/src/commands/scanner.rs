@@ -198,15 +198,23 @@ fn scan_workspaces_recursive(
     }
 }
 
-#[tauri::command]
-pub fn scan_folder(path: String, max_depth: Option<u32>) -> Vec<ScannedProject> {
-    let root = Path::new(&path);
+fn scan_folder_blocking(path: &str, max_depth: Option<u32>) -> Vec<ScannedProject> {
+    let root = Path::new(path);
     let depth = max_depth.unwrap_or(MAX_DEPTH);
     let mut results = Vec::new();
     for child in list_subdirs(root) {
         scan_recursive(&child, root, 1, depth, &mut results);
     }
     results
+}
+
+/// Async so a scan of a big tree runs on a worker thread instead of freezing the window
+/// (this is also polled in the background to spot new folders).
+#[tauri::command]
+pub async fn scan_folder(path: String, max_depth: Option<u32>) -> Vec<ScannedProject> {
+    tauri::async_runtime::spawn_blocking(move || scan_folder_blocking(&path, max_depth))
+        .await
+        .unwrap_or_default()
 }
 
 #[tauri::command]

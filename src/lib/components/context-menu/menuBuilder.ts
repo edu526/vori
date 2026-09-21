@@ -1,6 +1,7 @@
 import { ask, open } from '@tauri-apps/plugin-dialog';
 import type { NavItem } from '$lib/stores/navigation.svelte';
 import { navigationStore } from '$lib/stores/navigation.svelte';
+import { syncStore } from '$lib/stores/sync.svelte';
 import { configStore } from '$lib/stores/config.svelte';
 import { dialogStore } from '$lib/stores/dialogs.svelte';
 import { openWorkspaceInEditor } from '$lib/api/commands';
@@ -54,6 +55,7 @@ export function buildMenuItems(
       const cat = configStore.categories[item.key];
       const existingSourcePath = cat?.source_path;
       const detected = navigationStore.workspaceDetections[item.key] ?? [];
+      const newFolders = existingSourcePath ? syncStore.newCount(item.key) : 0;
       return [
         {
           label: 'Add Subcategory',
@@ -71,6 +73,18 @@ export function buildMenuItems(
           label: 'Import folder…',
           action: () => opts.onImportFolder?.(),
         },
+        ...(newFolders > 0
+          ? [
+              {
+                label: `Import ${newFolders} new project${newFolders !== 1 ? 's' : ''}…`,
+                action: () => opts.onImportFolder?.(existingSourcePath ?? undefined),
+              },
+              {
+                label: 'Ignore new folders',
+                action: () => syncStore.dismiss(item.key),
+              },
+            ]
+          : []),
         ...(existingSourcePath
           ? [
               {
