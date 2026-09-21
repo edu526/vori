@@ -24,9 +24,9 @@ pub fn setup_tray(app: &AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
-    let show_item = MenuItem::new(app, "Mostrar Vori", true, None::<&str>)
+    let show_item = MenuItem::new(app, "Show Vori", true, None::<&str>)
         .map_err(|e| e.to_string())?;
-    let quit_item = MenuItem::new(app, "Salir", true, None::<&str>)
+    let quit_item = MenuItem::new(app, "Quit", true, None::<&str>)
         .map_err(|e| e.to_string())?;
 
     let show_id = show_item.id().clone();

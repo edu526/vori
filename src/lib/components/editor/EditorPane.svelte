@@ -67,7 +67,7 @@
       const msg = String(e);
       if (/permission|denied|access|io error/i.test(msg)) {
         const ok = await ask(
-          'Permisos insuficientes para guardar. ¿Reintentar como administrador?',
+          'Insufficient permissions to save. Retry as administrator?',
           { kind: 'warning' },
         );
         if (ok) {
@@ -93,7 +93,7 @@
 
   async function cancel() {
     if (dirty) {
-      const ok = await ask('Tienes cambios sin guardar. ¿Cerrar de todos modos?', {
+      const ok = await ask('You have unsaved changes. Close anyway?', {
         kind: 'warning',
       });
       if (!ok) return;
@@ -220,7 +220,7 @@
       <span class="filepath">{filePath}</span>
       {#if dirty}<span class="dirty" title="Cambios sin guardar">●</span>{/if}
     </div>
-    <button class="close-btn" onclick={cancel} title="Cerrar (Esc)" disabled={saving}>×</button>
+    <button class="close-btn" onclick={cancel} title="Close (Esc)" disabled={saving}>×</button>
   </header>
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -245,15 +245,15 @@
   <footer class="pane-footer">
     <span class="hint">
       {#if saved}
-        <span class="saved-indicator">✓ Guardado</span>
+        <span class="saved-indicator">✓ Saved</span>
       {:else}
-        Ctrl+S guardar · Esc cerrar · Ctrl+F buscar · Ctrl+D seleccionar siguiente
+        Ctrl+S save · Esc close · Ctrl+F find · Ctrl+D select next
       {/if}
     </span>
     <div class="actions">
-      <Button variant="ghost" onclick={cancel} disabled={saving}>Cerrar</Button>
+      <Button variant="ghost" onclick={cancel} disabled={saving}>Close</Button>
       <Button onclick={save} disabled={saving || loading || !dirty}>
-        {saving ? 'Guardando…' : 'Guardar'}
+        {saving ? 'Saving…' : 'Save'}
       </Button>
     </div>
   </footer>

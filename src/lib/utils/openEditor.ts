@@ -19,7 +19,7 @@ export async function openEditor(filePath: string, fileName: string) {
   ) {
     const currentName = editorStore.currentFilePath.split(/[\\/]/).pop() ?? editorStore.currentFilePath;
     const ok = await ask(
-      `Tienes cambios sin guardar en "${currentName}". ¿Cambiar de archivo de todos modos?`,
+      `You have unsaved changes in "${currentName}". Switch files anyway?`,
       { kind: 'warning' },
     );
     if (!ok) return;

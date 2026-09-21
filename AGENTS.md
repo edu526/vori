@@ -80,7 +80,7 @@ Don't add similar visibility logic without considering both paths.
 
 ## UI conventions
 
-- **UI strings are in Spanish** (e.g. tray menu "Mostrar Vori" / "Salir" in `services/window.rs`). Match this when adding user-facing text.
+- **UI strings are in English** (e.g. tray menu "Show Vori" / "Quit" in `services/window.rs`). Match this when adding user-facing text.
 - **shadcn-svelte**, style `"maia"`, base color `neutral`, icon library `hugeicons` (`components.json`). CSS entry is `src/app.css`. UI primitives go in `src/lib/components/ui/`; feature components in `src/lib/components/`.
 - Themes live in `src/themes/` and are applied via an `os-{macos,windows,linux}` class on `<body>` (platform detected at runtime with `@tauri-apps/plugin-os`).
 
