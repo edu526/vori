@@ -1,3 +1,17 @@
+# [1.7.0](https://github.com/edu526/vori/compare/v1.6.0...v1.7.0) (2026-09-21)
+
+
+### Bug Fixes
+
+* resolve vite.config.js type errors ([78d8fec](https://github.com/edu526/vori/commit/78d8fec0700f5b2255a80196e8612d02374f6165))
+* **ui:** translate remaining Spanish strings to English ([d7984ed](https://github.com/edu526/vori/commit/d7984edddaf0502ea9c6da0de94629bf85fb3291))
+* **updater:** publish updater artifacts and relaunch after install ([859a5a2](https://github.com/edu526/vori/commit/859a5a23ef1eead220aeec95c5b6152312cb857d))
+
+
+### Features
+
+* **updater:** check once a day and show download progress ([f816ba9](https://github.com/edu526/vori/commit/f816ba9246546d73b732ee4c51f0aa29f700844c))
+
 # [1.6.0](https://github.com/edu526/vori/compare/v1.5.0...v1.6.0) (2026-09-21)
 
 
