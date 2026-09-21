@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/edu526/vori/compare/v1.5.0...v1.6.0) (2026-09-21)
+
+
+### Features
+
+* per-category and per-project Claude profiles ([c81638b](https://github.com/edu526/vori/commit/c81638bc14a84aff79a7617f00d571262e243cae))
+
 # [1.5.0](https://github.com/edu526/vori/compare/v1.4.1...v1.5.0) (2026-09-01)
 
 
