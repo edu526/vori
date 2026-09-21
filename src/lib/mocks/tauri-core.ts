@@ -30,7 +30,17 @@ const handlers: Record<string, (args: Args) => any> = {
     state.categories[key] = {
       parent: parent ?? null,
       source_path: sourcePath === undefined ? existing.source_path : (sourcePath ?? null),
+      // Structural updates never touch the Claude profile (mirrors the Rust command)
+      claude_profile: existing.claude_profile,
     };
+  },
+  set_claude_profile: ({ target, key, profile }: Args) => {
+    if (profile && !(profile in state.preferences.claude_profiles)) {
+      throw `Claude profile '${profile}' does not exist`;
+    }
+    const node = target === 'category' ? state.categories[key] : state.projects[key];
+    if (!node) throw `${target} '${key}' not found`;
+    node.claude_profile = profile || null;
   },
   delete_category: ({ key }: Args) => {
     // Collect all descendants
@@ -83,7 +93,13 @@ const handlers: Record<string, (args: Args) => any> = {
   // ── Preferences ───────────────────────────────────────────────────────────
   get_preferences: () => structuredClone(state.preferences),
   update_preferences: ({ prefs }: Args) => {
-    state.preferences = { ...state.preferences, ...prefs };
+    // Plain copy: callers pass Svelte $state proxies, which structuredClone can't clone later
+    state.preferences = { ...state.preferences, ...JSON.parse(JSON.stringify(prefs)) };
+    // Drop assignments pointing at removed profiles (mirrors the Rust command)
+    const known = state.preferences.claude_profiles;
+    for (const node of [...Object.values(state.categories), ...Object.values(state.projects)]) {
+      if (node.claude_profile && !(node.claude_profile in known)) node.claude_profile = null;
+    }
   },
 
   // ── Favorites ─────────────────────────────────────────────────────────────

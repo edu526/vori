@@ -161,6 +161,8 @@ pub fn run() {
             add_category,
             update_category,
             delete_category,
+            // Config — Claude profiles
+            set_claude_profile,
             // Config — projects
             add_project,
             update_project,

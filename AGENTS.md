@@ -12,7 +12,7 @@ pnpm tauri build         # production build → src-tauri/target/release/bundle/
 pnpm check               # svelte-check typecheck (runs `svelte-kit sync` first)
 ```
 
-There is no test suite, no lint script, no formatter config. `pnpm check` is the only verification step — run it after frontend changes. For Rust changes, `cargo check --manifest-path src-tauri/Cargo.toml`.
+There is no frontend test suite, no lint script, no formatter config. `pnpm check` is the only frontend verification step — run it after frontend changes (it currently reports 5 pre-existing type errors in `vite.config.js`). For Rust changes, `cargo check --manifest-path src-tauri/Cargo.toml`, and `cargo test --manifest-path src-tauri/Cargo.toml --lib` for the unit tests that live inside `src-tauri/src` modules.
 
 ### Setup gotchas (Windows)
 
@@ -53,6 +53,16 @@ Files: `categories.json`, `projects.json`, `files.json`, `preferences.json`, `fa
 
 The old `code-launcher` docs claimed a "hard limit of 2 levels". **Stale.** The model is flat N-level: `Category { parent: Option<String> }` (`src-tauri/src/models/category.rs`), and `add_category` accepts any parent with no depth check. `migrate_to_flat_format()` (`config_manager.rs:64`) rewrites the old 2-level `subcategories` format into the flat one on startup. Don't reintroduce a depth limit unless explicitly asked.
 
+## Claude profiles
+
+Categories and projects can be bound to a **Claude profile** so different folders open with different Claude Code accounts. A profile is a name → `CLAUDE_CONFIG_DIR` path (`Preferences.claude_profiles`, managed in Preferences → Claude); `Category.claude_profile` / `Project.claude_profile` hold the profile *name*.
+
+- **Resolution is by path, in Rust** (`services/claude_profile.rs`, unit-tested). The most specific project path or category `source_path` containing the opened path wins; a project's own profile overrides its categories, otherwise the nearest ancestor category with one wins. Because of this, the frontend call sites that open things (`openProjectInEditor`, `openInTerminal`, `openWorkspaceInEditor`) pass nothing extra — `commands/launcher.rs` resolves the profile and exports `CLAUDE_CONFIG_DIR` to the spawned process. Keep it that way rather than threading a profile through the frontend.
+- **`update_category` / `update_project` never touch `claude_profile`** (they preserve the stored value). Only `set_claude_profile` changes it. Don't make the update commands overwrite it — several callers (`menuBuilder.ts`, `ImportFolderModal.svelte`) update categories without knowing about profiles.
+- **Removing a profile** in `update_preferences` clears dangling references from categories and projects.
+- **Terminals** (`services/terminal.rs`): the variable is set on the spawned process, and additionally passed as `env CLAUDE_CONFIG_DIR=… $SHELL` for terminals with a known "run this command" flag (gnome-terminal, konsole, alacritty, kitty, xterm), because single-instance/server terminals ignore the launcher's environment. **Warp** is single-instance and has no such flag, so on Linux Vori writes a temporary Warp *Tab Config* and opens it via `xdg-open warp://tab_config/<name>`; it falls back to a plain spawn if that fails. Warp on macOS/Windows and Warp Preview are not handled.
+- **Editors**: the variable is set on the editor process. That only takes effect when the editor starts a fresh process (VS Code reuses a running instance's environment otherwise).
+
 ## Global hotkey — non-fatal on registration
 
 The default hotkey is `Super+Shift+KeyV` (`models/preferences.rs:44`). On Windows this frequently collides with other apps. **Registration errors must not crash the app** — `lib.rs:78` handles this with `if let Err(e) = ...` + `eprintln!`, not `?`. If you touch that block, preserve the non-fatal behavior: the window remains reachable via tray icon and a second launch (single-instance plugin toggles it).
@@ -87,4 +97,4 @@ Do not hand-edit version fields — the next release will overwrite them and the
 
 ## Scratch files — ignore
 
-`test.rs` (repo root) and `src-tauri/src/test_api.rs` are ad-hoc scratch files, not a test harness. There is no `cargo test` suite and no `pnpm test`. Don't wire them into anything.
+`test.rs` (repo root) and `src-tauri/src/test_api.rs` are ad-hoc scratch files, not a test harness. Don't wire them into anything. The real Rust tests are the `#[cfg(test)]` modules inside `src-tauri/src` (run with `cargo test --lib`); there is no `pnpm test`.

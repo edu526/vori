@@ -1,5 +1,7 @@
 use std::process::Command;
 
+use super::claude_profile::CONFIG_DIR_ENV;
+
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
@@ -26,9 +28,14 @@ fn build_editor_command(binary: &str) -> Command {
 }
 
 /// Open a path in an editor. `binary` is the full path or command resolved by the detector.
-pub fn open_in_editor(path: &str, binary: &str) -> Result<(), String> {
-    eprintln!("[vori][editor] open_in_editor path={path:?} binary={binary:?}");
+/// `claude_config_dir` is exported as `CLAUDE_CONFIG_DIR` so Claude Code inside the editor
+/// (integrated terminal, extension) uses that profile.
+pub fn open_in_editor(path: &str, binary: &str, claude_config_dir: Option<&str>) -> Result<(), String> {
+    eprintln!("[vori][editor] open_in_editor path={path:?} binary={binary:?} claude_config_dir={claude_config_dir:?}");
     let mut cmd = build_editor_command(binary);
+    if let Some(dir) = claude_config_dir {
+        cmd.env(CONFIG_DIR_ENV, dir);
+    }
     cmd.arg(path);
     eprintln!("[vori][editor] spawning: {:?}", cmd);
     match cmd.spawn() {
@@ -43,9 +50,16 @@ pub fn open_in_editor(path: &str, binary: &str) -> Result<(), String> {
     }
 }
 
-pub fn open_workspace_in_editor(paths: &[String], binary: &str) -> Result<(), String> {
-    eprintln!("[vori][editor] open_workspace_in_editor paths={paths:?} binary={binary:?}");
+pub fn open_workspace_in_editor(
+    paths: &[String],
+    binary: &str,
+    claude_config_dir: Option<&str>,
+) -> Result<(), String> {
+    eprintln!("[vori][editor] open_workspace_in_editor paths={paths:?} binary={binary:?} claude_config_dir={claude_config_dir:?}");
     let mut cmd = build_editor_command(binary);
+    if let Some(dir) = claude_config_dir {
+        cmd.env(CONFIG_DIR_ENV, dir);
+    }
     for path in paths {
         cmd.arg(path);
     }

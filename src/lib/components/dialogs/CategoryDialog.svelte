@@ -2,7 +2,7 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
-  import { addCategory, updateCategory } from '$lib/api/commands';
+  import { addCategory, updateCategory, setClaudeProfile } from '$lib/api/commands';
   import { open } from '@tauri-apps/plugin-dialog';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
   import { Label } from '$lib/components/ui/label';
@@ -19,7 +19,12 @@
   let key = $state('');
   let selectedParent = $state<string>('');
   let sourcePath = $state<string>('');
+  let claudeProfile = $state<string>('');
   let keyError = $state('');
+
+  const profileNames = $derived(
+    Object.keys(configStore.preferences.claude_profiles ?? {}).sort((a, b) => a.localeCompare(b)),
+  );
 
   // All category keys, sorted — used for parent dropdown
   const categoryOptions = $derived(
@@ -33,10 +38,12 @@
       key = payload.key;
       selectedParent = configStore.categories[payload.key]?.parent ?? '';
       sourcePath = configStore.categories[payload.key]?.source_path ?? '';
+      claudeProfile = configStore.categories[payload.key]?.claude_profile ?? '';
     } else {
       key = '';
       selectedParent = payload.parentKey ?? '';
       sourcePath = '';
+      claudeProfile = '';
     }
     keyError = '';
   });
@@ -64,6 +71,11 @@
         await addCategory(key, parent, trimmedSource);
       } else if (payload.mode === 'edit') {
         await updateCategory(payload.key, parent, trimmedSource);
+      }
+      // Profile is set separately: add/update_category never touch it.
+      const previous = payload.mode === 'edit' ? (configStore.categories[key]?.claude_profile ?? '') : '';
+      if (claudeProfile !== previous) {
+        await setClaudeProfile('category', key, claudeProfile || null);
       }
       await configStore.load();
       navigationStore.refresh(
@@ -120,6 +132,21 @@
           <Button type="button" variant="outline" size="sm" onclick={handleBrowse}>Browse</Button>
         </div>
         <span class="hint">Bind a folder to auto-detect workspaces and enable Refresh Import Tree</span>
+      </div>
+
+      <div class="field">
+        <Label for="cat-claude">Claude profile</Label>
+        {#if profileNames.length > 0}
+          <select id="cat-claude" bind:value={claudeProfile} class="native-select">
+            <option value="">Inherit from parent</option>
+            {#each profileNames as name}
+              <option value={name}>{name}</option>
+            {/each}
+          </select>
+          <span class="hint">Applies to everything inside when opened in an editor or terminal</span>
+        {:else}
+          <span class="hint">No profiles yet — create one in Preferences → Claude</span>
+        {/if}
       </div>
     </div>
 

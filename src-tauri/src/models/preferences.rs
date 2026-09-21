@@ -87,6 +87,9 @@ pub struct Preferences {
     pub editor_tab_size: u8,
     #[serde(default = "default_editor_font_size")]
     pub editor_font_size: u8,
+    /// Named Claude profiles: profile name → `CLAUDE_CONFIG_DIR` path.
+    #[serde(default)]
+    pub claude_profiles: HashMap<String, String>,
 }
 
 fn default_ui_scale() -> f32 {
@@ -112,6 +115,7 @@ impl Default for Preferences {
             editor_text_wrap: false,
             editor_tab_size: 2,
             editor_font_size: 13,
+            claude_profiles: HashMap::new(),
         }
     }
 }

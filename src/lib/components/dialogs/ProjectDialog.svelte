@@ -2,7 +2,7 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { navigationStore } from '$lib/stores/navigation.svelte';
-  import { addProject, updateProject } from '$lib/api/commands';
+  import { addProject, updateProject, setClaudeProfile } from '$lib/api/commands';
   import { open } from '@tauri-apps/plugin-dialog';
   import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '$lib/components/ui/dialog';
   import { Label } from '$lib/components/ui/label';
@@ -19,7 +19,12 @@
   let key = $state('');
   let path = $state('');
   let selectedParent = $state('');
+  let claudeProfile = $state('');
   let keyError = $state('');
+
+  const profileNames = $derived(
+    Object.keys(configStore.preferences.claude_profiles ?? {}).sort((a, b) => a.localeCompare(b)),
+  );
 
   const categoryOptions = $derived(
     Object.keys(configStore.categories).sort((a, b) => a.localeCompare(b)),
@@ -32,10 +37,12 @@
       key = payload.key;
       path = existing?.path ?? '';
       selectedParent = existing?.parent ?? '';
+      claudeProfile = existing?.claude_profile ?? '';
     } else {
       key = '';
       path = '';
       selectedParent = payload.parentKey ?? '';
+      claudeProfile = '';
     }
     keyError = '';
   });
@@ -60,6 +67,11 @@
         await updateProject(payload.key, projectData);
       } else {
         await addProject(key, projectData);
+      }
+      // Profile is set separately: add/update_project never overwrite it.
+      const previous = payload.mode === 'edit' ? (configStore.projects[key]?.claude_profile ?? '') : '';
+      if (claudeProfile !== previous) {
+        await setClaudeProfile('project', key, claudeProfile || null);
       }
       await configStore.load();
       navigationStore.refresh(
@@ -103,6 +115,20 @@
           {/each}
         </select>
       </div>
+
+      <div class="field">
+        <Label for="proj-claude">Claude profile</Label>
+        {#if profileNames.length > 0}
+          <select id="proj-claude" bind:value={claudeProfile} class="native-select">
+            <option value="">Inherit from category</option>
+            {#each profileNames as name}
+              <option value={name}>{name}</option>
+            {/each}
+          </select>
+        {:else}
+          <span class="hint">No profiles yet — create one in Preferences → Claude</span>
+        {/if}
+      </div>
     </div>
 
     <DialogFooter>
@@ -119,6 +145,7 @@
 
   .path-row { display: flex; gap: 6px; align-items: center; }
   .path-row :global(input) { flex: 1; }
+  .hint { font-size: var(--text-xs); color: var(--color-text-secondary); font-style: italic; }
 
   .native-select {
     width: 100%;

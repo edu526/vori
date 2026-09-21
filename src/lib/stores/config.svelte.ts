@@ -29,6 +29,7 @@ function createConfigStore() {
     editor_text_wrap: false,
     editor_tab_size: 2,
     editor_font_size: 13,
+    claude_profiles: {},
   });
   let favorites = $state<Favorites>({ projects: [], files: [], categories: [] });
   let recents = $state<RecentItem[]>([]);

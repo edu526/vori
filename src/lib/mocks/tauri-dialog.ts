@@ -7,6 +7,10 @@ export async function ask(message: string, options?: { title?: string }): Promis
   return window.confirm(`${title}\n\n${message}`);
 }
 
+export async function message(message: string, options?: { title?: string }): Promise<void> {
+  window.alert(`${options?.title ?? 'Vori'}\n\n${message}`);
+}
+
 export async function open(options?: {
   title?: string;
   directory?: boolean;

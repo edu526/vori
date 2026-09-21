@@ -3,6 +3,8 @@
 export interface Category {
   parent: string | null;
   source_path?: string | null;
+  /** Claude profile name (key of Preferences.claude_profiles); inherited by children. */
+  claude_profile?: string | null;
 }
 
 export type CategoriesMap = Record<string, Category>;
@@ -13,6 +15,8 @@ export interface Project {
   path: string;
   parent: string; // key of parent category node (any depth)
   stack?: string;
+  /** Overrides the profile inherited from the parent category chain. */
+  claude_profile?: string | null;
 }
 
 export type ProjectsMap = Record<string, Project>;
@@ -53,6 +57,8 @@ export interface Preferences {
   editor_text_wrap: boolean;
   editor_tab_size: number;
   editor_font_size: number;
+  /** Named Claude profiles: profile name → CLAUDE_CONFIG_DIR path. */
+  claude_profiles: Record<string, string>;
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────

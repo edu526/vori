@@ -2,6 +2,7 @@
   import { dialogStore } from '$lib/stores/dialogs.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import { themeStore } from '$lib/stores/theme.svelte';
+  import { navigationStore } from '$lib/stores/navigation.svelte';
   import { updatePreferences, detectTerminals, detectEditors } from '$lib/api/commands';
   import { updaterStore } from '$lib/stores/updater.svelte';
   import { open, ask, message } from '@tauri-apps/plugin-dialog';
@@ -16,7 +17,7 @@
 
   const isOpen = $derived(dialogStore.current?.type === 'preferences');
 
-  let activeTab = $state<'appearance' | 'editors' | 'terminal' | 'system'>('appearance');
+  let activeTab = $state<'appearance' | 'editors' | 'terminal' | 'claude' | 'system'>('appearance');
 
   let prefs = $state<Preferences>({
     default_editor: 'vscode',
@@ -34,6 +35,7 @@
     editor_text_wrap: false,
     editor_tab_size: 2,
     editor_font_size: 13,
+    claude_profiles: {},
   });
 
   let recordingHotkey = $state(false);
@@ -151,11 +153,40 @@
     };
   }
 
+  let newProfileName = $state('');
+  let newProfileDir = $state('');
+  let profileError = $state('');
+
+  function addProfile() {
+    const name = newProfileName.trim();
+    const dir = newProfileDir.trim();
+    if (!name) { profileError = 'Name is required.'; return; }
+    if (!dir) { profileError = 'Config folder is required.'; return; }
+    if (name in prefs.claude_profiles) { profileError = `A profile named "${name}" already exists.`; return; }
+    prefs.claude_profiles = { ...prefs.claude_profiles, [name]: dir };
+    newProfileName = '';
+    newProfileDir = '';
+    profileError = '';
+  }
+
+  function removeProfile(name: string) {
+    const { [name]: _, ...rest } = prefs.claude_profiles;
+    prefs.claude_profiles = rest;
+  }
+
+  async function browseProfileDir() {
+    const picked = await open({ directory: true });
+    if (typeof picked === 'string') newProfileDir = picked;
+  }
+
   $effect(() => {
     if (!isOpen) return;
     prefs = JSON.parse(JSON.stringify(configStore.preferences));
     originalScale = configStore.preferences.ui_scale ?? 1.0;
     detectError = '';
+    newProfileName = '';
+    newProfileDir = '';
+    profileError = '';
     activeTab = 'appearance';
   });
 
@@ -209,9 +240,19 @@
     // single "When closing the window" dropdown, so they must always match.
     // Done here (not on load) to avoid a reactive loop in the load $effect.
     prefs.keep_background = prefs.show_tray;
+    // Removing a profile makes the backend clear it from categories/projects
+    const removedProfile = Object.keys(configStore.preferences.claude_profiles ?? {})
+      .some((n) => !(n in prefs.claude_profiles));
     try {
       await updatePreferences(prefs);
       configStore.preferences = prefs;
+      if (removedProfile) {
+        await configStore.load();
+        navigationStore.refresh(
+          configStore.categories, configStore.projects,
+          configStore.files, configStore.favorites, configStore.recents,
+        );
+      }
       themeStore.apply(prefs.theme);
       originalScale = prefs.ui_scale ?? 1.0; // mark as saved so close doesn't revert
       dialogStore.close();
@@ -220,6 +261,9 @@
     }
   }
 
+  const profileEntries = $derived(
+    Object.entries(prefs.claude_profiles ?? {}).sort(([a], [b]) => a.localeCompare(b)),
+  );
   const terminalEntries = $derived(Object.entries(prefs.terminal.available ?? {}));
   const editorEntries = $derived(
     Object.entries(prefs.editors_available ?? {}).sort(([a], [b]) => a.localeCompare(b))
@@ -257,6 +301,7 @@
         <TabsTrigger value="appearance">Appearance</TabsTrigger>
         <TabsTrigger value="editors">Editors</TabsTrigger>
         <TabsTrigger value="terminal">Terminal</TabsTrigger>
+        <TabsTrigger value="claude">Claude</TabsTrigger>
         <TabsTrigger value="system">System</TabsTrigger>
       </TabsList>
 
@@ -474,6 +519,51 @@
         {/if}
       </TabsContent>
 
+      <!-- Claude -->
+      <TabsContent value="claude" class="tab-body">
+        <div class="field">
+          <Label>Claude profiles</Label>
+          <p class="hint">
+            A profile is a separate Claude Code config folder (<code>CLAUDE_CONFIG_DIR</code>) with its own
+            login and history. Assign one to a category or project to use it when opening in an editor or terminal.
+          </p>
+          {#if profileEntries.length > 0}
+            <div class="radio-group">
+              {#each profileEntries as [name, dir]}
+                <div class="radio-row">
+                  <span class="profile-label" title={dir}>
+                    <span class="profile-name">{name}</span>
+                    <span class="profile-dir">{dir}</span>
+                  </span>
+                  <button class="remove-btn" onclick={() => removeProfile(name)} title="Remove">✕</button>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <p class="hint">No profiles yet.</p>
+          {/if}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <Label for="claude-profile-name">Add profile</Label>
+          <Input id="claude-profile-name" bind:value={newProfileName} placeholder="Name, e.g. work" />
+          <div class="input-row">
+            <Input bind:value={newProfileDir} placeholder="~/.claude-work" />
+            <Button variant="outline" size="sm" onclick={browseProfileDir}>Browse</Button>
+          </div>
+          <div class="detect-row">
+            <Button variant="outline" size="sm" onclick={addProfile}>+ Add Profile</Button>
+          </div>
+          {#if profileError}<p class="error-msg">{profileError}</p>{/if}
+        </div>
+
+        {#if detectError}
+          <p class="error-msg">{detectError}</p>
+        {/if}
+      </TabsContent>
+
       <!-- System -->
       <TabsContent value="system" class="tab-body">
         <div class="field">
@@ -647,6 +737,16 @@
 
   .radio-row:hover .remove-btn { opacity: 1; }
   .remove-btn:hover { background: #fee2e2; color: #dc2626; }
+
+  .profile-label { display: flex; flex-direction: column; min-width: 0; flex: 1; font-size: var(--text-base); }
+  .profile-name { color: var(--color-text); }
+  .profile-dir {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .input-row { display: flex; gap: 6px; }
   .input-row :global(input) { flex: 1; }

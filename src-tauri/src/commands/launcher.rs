@@ -1,7 +1,16 @@
 use tauri::State;
 
-use crate::services::{app_search, config_manager, editor, editor_detector, terminal};
+use crate::services::{app_search, claude_profile, config_manager, editor, editor_detector, terminal};
 use crate::state::AppState;
+
+/// `CLAUDE_CONFIG_DIR` to export when opening `path`, from the profile of the
+/// project/category that contains it (see `claude_profile::resolve_profile_name`).
+fn claude_config_dir_for(path: &str, state: &AppState) -> Option<String> {
+    let categories = state.categories.lock().unwrap();
+    let projects = state.projects.lock().unwrap();
+    let prefs = state.preferences.lock().unwrap();
+    claude_profile::config_dir_for_path(path, &categories, &projects, &prefs.claude_profiles)
+}
 
 #[tauri::command]
 pub fn open_project_in_editor(
@@ -26,7 +35,8 @@ pub fn open_project_in_editor(
         );
         b
     };
-    editor::open_in_editor(&path, &binary)
+    let claude_dir = claude_config_dir_for(&path, &state);
+    editor::open_in_editor(&path, &binary, claude_dir.as_deref())
 }
 
 #[tauri::command]
@@ -43,7 +53,9 @@ pub fn open_workspace_in_editor(
             .cloned()
             .unwrap_or_else(|| editor_name.clone())
     };
-    editor::open_workspace_in_editor(&paths, &binary)
+    // A workspace can span several folders; the first one decides the profile.
+    let claude_dir = paths.first().and_then(|p| claude_config_dir_for(p, &state));
+    editor::open_workspace_in_editor(&paths, &binary, claude_dir.as_deref())
 }
 
 #[tauri::command]
@@ -80,7 +92,8 @@ pub fn open_in_terminal(path: Option<String>, state: State<AppState>) -> Result<
         eprintln!("[vori][launcher] resolved terminal binary={resolved:?}");
         resolved
     };
-    terminal::open_terminal(path.as_deref(), &terminal_cmd)
+    let claude_dir = path.as_deref().and_then(|p| claude_config_dir_for(p, &state));
+    terminal::open_terminal(path.as_deref(), &terminal_cmd, claude_dir.as_deref())
 }
 
 #[tauri::command]
@@ -119,4 +132,59 @@ pub fn detect_terminals(
         config_manager::save("preferences.json", &*prefs)?;
     }
     Ok(found)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        category::{CategoriesMap, Category},
+        favorites::Favorites,
+        file_entry::FilesMap,
+        preferences::Preferences,
+        project::{Project, ProjectsMap},
+    };
+
+    fn state_with(claude_profiles: &[(&str, &str)]) -> AppState {
+        let mut categories = CategoriesMap::new();
+        categories.insert(
+            "work".into(),
+            Category {
+                parent: None,
+                source_path: Some("/code/work".into()),
+                claude_profile: Some("trabajo".into()),
+            },
+        );
+        let mut projects = ProjectsMap::new();
+        projects.insert(
+            "api".into(),
+            Project {
+                path: "/code/work/api".into(),
+                parent: "work".into(),
+                stack: None,
+                claude_profile: None,
+            },
+        );
+        let mut prefs = Preferences::default();
+        for (name, dir) in claude_profiles {
+            prefs.claude_profiles.insert(name.to_string(), dir.to_string());
+        }
+        AppState::new(categories, projects, FilesMap::new(), prefs, Favorites::default(), vec![], false)
+    }
+
+    #[test]
+    fn launcher_resolves_dir_from_app_state() {
+        let state = state_with(&[("trabajo", "/home/u/.claude-work")]);
+        assert_eq!(
+            claude_config_dir_for("/code/work/api", &state).as_deref(),
+            Some("/home/u/.claude-work")
+        );
+        assert_eq!(claude_config_dir_for("/code/elsewhere", &state), None);
+    }
+
+    #[test]
+    fn launcher_ignores_assignment_to_a_deleted_profile() {
+        let state = state_with(&[]);
+        assert_eq!(claude_config_dir_for("/code/work/api", &state), None);
+    }
 }

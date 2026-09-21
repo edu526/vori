@@ -5,7 +5,7 @@ export const mockAppData: AppData = {
     personal: { parent: null },
     'personal/web': { parent: 'personal' },
     'personal/tools': { parent: 'personal' },
-    work: { parent: null },
+    work: { parent: null, claude_profile: 'trabajo' },
     'work/frontend': { parent: 'work' },
     'work/backend': { parent: 'work' },
     open_source: { parent: null },
@@ -69,6 +69,10 @@ export const mockAppData: AppData = {
     editor_text_wrap: false,
     editor_tab_size: 2,
     editor_font_size: 13,
+    claude_profiles: {
+      trabajo: '~/.claude-trabajo',
+      personal: '~/.claude-personal',
+    },
   },
   favorites: {
     projects: ['vori', 'dashboard'],

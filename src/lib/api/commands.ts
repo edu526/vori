@@ -26,6 +26,15 @@ export const updateCategory = (key: string, parent: string | null, sourcePath?: 
 
 export const deleteCategory = (key: string) => invoke<void>('delete_category', { key });
 
+// ── Claude profiles ───────────────────────────────────────────────────────────
+
+/** Assign a Claude profile to a category or project; `null` clears it (inherit). */
+export const setClaudeProfile = (
+  target: 'category' | 'project',
+  key: string,
+  profile: string | null,
+) => invoke<void>('set_claude_profile', { target, key, profile });
+
 // ── Projects ──────────────────────────────────────────────────────────────────
 
 export const addProject = (key: string, project: Project) =>

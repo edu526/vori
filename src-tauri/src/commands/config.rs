@@ -55,7 +55,7 @@ fn collect_descendants(cats: &CategoriesMap, root: &str) -> Vec<String> {
 #[tauri::command]
 pub fn add_category(key: String, parent: Option<String>, source_path: Option<String>, state: State<AppState>) -> Result<(), String> {
     let mut cats = state.categories.lock().unwrap();
-    cats.insert(key, Category { parent, source_path });
+    cats.insert(key, Category { parent, source_path, claude_profile: None });
     config_manager::save("categories.json", &*cats)
 }
 
@@ -72,7 +72,9 @@ pub fn update_category(key: String, parent: Option<String>, source_path: Option<
             return Err("Cannot set a descendant as parent (circular reference)".to_string());
         }
     }
-    cats.insert(key, Category { parent, source_path });
+    // Structural updates never touch the Claude profile — see `set_claude_profile`.
+    let claude_profile = cats.get(&key).and_then(|c| c.claude_profile.clone());
+    cats.insert(key, Category { parent, source_path, claude_profile });
     config_manager::save("categories.json", &*cats)
 }
 
@@ -128,10 +130,12 @@ pub fn bulk_import_projects(
 #[tauri::command]
 pub fn update_project(
     key: String,
-    project: Project,
+    mut project: Project,
     state: State<AppState>,
 ) -> Result<(), String> {
     let mut projs = state.projects.lock().unwrap();
+    // Structural updates never touch the Claude profile — see `set_claude_profile`.
+    project.claude_profile = projs.get(&key).and_then(|p| p.claude_profile.clone());
     projs.insert(key, project);
     config_manager::save("projects.json", &*projs)
 }
@@ -141,6 +145,64 @@ pub fn delete_project(key: String, state: State<AppState>) -> Result<(), String>
     let mut projs = state.projects.lock().unwrap();
     projs.remove(&key);
     config_manager::save("projects.json", &*projs)
+}
+
+// ── Claude profiles ───────────────────────────────────────────────────────────
+
+/// Assign (or clear, with `None`) the Claude profile of a category or project.
+#[tauri::command]
+pub fn set_claude_profile(
+    target: String,
+    key: String,
+    profile: Option<String>,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let profile = profile.filter(|p| !p.is_empty());
+    if let Some(name) = &profile {
+        if !state.preferences.lock().unwrap().claude_profiles.contains_key(name) {
+            return Err(format!("Claude profile '{name}' does not exist"));
+        }
+    }
+    match target.as_str() {
+        "category" => {
+            let mut cats = state.categories.lock().unwrap();
+            cats.get_mut(&key)
+                .ok_or_else(|| format!("Category '{key}' not found"))?
+                .claude_profile = profile;
+            config_manager::save("categories.json", &*cats)
+        }
+        "project" => {
+            let mut projs = state.projects.lock().unwrap();
+            projs
+                .get_mut(&key)
+                .ok_or_else(|| format!("Project '{key}' not found"))?
+                .claude_profile = profile;
+            config_manager::save("projects.json", &*projs)
+        }
+        other => Err(format!("Unknown target: {other}")),
+    }
+}
+
+/// Drop assignments that point at profiles that no longer exist.
+fn clear_dangling_profile_refs(state: &AppState, profiles: &std::collections::HashMap<String, String>) -> Result<(), String> {
+    let dangling = |p: &Option<String>| p.as_ref().is_some_and(|n| !profiles.contains_key(n));
+    {
+        let mut cats = state.categories.lock().unwrap();
+        if cats.values().any(|c| dangling(&c.claude_profile)) {
+            for c in cats.values_mut().filter(|c| dangling(&c.claude_profile)) {
+                c.claude_profile = None;
+            }
+            config_manager::save("categories.json", &*cats)?;
+        }
+    }
+    let mut projs = state.projects.lock().unwrap();
+    if projs.values().any(|p| dangling(&p.claude_profile)) {
+        for p in projs.values_mut().filter(|p| dangling(&p.claude_profile)) {
+            p.claude_profile = None;
+        }
+        config_manager::save("projects.json", &*projs)?;
+    }
+    Ok(())
 }
 
 // ── Files ─────────────────────────────────────────────────────────────────────
@@ -214,7 +276,8 @@ pub fn update_preferences(
     }
 
     *state.preferences.lock().unwrap() = prefs.clone();
-    config_manager::save("preferences.json", &prefs)
+    config_manager::save("preferences.json", &prefs)?;
+    clear_dangling_profile_refs(&state, &prefs.claude_profiles)
 }
 
 // ── Workspace selection (Ctrl+click selection that survives across restarts) ──
