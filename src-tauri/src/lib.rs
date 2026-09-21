@@ -32,6 +32,7 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             // Migrate config from code-launcher → vori on first launch (no-op if already done)
             config_manager::migrate_from_legacy();

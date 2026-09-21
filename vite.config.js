@@ -26,6 +26,7 @@ const browserAlias = {
   "@tauri-apps/api/dpi": mock("tauri-dpi.ts"),
   "@tauri-apps/plugin-dialog": mock("tauri-dialog.ts"),
   "@tauri-apps/plugin-updater": mock("tauri-updater.ts"),
+  "@tauri-apps/plugin-process": mock("tauri-process.ts"),
 };
 
 /**

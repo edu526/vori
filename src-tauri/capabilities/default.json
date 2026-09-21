@@ -16,6 +16,7 @@
     "dialog:allow-ask",
     "dialog:allow-open",
     "global-shortcut:default",
-    "updater:default"
+    "updater:default",
+    "process:allow-restart"
   ]
 }
