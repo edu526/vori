@@ -1,3 +1,24 @@
+# [1.8.0](https://github.com/edu526/vori/compare/v1.7.0...v1.8.0) (2026-09-22)
+
+
+### Bug Fixes
+
+* **config:** write config atomically and never overwrite an unreadable file ([06e615e](https://github.com/edu526/vori/commit/06e615e7ebeac01e19c91b1890bbdd5353307634))
+
+
+### Features
+
+* **backup:** export/import data and a relocatable config directory ([288535a](https://github.com/edu526/vori/commit/288535a6d57e590f94834d5b5b300b35c13ff937))
+* **categories:** flag new folders in folder-bound categories ([2af9931](https://github.com/edu526/vori/commit/2af9931758dc90fdb830ba6d4de76a2f4bd16a6c))
+* **cli:** vori CLI and vori:// deep links ([af9e47d](https://github.com/edu526/vori/commit/af9e47d146c2355e321389aad6df73883d0c0b58))
+* **git:** show branch and dirty state on projects, and clone repositories ([da32e85](https://github.com/edu526/vori/commit/da32e85ff425df350598bec8a397e9a4254d349f))
+* **i18n:** language preference and translation infrastructure ([c22903b](https://github.com/edu526/vori/commit/c22903b5a934df48c78b4d6ab3751356d51b93cb))
+* **i18n:** Spanish translation of the whole UI ([76eb5f1](https://github.com/edu526/vori/commit/76eb5f1c20c2783fe109da9786ecdf3422218e9e))
+* **i18n:** translate menus, editor, home and shell (Spanish) ([70df7c2](https://github.com/edu526/vori/commit/70df7c2f9b88b547a612a4c07efeef51815892dc))
+* **projects:** quick actions — show in file manager, copy path, run package.json scripts ([a5cd96e](https://github.com/edu526/vori/commit/a5cd96eeaf4ed51781bb6bd988c3b55e44bec496))
+* **search:** rank by relevance and frecency, and show frequently used items ([9c8425b](https://github.com/edu526/vori/commit/9c8425b1461271f29d37a745b2cda869cc2b17d1))
+* **updater:** show what's new in the update prompt ([30d8856](https://github.com/edu526/vori/commit/30d8856996cefa3556b5fec6e6b3c0cff9789985))
+
 # [1.7.0](https://github.com/edu526/vori/compare/v1.6.0...v1.7.0) (2026-09-21)
 
 
