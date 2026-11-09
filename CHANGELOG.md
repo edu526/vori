@@ -1,3 +1,11 @@
+## [1.8.1](https://github.com/edu526/vori/compare/v1.8.0...v1.8.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **home:** open workspaces from recents and favorites with their Claude profile ([c0739f2](https://github.com/edu526/vori/commit/c0739f21cdbbb8d1e6849190aa92a3a8cdeee6b0))
+* **workspaces:** show detected workspaces in the subcategory of their folder ([0827206](https://github.com/edu526/vori/commit/082720628513c716a2045d6028c6b715eeb2c135))
+
 # [1.8.0](https://github.com/edu526/vori/compare/v1.7.0...v1.8.0) (2026-09-22)
 
 
