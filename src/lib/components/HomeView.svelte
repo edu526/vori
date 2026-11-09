@@ -50,16 +50,22 @@
     return path.replace(/^\/home\/[^/]+/, '~');
   }
 
-  function trackRecent(path: string, name: string, type: 'project' | 'file') {
+  // A `.code-workspace` opens in the editor like a project, so the Claude profile of its
+  // folder applies. Recents saved as 'file' before workspaces existed are caught by the extension.
+  function isWorkspace(item: { type: string; path: string }): boolean {
+    return item.type === 'workspace' || item.path.endsWith('.code-workspace');
+  }
+
+  function trackRecent(path: string, name: string, type: 'project' | 'file' | 'workspace') {
     const item = { path, name, type, timestamp: Date.now() / 1000 };
     addRecent(item);
     navigationStore.addRecentToView(item);
     configStore.recents = [item, ...configStore.recents.filter(r => r.path !== path)].slice(0, 20);
   }
 
-  async function openProject(path: string, name: string) {
+  async function openProject(path: string, name: string, type: 'project' | 'workspace' = 'project') {
     await openProjectInEditor(path, defaultEditor);
-    trackRecent(path, name, 'project');
+    trackRecent(path, name, type);
     if (configStore.preferences.close_on_open_editor) await getCurrentWindow().close();
   }
 
@@ -109,6 +115,10 @@
                     {t('common.openIn', { editor: editorLabel(defaultEditor) })}
                   </button>
                   <button onclick={() => openTerminal(item.path)}>{t('common.terminal')}</button>
+                {:else if isWorkspace(item)}
+                  <button onclick={() => openProject(item.path, item.name, 'workspace')}>
+                    {t('common.openIn', { editor: editorLabel(defaultEditor) })}
+                  </button>
                 {:else if isTextFile(item.path)}
                   <button onclick={() => editFile(item.path, item.name)}>{t('common.edit')}</button>
                 {:else}
@@ -132,7 +142,7 @@
           {#each recents as item (item.path)}
             <li class="item">
               <div class="item-icon">
-                <ItemIcon type={item.type === 'file' ? 'file' : 'project'} size={16} />
+                <ItemIcon type={isWorkspace(item) ? 'workspace' : item.type === 'file' ? 'file' : 'project'} size={16} />
               </div>
               <div class="item-info">
                 <span class="item-name">{item.name}</span>
@@ -144,6 +154,10 @@
                     {t('common.openIn', { editor: editorLabel(defaultEditor) })}
                   </button>
                   <button onclick={() => openTerminal(item.path)}>{t('common.terminal')}</button>
+                {:else if isWorkspace(item)}
+                  <button onclick={() => openProject(item.path, item.name, 'workspace')}>
+                    {t('common.openIn', { editor: editorLabel(defaultEditor) })}
+                  </button>
                 {:else if isTextFile(item.path)}
                   <button onclick={() => editFile(item.path, item.name)}>{t('common.edit')}</button>
                 {:else}
