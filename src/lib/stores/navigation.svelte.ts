@@ -188,34 +188,74 @@ function createNavigationStore() {
         title: key.split('/').pop() ?? key,
       }];
 
-      const sourcePath = _categories[key]?.source_path;
-      if (sourcePath && _workspaceDetections[key] === undefined) {
-        detectWorkspaces(key, sourcePath);
+      const root = detectionRootFor(key);
+      const sourcePath = root ? _categories[root]?.source_path : undefined;
+      if (root && sourcePath && _workspaceDetections[root] === undefined) {
+        detectWorkspaces(root, sourcePath);
       }
     } else {
       _activeCategoryKey = null;
     }
   }
 
+  /** `key` itself or its nearest ancestor bound to a folder, whose scan finds the workspaces under it. */
+  function detectionRootFor(key: string): string | null {
+    const visited = new Set<string>();
+    let current: string | null | undefined = key;
+    while (current && !visited.has(current)) {
+      visited.add(current);
+      const cat: CategoriesMap[string] | undefined = _categories[current];
+      if (!cat) return null;
+      if (cat.source_path) return current;
+      current = cat.parent;
+    }
+    return null;
+  }
+
+  /**
+   * Category a workspace detected from `rootKey`'s folder belongs to: the deepest existing
+   * subcategory matching its folder (`work` + `api/billing` → `work/api/billing`, the keys a
+   * nested import creates), or `rootKey` when there is none.
+   */
+  function workspaceCategory(rootKey: string, ws: DetectedWorkspace): string {
+    const segments = ws.relative_path.split('/').filter(Boolean);
+    for (let n = segments.length; n > 0; n--) {
+      const candidate = `${rootKey}/${segments.slice(0, n).join('/')}`;
+      if (_categories[candidate]) return candidate;
+    }
+    return rootKey;
+  }
+
   function workspaceItemsFor(key: string): NavItem[] {
-    return (_workspaceDetections[key] ?? []).map((ws) => ({
-      key: `__ws:${ws.workspace_file}`,
-      label: ws.name,
-      type: 'workspace',
-      path: ws.workspace_file,
-      parentKey: key,
-    }));
+    const seen = new Set<string>();
+    const items: NavItem[] = [];
+    for (const [rootKey, workspaces] of Object.entries(_workspaceDetections)) {
+      if (key !== rootKey && !key.startsWith(`${rootKey}/`)) continue;
+      for (const ws of workspaces) {
+        if (seen.has(ws.workspace_file) || workspaceCategory(rootKey, ws) !== key) continue;
+        seen.add(ws.workspace_file);
+        items.push({
+          key: `__ws:${ws.workspace_file}`,
+          label: ws.name,
+          type: 'workspace',
+          path: ws.workspace_file,
+          parentKey: key,
+        });
+      }
+    }
+    return items;
   }
 
   function detectWorkspaces(key: string, sourcePath: string) {
     detectWorkspacesInFolder(sourcePath)
       .then((workspaces) => {
         _workspaceDetections = { ..._workspaceDetections, [key]: workspaces };
-        if (_activeCategoryKey !== key) return;
+        const active = _activeCategoryKey;
+        if (!active || (active !== key && !active.startsWith(`${key}/`))) return;
         const colIdx = columns.length - 1;
         if (colIdx <= 0) return;
-        const baseItems = buildChildItems(key, _categories, _projects, _files, _favorites);
-        const wsItems = workspaceItemsFor(key);
+        const baseItems = buildChildItems(active, _categories, _projects, _files, _favorites);
+        const wsItems = workspaceItemsFor(active);
         columns = [
           ...columns.slice(0, colIdx),
           { ...columns[colIdx], items: [...baseItems, ...wsItems] },
@@ -419,6 +459,7 @@ function createNavigationStore() {
     clearWorkspaceSelection,
     loadWorkspaceSelection,
     detectWorkspaces,
+    workspaceCategory,
   };
 }
 

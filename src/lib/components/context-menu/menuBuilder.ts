@@ -147,7 +147,7 @@ export function buildMenuItems(
                       key = used.has(`ws-${rel}`) ? `ws-${ws.workspace_file}` : `ws-${rel}`;
                     }
                     used.add(key);
-                    return [key, { path: ws.workspace_file, parent: item.key }];
+                    return [key, { path: ws.workspace_file, parent: navigationStore.workspaceCategory(item.key, ws) }];
                   });
                   await bulkImportProjects(entries);
                   await configStore.load();
